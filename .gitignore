@@ -4,3 +4,12 @@
 /tmp/
 *.bundle
 Gemfile.lock
+
+
+
+.sass-cache
+.jekyll-metadata
+
+# Ignore the config file that's used for gh-pages.
+_config.gh-pages.yml
+
