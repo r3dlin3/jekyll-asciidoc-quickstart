@@ -1,0 +1,13 @@
+= Hello World!
+:showtitle:
+:page-navtitle: Hello World!
+:page-excerpt: The famous Hello world.
+:page-root: ../../../
+
+== Finally!
+
+After giving a lot of thought, here I am!
+
+I hope to contribute a little to this computer science world and that you will find usefull information.
+
+See you soon
