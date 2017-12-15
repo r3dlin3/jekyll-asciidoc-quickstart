@@ -1,0 +1,143 @@
+<!doctype html>
+<!--[if IE 9]>
+<html class="lt-ie10" lang="en"> <![endif]-->
+<html class="no-js" lang="en" data-useragent="Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Trident/6.0)">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suivre le tutorial d&#8217;Udacity sur Kubernetes avec Azure</title>
+    <meta name="description" content="The Jekyll AsciiDoc Quickstart project is a leg-up in starting your own website hosted on GitHub with content based in AsciiDoc.">
+    <meta name="author" content="Your name goes here">
+    <meta name="copyright" content="Maybe consider a Creative Commons license">
+    <link rel="stylesheet" href="../../../css/foundation.css">
+    <link rel="stylesheet" href="../../../css/font-awesome.css">
+    <link rel="stylesheet" href="../../../css/coderay.css">
+    <link rel="stylesheet" href="../../../css/asciidoctor.css">
+    <script src="../../../js/vendor/modernizr.js"></script>
+    <script src="../../../js/toc.js"></script>
+</head>
+<body>
+
+
+<!-- Nav Bar -->
+
+<nav class="top-bar" data-topbar>
+    <ul class="title-area">
+        <!-- Title Area -->
+        <li class="name">
+            <h1>
+                <a href="../../../">Jekyll AsciiDoc Quickstart</a>
+            </h1>
+        </li>
+        <li class="toggle-topbar menu-icon"><a href="#"><span>Menu</span></a></li>
+    </ul>
+</nav>
+<!-- End Nav -->
+
+
+<!-- Main Page Content and Sidebar -->
+
+<div class="row">
+
+    <!-- Main Blog Content -->
+    <div class="large-9 columns" role="content">
+
+        <h1>Suivre le tutorial d&#8217;Udacity sur Kubernetes avec Azure</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Udacity propose un <a href="https://www.udacity.com/course/scalable-microservices-with-kubernetes&#8212;&#8203;ud615">cours gratuit</a> sur Docker, les microservices et Kubernetes (en anglais). Tout est très bien décrit, y compris les commandes mais cela se base (naturellement) sur Google Container Engine (GKE).</p>
+</div>
+<div class="paragraph">
+<p>Disposant déjà d&#8217;une souscription Azure et Azure proposant également une offre managée sur Kubernetes : Azure Container Service (AKS).</p>
+</div>
+<div class="paragraph">
+<p>Azure disposant également d&#8217;un Registry privé (Azure Container Registry), ce sera l&#8217;occasion de l&#8217;utilisé!</p>
+</div>
+<div class="paragraph">
+<p>Le tutorial fait également largement usage de <a href="https://cloud.google.com/shell/docs/">Google Cloud Shell</a>. Azure dispose également d&#8217;un shell: Azure Cloud Shell. Il est même proposé "en plein écran" depuis peu et propose un raccourci vers <a href="http://shell.azure.com/bash">bash</a> ou <a href="http://shell.azure.com/powershell">PowerShell</a>.</p>
+</div>
+<div class="paragraph">
+<p>L&#8217;Azure Cloud Shell <span class="line-through">permet une persistance</span> a un espace de stockage en étant lié à un Storage Account. Ce sera donc parfait pour créer une image, la publier et autre.</p>
+</div>
+<div class="paragraph">
+<p>La suite de cet article présente par leçon, étape par étape les adaptations</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="lesson_1_introduction_to_microservices">Lesson 1: Introduction to Microservices</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="etape_5_get_the_source_code">Etape 5: Get the Source Code</h3>
+<div class="paragraph">
+<p>Je fais l&#8217;hypothèse que vous avez une souscription Azure et que vous avez démarré un Bash dans <a href="http://shell.azure.com/bash">Azure Cloud Shell</a>.
+TIP: Sous Windows, utilisez <span class="keyseq"><kbd>Ctrl</kbd>+<kbd>Insert</kbd></span> to copy and <span class="keyseq"><kbd>Shift</kbd>+<kbd>Insert</kbd></span> to paste.</p>
+</div>
+<div class="paragraph">
+<p>Go étant déjà installé, rien à faire ici:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="bash">$ go version
+go version go1.7 linux/amd64</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+    </div>
+
+    <!-- End Main Content -->
+
+    <!-- Sidebar -->
+
+    <aside class="large-3 columns">
+
+        <h4>Posts</h4>
+        <ul id="posts" class="posts nav">
+            
+            <li><a href="./2017/12/15/udacity-with-azure.html">Suivre le tutorial d'Udacity sur Kubernetes avec Azure</a></li>
+            
+            <li><a href="./2017/10/27/hello-world.html">Hello World!</a></li>
+            
+        </ul>
+
+        <div class="panel">
+            <h5>Featured</h5>
+
+            <p>Pork drumstick turkey fugiat. Tri-tip elit turducken pork chop in. Swine short ribs meatball irure bacon
+                nulla pork belly cupidatat meatloaf cow.</p>
+        </div>
+
+    </aside>
+
+    <!-- End Sidebar -->
+</div>
+
+<!-- End Main Content and Sidebar -->
+
+
+<!-- Footer -->
+
+<footer class="row">
+    <div class="large-12 columns">
+        <hr>
+        <div class="row">
+            <div class="large-12 columns">
+                <p>Footer</p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script src="../../../js/vendor/jquery.js"></script>
+<script src="../../../js/foundation.min.js"></script>
+<script>
+$(document).foundation();
+var doc = document.documentElement;
+doc.setAttribute('data-useragent', navigator.userAgent);
+</script>
+</body>
+</html>
