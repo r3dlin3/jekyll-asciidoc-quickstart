@@ -2,7 +2,7 @@
 :showtitle:
 :page-navtitle: Hello World!
 :page-excerpt: The famous Hello world.
-:page-root: ../../../
+//:page-root: ../../../
 
 == Finally!
 

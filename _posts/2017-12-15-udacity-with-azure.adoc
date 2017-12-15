@@ -2,7 +2,7 @@
 :showtitle:
 :page-navtitle: Suivre le tutorial d'Udacity sur Kubernetes avec Azure
 :page-excerpt: Comment suivre le tutorial d'Udacity avec une souscription Azure?
-:page-root: ../../../
+//:page-root: ../../../
 :page-tags: [kubernetes,azure,aks,docker,microservices]
 :experimental:
 

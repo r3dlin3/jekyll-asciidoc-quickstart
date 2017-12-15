@@ -1,0 +1,31 @@
+= Créer une VM avec Terraform dans Azure
+:showtitle:
+:page-navtitle: Créer une VM avec Terraform dans Azure
+:page-excerpt: Premier post sur une série autour de Terraform et Azure
+:page-root: ../../../
+:page-tags: [terraform,azure,vm]
+
+== Terraform
+
+https://www.terraform.io/[Terraform] est un outil qui permet de faire de l'Infrastructure as Code.
+
+Je l'avais découvert grâce à une session Azure par Microsoft mais je n'avais pas vraiment eu le temps de le tester.
+
+Microsoft propose déjà les ARM templates pour gérer l'infrastructure comme du code. De la même façon, AWS propose CloudFormation.
+Et C'est là où Terraform prend toute sa valeur: un seul language pour traiter ces 2 fournisseurs Cloud (et d'autres).
+
+Si au départ, il y avait une latence entre la mise à disposition de certains composants et leurs supports dans Terraform, 
+https://azure.microsoft.com/en-us/blog/investing-deeply-in-terraform-on-azure/[Microsoft a "investi"] sur Terraform et propose aujourd'hui une interface en https://azure.microsoft.com/en-us/blog/more-and-more-fun-with-terraform-on-azure/[constante évolution]. 
+Ainsi, à la sortie d'https://azure.microsoft.com/en-us/blog/introducing-azure-event-grid-an-event-service-for-modern-applications/[Event Grid] mi-août, le support d'Event Grid était https://github.com/terraform-providers/terraform-provider-azurerm/blob/master/CHANGELOG.md[annoncé] 15 jours après.
+
+== Les avantages de Terraform
+* Language commun à plusieurs fournisseurs
+* Capacité à gérer les groupes de ressources directement dans le fichier de description
+* Fusion de plusieurs fichiers (beaucoup plus simple que via ARM)
+
+== Installation
+
+Inutile de paraphraser le site de https://www.terraform.io/intro/getting-started/install.html[Terraform], la procédure est assez simple. 
+Vous pouvez aussi vous référer au https://stanislas.io/2017/01/02/modeliser-deployer-et-gerer-des-ressources-azure-avec-terraform-de-hashicorp/[site de Stanislas] qui donne des précisions sur l'utilisation de Terraform avec Azure.
+
+== 
