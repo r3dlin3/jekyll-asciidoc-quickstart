@@ -1,10 +1,11 @@
 = Suivre le tutorial d'Udacity sur Kubernetes avec Azure
-:showtitle:
 :page-navtitle: Suivre le tutorial d'Udacity sur Kubernetes avec Azure
 :page-excerpt: Comment suivre le tutorial d'Udacity avec une souscription Azure?
-//:page-root: ../../../
 :page-tags: [kubernetes,azure,aks,docker,microservices]
 :experimental:
+
+
+== Introduction
 
 Udacity propose un https://www.udacity.com/course/scalable-microservices-with-kubernetes--ud615[cours gratuit] sur Docker, les microservices et Kubernetes (en anglais). Tout est très bien décrit, y compris les commandes mais cela se base (naturellement) sur Google Container Engine (GKE).
 
@@ -12,7 +13,7 @@ Disposant déjà d'une souscription Azure et Azure proposant également une offr
 
 Azure disposant également d'un Registry privé (Azure Container Registry), ce sera l'occasion de l'utilisé!
 
-Le tutorial fait également largement usage de https://cloud.google.com/shell/docs/[Google Cloud Shell]. Azure dispose également d'un shell: Azure Cloud Shell. Il est même proposé "en plein écran" depuis peu et propose un raccourci vers http://shell.azure.com/bash[bash] ou http://shell.azure.com/powershell[PowerShell].
+Le tutorial fait également largement usage de https://cloud.google.com/shell/docs/[Google Cloud Shell]. Azure dispose également d'un shell: Azure Cloud Shell. Il est même proposé "en plein écran" depuis peu et propose un raccourci vers http://shell.azure.com/bash[bash] ou http://shell.azure.com/powershell[PowerShell]. Il dispose de nombreuses https://docs.microsoft.com/en-us/azure/cloud-shell/features[fonctionnalités et language] par défaut.
 
 L'Azure Cloud Shell [line-through]#permet une persistance# a un espace de stockage en étant lié à un Storage Account. Ce sera donc parfait pour créer une image, la publier et autre.
 
@@ -24,6 +25,7 @@ La suite de cet article présente par leçon, étape par étape les adaptations
 
 ### Etape 5: Get the Source Code
 Je fais l'hypothèse que vous avez une souscription Azure et que vous avez démarré un Bash dans http://shell.azure.com/bash[Azure Cloud Shell].
+
 TIP: Sous Windows, utilisez kbd:[Ctrl+Insert] to copy and kbd:[Shift+Insert] to paste. 
 
 Go étant déjà installé, rien à faire ici:
@@ -34,3 +36,139 @@ $ go version
 go version go1.7 linux/amd64
 ----
 
+Donc, hormis l'installation de Go, vous pouvez procéder comme indiqué et extraire directement le code source:
+[source,bash]
+----
+$ export GOPATH=~/go
+$ echo "export GOPATH=~/go" >> ~/.bashrc
+$ source ~/.bashrc
+$ mkdir -p $GOPATH/src/github.com/udacity
+$ git clone https://github.com/udacity/ud615
+$ cd ud615/app/
+----
+
+### Etape 6: Build And Interact With Monolith
+
+La compilation se passe comme un charge mais pour tester l'application, cela devient légèrement plus rusé.
+
+Pour exécuter le programme monolith, j'utilise le port 10081 au lieu de 81 car la commande sudo n'est pas disponible.
+
+TIP: Pour ouvrir une "deuxième console", ouvrez un nouvel onglet dans votre navigateur sur le Cloud Shell.
+
+----
+./bin/monolith -http :10080 -health :10081
+----
+
+Les tests à base de `curl` s'exécute corretement.
+
+Pour tuer le programme, il suffira de le ramener en avant-plan (commande `fg` puis kbd:[Ctrl+C]).
+
+### Etape 9: Refactor To MSA
+
+Pas de difficultés ici. Les commandes passent (compilations et tests).
+
+## Lesson 2: Building the Containers with Docker
+
+### Etape 3: Installing Apps With Native OS Tools
+
+Les festivités commencent... 
+Le https://docs.microsoft.com/en-us/azure/cloud-shell/quickstart["démarrage rapide"] donne en réalité toutes les indications. Dans les grosses mailles:
+
+1. Choisir sa souscription (`az account list` puis `az account set --subscription my-subscription-name`)
+2. Créer un resource group (unité de base dans Azure)
+3. Créer la VM (configuration de base)
+4. Se connecter à la VM
+
+Ce qui donne:
+
+----
+az group create --name rg-udacity-test --location westeurope
+az vm create -n ubuntu -g rg-udacity-test --image UbuntuLTS --generate-ssh-keys
+ssh username@ipaddress
+----
+
+TIP: Ne pas oublier d'éteindre la VM pour éviter d'exploser le forfait!
+
+TIP: Pour connaitre l'adresse IP de la VM: `az vm list-ip-addresses -g rg-udacity-test -n ubuntu --output table`
+
+Une fois connecté, les autres commandes ne changent pas:
+
+----
+sudo apt-get update
+sudo apt-get install nginx
+nginx -v
+...
+----
+
+### Etape 7 : Intalling Images With Docker
+Pas de spécificité.
+ 
+### Etape 8 : Running Images With Docker
+Pas de spécificité.
+
+### Etape 9 : Talking To Docker Instances
+Pas de spécificité.
+
+### Etape 11 : Create An Image
+Pas de spécificité.
+
+### Etape 12 : Create docker images for the remaining microservices - auth and hello
+Pas de spécificité.
+
+### Etape 14 : Push Images
+
+Nous allons ici utilisé l'Azure Container Registry.
+
+----
+az group create --name rg-common-docker --location westeurope
+az acr create --resource-group rg-common-docker --name <acrName> --sku Basic
+----
+La commande va retourner une structure. Bien noter la ligne:
+
+[source,json]
+----
+"loginServer": "<acrLoginServer>"
+----
+
+Sur la VM Ubuntu, installer Azure CLI 2.0 en suivant la https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest#install-with-apt-package-manager[procédure]:
+
+----
+echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ wheezy main" | \
+     sudo tee /etc/apt/sources.list.d/azure-cli.list
+sudo apt-key adv --keyserver packages.microsoft.com --recv-keys 52E16F86FEE04B979B07E28DB02C46DF417A0893
+sudo apt-get install apt-transport-https
+sudo apt-get update && sudo apt-get install azure-cli
+----
+
+Puis se logguer sur Azure puis l'ACR avant de publier l'image
+----
+sudo az login
+sudo az acr login --name <acrName>
+----
+
+La commande de publication ('push') doit être adapté:
+
+----
+docker tag monolith:1.0.0 <acrLoginServer>/example-monolith:1.0.0
+docker push <acrLoginServer>/example-monolith:1.0.0
+----
+
+On peut ensuite vérifier le travail:
+
+```
+$ sudo az acr repository list --name <acrName> --output table
+Result
+----------------
+example-auth
+example-hello
+example-monolith
+```
+
+TIP: A ce stade, il est possible d'arrêter la VM: `az vm stop -g rg-udacity-test -n ubuntu`
+
+== Un peu de nettoyage
+Comme d'habitude, ne pas oublier de nettoyer. Le plus simple: supprimer le resource group.
+
+----
+az group delete --name rg-udacity-test
+----

@@ -4,6 +4,7 @@
 :page-excerpt: Premier post sur une série autour de Terraform et Azure
 :page-root: ../../../
 :page-tags: [terraform,azure,vm]
+:published: false
 
 == Terraform
 

@@ -1,8 +1,9 @@
-title: Jekyll AsciiDoc Quickstart
-description: The Jekyll AsciiDoc Quickstart project is a leg-up in starting your own website hosted on GitHub with content based in AsciiDoc.
+title: A bit of everything
+description: A bit of everything
+author:      r3dLiN3
+url:         "https://r3dlin3.github.com"
 encoding: utf-8
-highlighter: rouge
-
+date_format: '%Y-%m-%d'
 exclude:
   - LICENSE.adoc
   - README.adoc
@@ -17,3 +18,13 @@ asciidoctor:
     - idseparator=_
     - source-highlighter=coderay
     - icons=font
+
+paginate:     4
+sass:
+  style: compressed
+plugins:
+  - jekyll-paginate
+  - jekyll-sitemap
+redcarpet:
+  extensions: ['smart', 'tables', 'with_toc_data']
+permalink:    pretty
