@@ -164,7 +164,7 @@ example-hello
 example-monolith
 ```
 
-TIP: A ce stade, il est possible d'arrêter la VM: `az vm stop -g rg-udacity-test -n ubuntu`
+TIP: A ce stade, il est possible d'arrêter la VM: `az vm deallocate -g rg-udacity-test -n ubuntu`
 
 == Un peu de nettoyage
 Comme d'habitude, ne pas oublier de nettoyer. Le plus simple: supprimer le resource group.
