@@ -1,5 +1,5 @@
-= Suivre le tutorial d'Udacity sur Kubernetes avec Azure
-:page-navtitle: Suivre le tutorial d'Udacity sur Kubernetes avec Azure
+= Suivre le tutorial d'Udacity sur Kubernetes avec Azure (1ère partie)
+:page-navtitle: Suivre le tutorial d'Udacity sur Kubernetes avec Azure (1ère partie)
 :page-excerpt: Comment suivre le tutorial d'Udacity avec une souscription Azure?
 :page-tags: [kubernetes,azure,aks,docker,microservices]
 :experimental:
@@ -26,7 +26,7 @@ La suite de cet article présente par leçon, étape par étape les adaptations
 ### Etape 5: Get the Source Code
 Je fais l'hypothèse que vous avez une souscription Azure et que vous avez démarré un Bash dans http://shell.azure.com/bash[Azure Cloud Shell].
 
-TIP: Sous Windows, utilisez kbd:[Ctrl+Insert] to copy and kbd:[Shift+Insert] to paste. 
+TIP: Sous Windows, utilisez kbd:[Ctrl+Insert] pour copier and kbd:[Shift+Insert] pour coller.
 
 Go étant déjà installé, rien à faire ici:
 
@@ -39,7 +39,6 @@ go version go1.7 linux/amd64
 Donc, hormis l'installation de Go, vous pouvez procéder comme indiqué et extraire directement le code source:
 [source,bash]
 ----
-$ export GOPATH=~/go
 $ echo "export GOPATH=~/go" >> ~/.bashrc
 $ source ~/.bashrc
 $ mkdir -p $GOPATH/src/github.com/udacity
