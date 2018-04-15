@@ -1,0 +1,87 @@
+= Suivre le tutorial d'Udacity sur Kubernetes avec Azure (2e partie)
+:page-navtitle: Suivre le tutorial d'Udacity sur Kubernetes avec Azure (2e partie)
+:page-excerpt: Comment suivre le tutorial d'Udacity avec une souscription Azure?
+:page-tags: [kubernetes,azure,aks,docker,microservices]
+:experimental:
+:page-liquid:
+
+
+== Introduction
+
+Nous prenons ici la suite du https://www.udacity.com/course/scalable-microservices-with-kubernetes--ud615[cours gratuit] d'Udacity sur Docker, les microservices et Kubernetes.
+Vous pouvez trouver la première partie link:{{ site.baseurl }}{% post_url 2017-12-15-udacity-with-azure %}[ici]
+
+== Lesson 3: Kubernetes
+
+=== Step 4: Setting up Kubernetes for this course
+
+Si l'on reprend là où on en était resté, vous devriez avoir:
+
+- Une souscription Azure
+- Un http://shell.azure.com/bash[Azure Cloud Shell] ouvert sous Bash
+- Un resource group `rg-udacity-test`. Pour rappel, pour en créer un :
+
+    az group create --name rg-udacity-test --location westeurope
+
+A ce stade, vous pouvez instancier un Kubernetes sur AKS grâce à la commande:
+
+    az aks create --resource-group rg-udacity-test --name myK8sCluster --node-count 1 --generate-ssh-keys
+    az aks get-credentials --resource-group rg-udacity-test --name myK8sCluster
+
+Etant sur Azure Cloud Shell, il n'est pas nécessaire d'installer kubectl. 
+Il est déjà présent.
+Tester la commande:
+
+    kubectl get nodes
+    
+
+En exécutant la commande ci-dessous, on peut s'apercevoir que le cluster est en 1.7.7 et que la dernière version disponible est la 1.8.2:
+    
+    az aks get-versions --resource-group rg-udacity-test --name myK8sCluster -o table
+
+Taper la commande suivante pour automatiquement mettre à jour le cluster vers la 1.8.2:
+
+    az aks upgrade --resource-group rg-udacity-test --name myK8sCluster -k 1.8.2
+    
+=== Step 5: Kubernetes Intro Demo
+
+Pas de spécificité sur les commandes. Nginx se déploie correctement.
+
+=== Step 7: Creating Pods
+
+Editer le fichier `pods/monolith.yaml` et modifier la ligne
+
+    image: udacity/example-monolith:1.0.0
+    
+par
+
+    image: <acrLoginServer>/example-monolith:1.0.0
+
+où: `<acrLoginServer>` est le "Login Server (cf. link:{{ site.baseurl }}{% post_url 2017-12-15-udacity-with-azure %}[partie 1]).
+
+TIP: `vim` est présent sur Azure Cloud Shell
+
+Le reste des commande est inchangé.
+
+=== Step 8: Interacting With Pods
+
+Pas de spécificité. Bien penser qu'il est possible d'ouvrir plusieurs Azure Cloud Shell.
+
+=== Step 12: Creating Secrets
+
+Pas de spécificité. 
+
+=== Step 13: Accessing A Secure HTTPS Endpoint
+
+Editer le fichier `pods/secure-monolith.yaml` et modifier la ligne
+
+    image: udacity/example-monolith:1.0.0
+    
+par
+
+    image: <acrLoginServer>/example-monolith:1.0.0
+
+== Lesson 4: Deploying Microservices
+
+
+    
