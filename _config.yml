@@ -23,7 +23,7 @@ sass:
   sass_dir: _sass
   style: compressed
 plugins:
-  #- jekyll-paginate
+  - jekyll-paginate
   - jekyll-sitemap
   - jekyll-asciidoc
 #theme: jekyll-theme-type
