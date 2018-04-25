@@ -25,6 +25,7 @@ sass:
 plugins:
   - jekyll-paginate
   - jekyll-sitemap
+  - jekyll-asciidoc
 #theme: jekyll-theme-type
 redcarpet:
   extensions: ['smart', 'tables', 'with_toc_data']
