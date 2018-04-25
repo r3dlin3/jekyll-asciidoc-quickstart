@@ -36,7 +36,7 @@ Tester la commande:
     
 
 En exécutant la commande ci-dessous, on peut s'apercevoir que le cluster est en 1.7.7 et que la dernière version disponible est la 1.8.2:
-    
+   
     az aks get-versions --resource-group rg-udacity-test --name myK8sCluster -o table
 
 Taper la commande suivante pour automatiquement mettre à jour le cluster vers la 1.8.2:
