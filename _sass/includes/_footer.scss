@@ -10,6 +10,9 @@
   .site-nav {
     a {
       color: $header-link-color;
+      &:hover {
+        color: $header-link-color-hover;
+      }
     }
     ul {
       margin: 0;

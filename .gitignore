@@ -7,7 +7,7 @@ Gemfile.lock
 
 
 
-.sass-cache
+.sass-cache/
 .jekyll-metadata
 
 # Ignore the config file that's used for gh-pages.

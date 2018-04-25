@@ -8,6 +8,10 @@
 
   a {
     color: $header-link-color;
+    text-transform: uppercase;
+    &:hover {
+      color: $header-link-color-hover;
+    }
   }
 
   .avatar {
