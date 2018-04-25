@@ -5,7 +5,7 @@ gem 'coderay', '~> 1.1.0'
 gem 'rake-jekyll', '~> 1.1.0'
 
 group :jekyll_plugins do
-  gem 'jekyll-asciidoc', '~> 2.0.1'
+  gem 'jekyll-asciidoc', '~> 2.1.0'
   gem 'jekyll-paginate', '~>1.1.0'
   gem 'jekyll-sitemap', '~>1.1.1'
 end

@@ -101,3 +101,4 @@ theme_settings:
 # PAGINATION
 paginate: 5
 paginate_path: "blog/page:num"
+highlighter: rouge

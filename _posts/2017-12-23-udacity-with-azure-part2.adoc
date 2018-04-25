@@ -1,6 +1,6 @@
 = Suivre le tutorial d'Udacity sur Kubernetes avec Azure (2e partie)
 :page-navtitle: Suivre le tutorial d'Udacity sur Kubernetes avec Azure (2e partie)
-:page-excerpt: Comment suivre le tutorial d'Udacity avec une souscription Azure?
+:page-excerpt: Comment suivre le tutorial d'Udacity avec une souscription Azure? (2e partie)
 :page-tags: [kubernetes,azure,aks,docker,microservices]
 :experimental:
 :page-liquid:
