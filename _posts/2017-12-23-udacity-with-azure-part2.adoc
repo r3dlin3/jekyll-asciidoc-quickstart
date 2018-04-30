@@ -8,7 +8,7 @@
 
 == Introduction
 
-Nous prenons ici la suite du https://www.udacity.com/course/scalable-microservices-with-kubernetes--ud615[cours gratuit] d'Udacity sur Docker, les microservices et Kubernetes.
+Nous prenons ici la suite du https://eu.udacity.com/course/scalable-microservices-with-kubernetes--ud615[cours gratuit] d'Udacity sur Docker, les microservices et Kubernetes.
 Vous pouvez trouver la première partie link:{{ site.baseurl }}{% post_url 2017-12-15-udacity-with-azure %}[ici]
 
 == Lesson 3: Kubernetes
