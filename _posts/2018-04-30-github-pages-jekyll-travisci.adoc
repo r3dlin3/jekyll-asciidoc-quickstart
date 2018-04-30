@@ -1,0 +1,88 @@
+= Faire un blog avec Jekyll, GitHub Pages et TravisCI
+:page-navtitle: Faire un blog avec jekyll, GitHub Pages et TravisCI
+:page-excerpt: Découvrir la chaîne complète permettant la génération de ce blog
+:page-tags: [github,jekyll,travisci,blog]
+:experimental:
+:page-liquid:
+:icons: font
+
+== Pourquoi déjà ?
+
+https://jekyllrb.com/[Jekyll] est un moteur puissant de générateur de site statique développé en Ruby. Il offre de nombreux plugins, thèmes ainsi que le support d'http://www.methods.co.nz/asciidoc/[AsciiDoc] au travers d'un https://github.com/asciidoctor/jekyll-asciidoc[plugin particulier].
+
+https://pages.github.com/[GitHub Pages] est un bon moyen d'héberger son site statique. GitHub Pages https://help.github.com/articles/using-jekyll-as-a-static-site-generator-with-github-pages/[supporte] même Jekyll mais sans le plugin AsciiDoc.
+
+Bien sûr, il aurait été possible de générer son site statique sur son poste et de le pousser sur GitHub pour publication, mais cela aurait dû être fait à chaque fois.
+J'ai donc préféré automatiser complètement la génération du site grâce à https://travis-ci.org/[TravisCI].
+
+WARNING: Je ne suis ni un expert Jekyll ni Ruby.
+
+Cet article regroupe donc quelques points sur la configuration de la chaîne complète.
+
+== Base du site
+
+Comme préconisé par le  plugin, je suis parti d'un fork du https://github.com/asciidoctor/jekyll-asciidoc-quickstart[démarrage rapide].
+
+Ceci a permis de :
+
+. https://jekyllrb.com/docs/installation/[Installer les prérequis]
+. https://github.com/asciidoctor/jekyll-asciidoc-quickstart#4-enable-travis-ci[Activer TravisCI]
+
+== Jeton d'accès
+
+Pour générer le jeton, ne pas à se référer à la doc du site, mais plutôt à https://docs.travis-ci.com/user/deployment/pages/#Setting-the-GitHub-token[celle] de TravisCI.
+
+== Branche GitHub
+
+Dans le cas d'un site perso, par opposition à un site projet, il est obligatoire de publier dans la branche `master`.
+
+J'ai donc créé et mis le code du site dans une branche `dev`. Pour ma part, j'ai utilisé :
+
+    git checkout -b dev
+
+== Configuration de TravisCI 
+
+TravisCI permet d'automatiser tout pipeline de livraison.
+Il propose même un https://docs.travis-ci.com/user/deployment/pages/[déploiement] pour GitHub Pages, ce qui évite la création de scripts spécifiques devant gérer les git clone, push, etc.
+
+Le premier élément concerne le fichier https://github.com/r3dlin3/r3dlin3.github.io/blob/dev/.travis.yml[.travis.yml].
+
+Celui-ci se compose de la sorte :
+
+[source,yml]
+----
+language: ruby
+rvm: 2.2
+install: bundle install
+script: bundle exec jekyll build
+deploy:
+  provider: pages
+  skip_cleanup: true
+  github_token: $GITHUB_TOKEN # Set in travis-ci.org dashboard <1>
+  local-dir: _site <2>
+  target-branch: master <3>
+  on:
+    branch: dev
+----
+
+<1> Il existe plusieurs façons de sécuriser son jeton GitHub.
+Ici, j'utilise les variables d'environnement. J'ai donc créer une variable `GITHUB_TOKEN` avec mon jeton (cf. https://docs.travis-ci.com/user/environment-variables#Defining-Variables-in-Repository-Settings[doc]). Par défaut, la valeur de la variable n'est pas affichée ("Display value in build log" à "Off")
+
+<2> Jekyll génère les pages dans le répertoire `_site`
+
+<3> Il faut pousser les modifications dans la branche `master`
+
+== Ne pas construire
+
+Lorsque je poussais mes modifications sur la branche `dev`, cela résultait en des modifications poussées sur la branche `master` : le site en lui-même.
+
+TravisCI essayait de construire le site sur master ce qui donnait inexorablement une erreur.
+
+En cochant la case "Build only if .travis.yml is present", cela a empêché la construction de la branche `master`.
+
+image:{{ "/assets/img/travisci_settings.png" | absolute_url }}[TravisCI Settings]
+
+== Conclusion
+
+Après tous ces efforts, quelle fierté d'avoir son petit build au vert : 
+image:https://travis-ci.org/r3dlin3/r3dlin3.github.io.svg?branch=dev[]
