@@ -1,0 +1,28 @@
+= Construire une image Windows avec packer
+:page-navtitle: Construire une image Windows pour VMWare avec packer
+:page-excerpt: Comment construire une image Windows "jetable" avec prête à l'emploi avec packer
+:page-tags: [fun project,jekyll,travisci,blog]
+:experimental:
+:page-liquid:
+:icons: font
+
+== Pourquoi déjà ?
+
+Pour des raisons de sécurité, j'aime exécuter naviguer ou exécuter des programmes dans une VM plutôt que mon poste personnel.
+
+Cette VM devrait être une VM jetable. Les snapshots pourraient être utiles pour revenir rapidement à un état "propre" mais un snapshot devrait être pris à chaque mise à jour de programme ou d'OS.
+
+Imaginer que je veuille afficher les extensions des fichiers, il faudrait :
+
+. Restaurer le snapshot
+. Configurer le paramètre
+. Prendre le snapshot
+. Supprimer l'ancien snapshot
+. Prier pour ne pas avoir oublier un autre paramètre.
+
+Préparer une VM vierge est toujours un peu long. Il est possible de préparer une image avec http://packer.io[Packer].
+
+J'utiliserai en particulier le "builder" pour https://www.packer.io/docs/builders/vmware-iso.html[VMWare].
+
+
+TIP: calculer le hash d'un fichier avec PowerShell: `Get-FileHash -Path .\Windows.iso -Algorithm SHA1`

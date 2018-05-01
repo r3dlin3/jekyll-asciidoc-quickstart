@@ -1,0 +1,21 @@
+= Moindre privilège pour packer avec Azure
+:page-navtitle: Moindre privilège pour packer avec Azure
+:page-excerpt: Contrairement à ce qui est documenter, il est possible de ne pas donner les droits de contributeurs sur la souscription Azure
+:page-tags: [packer,azure]
+:experimental:
+:page-liquid:
+:icons: font
+
+== Pourquoi déjà ?
+
+Par défaut, la https://www.packer.io/docs/builders/azure-setup.html#grant-permissions-to-your-application[documentation de packer] indique qu'il faut créer un service principal avec des droits de contributeur sur la souscription.
+
+[NOTE]
+il est possible de se passer de service principal en utilisant https://www.packer.io/docs/builders/azure-setup.html#device-login[Device Login]. 
+Malheureusement, ce n'est possible que pour un OS cible sous Linux, ce qui n'était pas mon cas.
+
+Il est possible de restreindre les droits de ce service principal à 2 groupes de resource:
+
+* Le groupe de ressource qui va accueillir l'image
+* Un groupe de ressource qui va accueillir accueillir les ressources temporaires (VM, interface réseau, disque, VNET)
+
