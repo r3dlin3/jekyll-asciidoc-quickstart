@@ -1,0 +1,94 @@
+= Gestion des rôles dans Azure
+:page-navtitle: Gestion des rôles dans Azure
+:page-excerpt: Comment gérer les rôles (i.e. RBAC ou encore IAM) dans Azure
+:page-tags: [azure,rbac,role]
+:experimental:
+:page-liquid:
+:icons: font
+
+Je m'étais posé la question. On m'a posé la question. Voici donc quelques commandes que j'ai glanées sur la gestion des rôles dans Azure.
+
+Rappelons qu'il est possible d'affecter un rôle sur 3 niveaux :
+
+* La souscription (donc l'ensemble des ressources de la souscription)
+* Un groupe de ressources
+* Directement sur une ressource
+
+Il existe par défaut de nombreux rôles (cf. https://docs.microsoft.com/en-us/azure/role-based-access-control/built-in-roles[Built-in roles for Azure role-based access control]).
+Certains rôles sont spécialisés sur un type de ressource mais très souvent les ressources n'utilisent que les rôles de base : owner/propriétaire, contributor/conntributeur et reader/lecteur.
+
+En plus de la page de référence de Microsoft, voici quelques éléments pour construire vos rôles.
+
+
+    
+## Liste des rôles
+
+----
+Get-AzureRmRoleDefinition | Format-Table Name, Description
+(Get-AzureRmRoleDefinition "Virtual Machine Contributor").Actions
+(Get-AzureRmRoleDefinition "Virtual Machine Contributor").NotActions
+----
+
+
+## Comment obtenir la liste des actions possibles
+
+Un fournisseur correspond plus ou moins à un type de sous-ressource.
+Pour obtenir une liste de fournisseurs:
+
+----
+> Get-AzureRmResourceProvider -ListAvailable | Select-Object ProviderNamespace, RegistrationState
+----
+
+Pour répertorier les opérations possibles d'un fournisseur :
+
+----
+Get-AzureRmProviderOperation Microsoft.Compute/virtualMachines/* |  select -ExpandProperty operation
+----
+
+NOTE: On notera l'utilisation du caractère '*' dans la commande précédente pour lister les opérations
+
+
+## Créer un rôle personnalisé basé sur un JSON
+
+    New-AzureRmRoleDefinition -InputFile C:\MycustomRole.json
+
+
+
+## Exporter un rôle au format JSON
+
+    Get-AzureRmRoleDefinition <nom du rôle> | ConvertTo-Json
+
+Il sera alors possible stocker/versionner un rôle dans un gestionnaire de source.
+
+## Mettre à jour un rôle personnalisé
+
+Mettez à jour la définition du rôle avec :
+
+----
+$ role = Get-AzureRmRoleDefinition -Name "ROLE_DEFINITION_NAME"
+$ role.AssignableScopes.Add ("/ abonnements / NEW_SUBSCRIPTION_ID_GOES_HERE") ## [[Répétez cette étape pour ajouter tous les abonnements que vous souhaitez ajouter]]
+$ role.Actions.Remove ("Microsoft.Compute / virtualMachines / write") # Ajouter une autorisation à un rôle
+$ role.Actions.Add ("Microsoft.Compute / virtualMachines / write") # Supprimer l'autorisation d'un rôle
+Set-AzureRmRoleDefinition -Role $ role
+----
+
+## Trouver où un rôle est utilisé
+
+    Get-AzureRmRoleAssignment -RoleDefinitionName "ROLE_DEFINITION_NAME"
+
+## Affecter un rôle à un groupe sur un groupe de ressources
+
+    $ AADGroup = Get-AzureRmADGroup -SearchString "GROUP_NAME"
+    New-AzureRmRoleAssignment -ObjectID $ AADGroup.ID -RoleDefinitionName "ROLE_DEFINITION_NAME" -ResourceGroupName "RG_NAME"
+
+## Supprimer un rôle personnalisé
+
+NOTE: Le rôle ne doit pas être affecté avant la suppression
+
+Pour supprimer un rôle personnalisé existant, exécutez la commande suivante :
+
+    Remove-AzureRmRoleDefinition -Id ROLE_DEFINITION_ID
+
+Ou
+
+    Remove-AzureRmRoleDefinition -Name "ROLE_DEFINITION_Name"
