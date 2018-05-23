@@ -1,0 +1,38 @@
+= Mes extensions Visual Studio Code
+:page-navtitle: Mes extensions Visual Studio Code
+:page-excerpt: Une liste presque exhaustive de mes extensions
+:page-tags: [vscode]
+:experimental:
+:page-liquid:
+:icons: font
+
+J'utilise https://code.visualstudio.com/[Visual Studio Code] depuis un moment. 
+
+Cette page recense les extensions que j'utilise pour éviter les "c'est quoi déjà l'extension que j'utilise pour faire ce truc ?". Je compléterai au fur et à mesure.
+
+== Azure
+
+* https://marketplace.visualstudio.com/items?itemName=msazurermtools.azurerm-vscode-tools[Azure Resource Manager Tools]  
+* https://marketplace.visualstudio.com/items?itemName=samcogan.arm-snippets[Azure Resource Manager Snippets]: Des snippets intéressants. Mes préférées : `arm-parameter` et `arm-paramvalue`.
+* https://marketplace.visualstudio.com/items?itemName=letrieu.expand-region[expand-region]: excellente extension qui me permet de sélectionner des régions: très pratiques pour sélectionner rapidement une ressource dans un ARM template
+
+
+== PowerShell
+
+Pas trop de débat :
+
+* https://marketplace.visualstudio.com/items?itemName=ms-vscode.PowerShell[Powershell]: l'extension s'est clairement bonifiée et je n'ai presque plus recours à PowerShell ISE
+
+
+== Web
+
+* https://marketplace.visualstudio.com/items?itemName=HookyQR.beautify[Beautify]
+
+== En cours de test
+
+* https://marketplace.visualstudio.com/items?itemName=ms-vscode.csharp[C#]
+
+== Manquantes
+
+* Edition d'adoc: il en existe une mais les prérequis sont importants et la coloration syntaxique ne reconnait les différents formats
+
