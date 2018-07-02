@@ -1,0 +1,44 @@
+= Démarrer avec Ansible pour Windows
+:page-navtitle: Démarrer avec Ansible pour Windows
+:page-excerpt: Les bases d'Ansible pour Windows
+:page-tags: [ansible,windows]
+:experimental:
+:page-liquid:
+:icons: font
+
+== Préparation de la cible Windows
+Ouvrir un prompt PowerShell en tant qu'admin et exécuter la commande suivante: 
+
+    iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1'))"
+
+
+== Ansible control machine
+
+----
+mkdir wintest
+cd wintest
+mkdir group_vars
+touch hosts
+touch group_vars/windows
+----
+
+----
+sudo apt-add-repository -y ppa:ansible/ansible
+sudo apt-get update
+sudo apt-get install -y ansible
+----
+
+== Quelques commandes de test
+
+----
+ansible windows -i hosts -m win_ping -k
+ansible windows -i hosts -m setup -k
+----
+
+
+
+== Sources
+
+https://medium.com/the-sysadmin/managing-windows-machines-with-ansible-60395445069f
+http://darrylcauldwell.com/how-to-setup-an-ansible-test-lab-for-windows-managed-nodes-custom-windows-modules/
+https://docs.ansible.com/ansible/latest/modules/list_of_windows_modules.html
