@@ -1,0 +1,19 @@
+= README
+
+image:https://travis-ci.org/r3dlin3/r3dlin3.github.io.svg?branch=dev[]
+
+Rappel de quelques commandes
+
+== Installation
+
+    bundle install
+
+== Affichage des pages en local
+
+Pour servir localement les pages :
+
+    bundle exec jekyll serve
+    
+Avec les brouillons :
+    
+    bundle exec jekyll serve --drafts
