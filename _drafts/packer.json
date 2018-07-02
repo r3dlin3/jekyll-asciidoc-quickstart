@@ -1,0 +1,35 @@
+{
+    "builders": [{
+      "type": "azure-arm",
+  
+      "tenant_id": "c18960a3-1b3c-4131-af4d-328229eaf90a",
+      "subscription_id": "a02537c6-7d2b-4815-aefd-e89ed37eec54",
+      "client_id": "210b9c74-cde2-4a42-b233-fd0e6f00c8f6",
+      "client_secret": "J5vbx0nim82qj4iT0efetY4N2sGmAwFA",
+      "managed_image_resource_group_name": "rg-packer-img",
+      "build_resource_group_name": "rg-packer",
+  
+      "managed_image_name": "myPackerImage",
+  
+      "os_type": "Windows",
+      "image_publisher": "MicrosoftWindowsServer",
+      "image_offer": "WindowsServer",
+      "image_sku": "2016-Datacenter",
+  
+      "communicator": "winrm",
+      "winrm_use_ssl": true,
+      "winrm_insecure": true,
+      "winrm_timeout": "3m",
+      "winrm_username": "packer",
+  
+      "vm_size": "Standard_DS2_v2"
+    }],
+    "provisioners": [{
+      "type": "powershell",
+      "inline": [
+        "Add-WindowsFeature Web-Server",
+        "& $env:SystemRoot\\System32\\Sysprep\\Sysprep.exe /oobe /generalize /quiet /quit",
+        "while($true) { $imageState = Get-ItemProperty HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Setup\\State | Select ImageState; if($imageState.ImageState -ne 'IMAGE_STATE_GENERALIZE_RESEAL_TO_OOBE') { Write-Output $imageState.ImageState; Start-Sleep -s 10  } else { break } }"
+      ]
+    }]
+  }
