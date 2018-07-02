@@ -1,6 +1,6 @@
 = Moindre privilège pour packer avec Azure
 :page-navtitle: Moindre privilège pour packer avec Azure
-:page-excerpt: Contrairement à ce qui est documenter, il est possible de ne pas donner les droits de contributeurs sur la souscription Azure
+:page-excerpt: Contrairement à ce qui est documenté, il est possible de ne pas donner les droits de contributeurs sur la souscription Azure.
 :page-tags: [packer,azure]
 :experimental:
 :page-liquid:
@@ -14,14 +14,14 @@ Par défaut, la https://www.packer.io/docs/builders/azure-setup.html#grant-permi
 il est possible de se passer de service principal en utilisant https://www.packer.io/docs/builders/azure-setup.html#device-login[Device Login]. 
 Malheureusement, ce n'est possible que pour un OS cible sous Linux, ce qui n'était pas mon cas.
 
-Il est possible de restreindre les droits de ce service principal à 2 groupes de resource:
+Il est possible de restreindre les droits de ce service principal à 2 groupes de ressource :
 
 * Le groupe de ressource qui va accueillir l'image
-* Un groupe de ressource qui va accueillir accueillir les ressources temporaires (VM, interface réseau, disque, VNET)
+* Un groupe de ressource qui va accueillir les ressources temporaires (VM, interface réseau, disque, VNET)
 
 NOTE: Cette procédure est valable pour packer v1.2.4
 
-== Mise en oeuvre
+== Mise en œuvre
 
 En fonction que vous lisez https://docs.microsoft.com/en-us/azure/virtual-machines/windows/build-image-with-packer[La doc Microsoft] 
 ou https://www.packer.io/docs/builders/azure-setup.html [celle de Packer], vous aurez respectivement la version PowerShell ou Azure CLI.
@@ -30,7 +30,7 @@ Pour ma part, je suis parti sur du PowerShell.
 
 === Connexion à Azure 
 
-Pas de subtilité ici:
+Pas de subtilité ici :
 
     Login-AzureRmAccount
 
@@ -47,7 +47,7 @@ La création d'un service principal se fait avec une cmdlet :
 
 === Création des groupes de ressource
 
-La création de groupe de resource se fait à l'aide de la cmdlet `New-AzureRmResourceGroup`.
+La création de groupe de ressource se fait à l'aide de la cmdlet `New-AzureRmResourceGroup`.
 Il est recommandable
 
 ----
@@ -61,18 +61,19 @@ New-AzureRmResourceGroup -Name $rgPackerName -Location $location
 NOTE: la cmdlet `Get-AzureRmLocation` donne la liste des localisations possibles.
 
 === Droits sur les groupes de ressource
-le rôle de contributeur doit être attribué juste sur les 2 groupes de ressource.
+
+Le rôle de contributeur doit être attribué juste sur les 2 groupes de ressource.
 
     New-AzureRmRoleAssignment -RoleDefinitionName Contributor -ServicePrincipalName $sp.ApplicationId -ResourceGroupName $rgName
     New-AzureRmRoleAssignment -RoleDefinitionName Contributor -ServicePrincipalName $sp.ApplicationId -ResourceGroupName $rgPackerName
 
 == Script tout-en-un
 
-J'ai préparé un petit script tout-en-un:
+J'ai préparé un petit script tout-en-un :
 
-{% gist 11733d072c25c661b3237ba65dc07d69 setup-azure.ps1 %}
+pass:[{% gist 11733d072c25c661b3237ba65dc07d69 setup-azure.ps1 %}]
 
-Il produira une structure JSON de la sorte:
+Il produira une structure JSON de la sorte :
 ----
 {
     "tenant_id": "c18XXXXX-XXXX-XXXX-XXXX-XXXXXXXXX90a",
@@ -84,8 +85,8 @@ Il produira une structure JSON de la sorte:
 }
 ----
 
-Restera à remplacer les valeurs dans le champs idoine dans fichier packer.
+Restera à remplacer les valeurs dans le champ idoine dans fichier packer.
 
-Un exemple est disponible ci-dessous:
+Un exemple est disponible ci-dessous :
 
-{% gist 11733d072c25c661b3237ba65dc07d69 packer.json %}
+pass:[{% gist 11733d072c25c661b3237ba65dc07d69 packer.json %}]
