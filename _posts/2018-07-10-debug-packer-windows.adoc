@@ -1,0 +1,200 @@
+= Débuguer la création d'image Packer pour Windows sur Azure
+:page-navtitle: Débuguer la création d'image Packer pour Windows sur Azure
+:page-excerpt: Un petit retour d'expérience sur la personnalisation d'image Windows avec Packer dans Azure. Dans certains cas, les scripts échouent mais comment déboguer ?
+:page-tags: [packer,azure,windows]
+:experimental:
+:page-liquid:
+:icons: font
+
+== Introduction
+
+https://www.packer.io/[Packer] est un outil très adapté à la création d'images personnalisées sur https://docs.microsoft.com/en-us/azure/virtual-machines/windows/build-image-with-packer[Azure].
+
+J'ai déjà évoqué une link:pass:[{% post_url 2018-07-02-packer-azure-least-privilege %}][configuration possible] avec Azure.
+
+Packer va être responsable de créer bon nombre de ressources :
+
+- Un Key Vault
+- Un VNET
+- Une interface réseau et son IP publique
+- Une VM
+
+Tout ça c'est très bien mais c'est relativement long à déployer et en phase de développement, cela revient à beaucoup de temps de perdu...
+
+Voici donc quelques trucs.
+
+== Tester le script
+
+J'ai perdu un peu de temps à mes débuts avec ça. 
+Ça parait bête mais aujourd'hui j'ai toujours une machine virtuelle démarrée pour copier et tester le script en live.
+C'est très TRES efficace.
+
+[TIP]
+===============================
+Je n'utilise jamais de "inline" pour les _provisioners_ https://www.packer.io/docs/provisioners/windows-shell.html[Windows Shell] ou https://www.packer.io/docs/provisioners/powershell.html[PowerShell].
+
+Cela me permet de tester plus facilement le script, de le réutiliser ou même d'enchaîner les scripts de même nature avec l'utilisation du paramètre "scripts"
+===============================
+
+== Du debug dans le script
+
+Là aussi ça parait évident, mais il est possible d'afficher des commentaires qui seront retournés par Packer.
+Rien d'exceptionnel ici : un `Write-Host` dans un script PowerShell fera l'affaire et pourra remonter des informations en cours d'exécution ou savoir à quel moment exactement le script échoue.
+
+== La construction d'image échoue
+
+Si la construction de l'image échoue, par défaut, packer supprime les ressources créées.
+
+Si vous souhaitez accéder à la machine pour récupérer des logs ou simplement exécuter manuellement le script à des fins de debug, il est possible d'utiliser le paramètre https://www.packer.io/docs/commands/build.html#on-error-cleanup[`-on-error=abort`] ou `-on-error=ask`.
+`abort` sortira dès l'échec tandis que `ask` demandera la procédure à suivre.
+
+== En condition réelle
+
+Si malgré tout ça, le script échoue sans raison apparente, il va falloir remonter les manches !
+
+Packer https://www.packer.io/docs/builders/azure.html#windows-1[s'appuie sur WinRM] pour passer les scripts et les exécuter.
+
+Packer configure déjà WinRM sur la machine, ce qui n'est pas une mince affaire !
+Nous allons voir comment exécuter des commandes WinRM avec une image construite par Packer.
+
+=== Le pied de biche
+
+Pour se connecter à la machine, il va certainement falloir à réinitialiser le mot de passe administrateur dans le https://docs.microsoft.com/fr-fr/azure/virtual-machines/windows/reset-rdp[portail Azure], car packer définit un mot de passe aléatoire par défaut.
+
+Ceci permet de réinitialiser le mot de passe du compte packer (compte créé par défaut).
+
+Une fois le login/mot de passe connu, il est possible de se connecter en RDP à la machine, le portail Azure donnant le FQDN du serveur au format <nom VM aléatoire>.<localisation>.cloudapp.azure.com (ex: pkrvmq69gzbq1tn.westeurope.cloudapp.azure.com). Penser à noter l'IP par la même occasion.
+
+=== Certificat
+
+L'utilisation de SSL est obligatoire dans la configuration réalisée par Packer pour WinRM. 
+Le certificat est cependant :
+
+- Auto-signé
+- Pour un FQDN différent de celui de donné par Azure
+
+Dans un premier temps, il nous faut extraire le certificat utilisé par WinRM.
+2 possibilités :
+
+1. Se connecter à la machine virtuelle, ouvrir le magasin de certificat de la machine, exporter le certificat et copier le certificat sur sa machine
+2. Utiliser openssl
+
+Commme la première méthode est plus longue à détailler, je vais détailler la deuxième. Exécuter la commande openssl suivante en remplacement avec votre FQDN
+
+----
+> c:\apps\OpenSSL\bin\openssl.exe s_client -connect pkrvmq69gzbq1tn.westeurope.cloudapp.azure.com:5986 -showcerts
+CONNECTED(0000021C)
+depth=0 CN = pkrvmq69gzbq1tn.cloudapp.net
+verify error:num=20:unable to get local issuer certificate
+verify return:1
+depth=0 CN = pkrvmq69gzbq1tn.cloudapp.net
+verify error:num=21:unable to verify the first certificate
+verify return:1
+---
+Certificate chain
+ 0 s:/CN=pkrvmq69gzbq1tn.cloudapp.net <1>
+   i:/CN=pkrvmq69gzbq1tn.cloudapp.net
+-----BEGIN CERTIFICATE----- <2>
+MIIDDjCCAfagAwIBAgIRAOAE4qOtV3FeMAKd0/F4U4EwDQYJKoZIhvcNAQELBQAw
+JzElMCMGA1UEAxMccGtydm1xNjlnemJxMXRuLmNsb3VkYXBwLm5ldDAeFw0xODA3
+MTAyMTE2NTdaFw0xODA3MTEyMTE2NTdaMCcxJTAjBgNVBAMTHHBrcnZtcTY5Z3pi
+cTF0bi5jbG91ZGFwcC5uZXQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIB
+AQCxnTGBTMq0jxbdVNRC1kPRTVyPquIvEbZGDZ64L+NB34vrHa3FlFkGVVzv0uG3
+5z/lgrbgjNdr5pj6LUJ1QS23TLVAeZgrMe1VCly36d7FIu/X+U4vFE2UKKIA/Cft
+myp7vPkzN8v7hye4kM2mQhNw9/k7DSkx+scLhrk1+7qZXl1DebcgpTzOdjM1WtAC
+pu3ZI0F7/qtLaoIRdaBBMVNfsZGasqu+QqpXKG+WVHLkC2VDDwwBC8U6haN6XKFH
+EIcoTyLfDvcDHDBrFwtGVsrBB9I5kHXNDyGgiJZCx7EGpk0uobF+5lQJo7c/z6lW
+Wurqu83U1XrESpp0zsPhDAh1AgMBAAGjNTAzMA4GA1UdDwEB/wQEAwIFoDATBgNV
+HSUEDDAKBggrBgEFBQcDATAMBgNVHRMBAf8EAjAAMA0GCSqGSIb3DQEBCwUAA4IB
+AQCky/mY+BlCA3RTSPy8Bxa8yewdhEL8ENS9UEX7fgrCDTVeiqxSgvYjQqhzVu7v
+Z9nYXttpXhLyi6l56iV3DEs5uBktnOdQZnds3zwfI/e53gqQC82lCGMDskE9kAag
+ppFuNO27K9bXs0szIYUY8yJJdc2QR3xF7l3aLXfF6J42aD9Kw3Q9Iss28BUSu/Tm
+Ry59MZMs5XfSgw9SZGRave2S2c4yPZBUQ67CDL3Ng7Axnl2EBSpT5uQTvXbgxHV1
+15pJ+kIoYqz0iL3rmprlzOLEohlIUn46gVqr+LNHlO1FuvfMx0e2io7lsLvJ933K
+G0QWqNVHvz2hEhi6u3KIqL64
+-----END CERTIFICATE-----
+---
+Server certificate
+subject=/CN=pkrvmq69gzbq1tn.cloudapp.net
+issuer=/CN=pkrvmq69gzbq1tn.cloudapp.net
+---
+No client certificate CA names sent
+Peer signing digest: SHA1
+Server Temp Key: ECDH, P-256, 256 bits
+---
+SSL handshake has read 1270 bytes and written 433 bytes
+---
+New, TLSv1/SSLv3, Cipher is ECDHE-RSA-AES256-GCM-SHA384
+Server public key is 2048 bit
+Secure Renegotiation IS supported
+Compression: NONE
+Expansion: NONE
+No ALPN negotiated
+SSL-Session:
+    Protocol  : TLSv1.2
+    Cipher    : ECDHE-RSA-AES256-GCM-SHA384
+    Session-ID: D820000035CA3984027AC8D13B4C4BDF4D73C0C63091B3DE510EAF06E2FABDA5
+    Session-ID-ctx:
+    Master-Key: 85504F679F0ABA212F87E25A0C3C68B5843B5990EE23523BD56702FBBC736F10C35F26253D795D1804A473620EECA2BE
+    Key-Arg   : None
+    PSK identity: None
+    PSK identity hint: None
+    SRP username: None
+    Start Time: 1531286527
+    Timeout   : 300 (sec)
+    Verify return code: 21 (unable to verify the first certificate)
+---
+read:errno=10093
+----
+<1> Notez le FQDN inclus dans le certificat auto-signé
+<2> Copier dans le contenu entre les balises "-----BEGIN CERTIFICATE-----" et "-----END CERTIFICATE-----" en incluant ces mêmes balises dans un fichier avec une extension `.cer` par exemple : vous avez votre certificat !
+
+Il ne vous reste plus qu'à installer le certificat. Sous Windows, en cliquant-droit sur le fichier, vous avez dans le menu "Installer le certificat". 
+
+WARNING: En suivant le wizard, il est nécessaire de choisir manuellement le magasin de certificat "Autorités de certification racine de confiance"
+
+
+=== hosts
+
+Vous l'aurez remarqué : le FQDN contenu dans le certificat auto-signé est différent de celui utilisé pour se connecter. Et malgré le fait que vous fassiez confiance à ce certificat, l'établissement de la connexion SSL échouera car le nom inclut dans le certificat est différent de celui utilisé pour la résolution DNS.
+
+Il est reste donc une dernière étape pour feinter Windows. 
+
+Sur votre machine, éditer le fichier `C:\Windows\System32\drivers\etc\hosts` et y ajouter l'entrée :
+    
+    <Adresse IP publique> <nom VM aléatoire>.cloudapp.net
+
+Ex:
+
+    40.91.194.154 pkrvmq69gzbq1tn.cloudapp.net
+
+=== Tout est bon ?
+
+----
+> $cred = Get-Credential
+> Test-WSMan pkrvmq69gzbq1tn.westeurope.cloudapp.azure.com -Credential $cred -UseSSL -Authentication Default
+wsmid           : http://schemas.dmtf.org/wbem/wsman/identity/1/wsmanidentity.xsd
+ProtocolVersion : http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd
+ProductVendor   : Microsoft Corporation
+ProductVersion  : OS: 10.0.14393 SP: 0.0 Stack: 3.0
+----
+
+=== C'est parti 
+    
+    Invoke-Command -ComputerName pkrvmq69gzbq1tn.cloudapp.net -ScriptBlock { ipconfig } -credential $cred -UseSSL
+
+Il ne reste plus qu'à remplacer `ipconfig` par la commande de votre choix.
+
+== Conclusion
+
+Le dernier recours à base de commande WinRM est probablement exagéré. 
+Je ne l'ai utilisé qu'une fois, mais il m'a permis d'en savoir plus sur WinRM.
+Certainement une bonne base pour d'autres outils s'appuyant sur WinRM comme https://www.ansible.com/[ansible]...
+
+== Bonus : vider mon groupe de ressource
+
+Dans le cas où packer ne nettoierait pas tout, il est possible de vider le groupe de ressource avec la commande suivante :
+
+    Get-AzureRmResource -ResourceGroupName <mon groupe de resource> | Remove-AzureRmResource -Force
+
+WARNING: C'est l'équivalent d'un `rm -f` sur Linux donc attention à passer le bon groupe de ressource !
