@@ -1,0 +1,40 @@
+= Astuce du jour: mettre à jour tous ses modules AzureRm
+:page-navtitle: Astuce du jour: mettre à jour tous ses modules AzureRm
+:page-excerpt: Dans certains cas, il est intéressant de mettre à jour tous ses modules PowerShell Azure d'un coup. Voici un petit _one-liner_
+:page-tags: [azure,truc,powershell]
+:experimental:
+:page-liquid:
+:icons: font
+
+
+== La ligne de commande
+
+Et la commande magique pour mettre à jour tous les modules AzureRM:
+
+    Get-Module -ListAvailable | ?{$_.Name -like "AzureRM.*"} | group Name | Update-Module
+
+NOTE: Ça peut prendre _très_ longtemps
+
+
+== Pour éviter les demandes de confirmation
+
+Par défaut, PowerShell Gallery n'est pas considéré comme une source sûre. 
+Ainsi, à chaque installation ou mise à jour, la commande `Install-Module` ou `Update-Module` demande une confirmation.
+
+Il est possible de lister les sources avec la commande `Get-PSRepository` :
+
+----
+PS > Get-PSRepository
+
+Name                      InstallationPolicy   SourceLocation
+----                      ------------------   --------------
+PSGallery                 Untrusted            https://www.powershellgallery.com/api/v2/
+----
+
+En pratique, on accepte tout module en provenance de PSGallery. 
+Autant lui faire confiance et se poser des vraies questions quand la gestion des modules demande confirmation.
+Pour ce faire, après vérification de l'URL de PSGallery avec la commande ci-dessous :
+
+    Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+
+
