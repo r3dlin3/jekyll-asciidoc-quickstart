@@ -79,7 +79,7 @@ Il produira une structure JSON de la sorte :
     "tenant_id": "c18XXXXX-XXXX-XXXX-XXXX-XXXXXXXXX90a",
     "subscription_id": "a02XXXXX-XXXX-XXXX-XXXX-XXXXXXXXXc54",
     "client_id": "210XXXXX-XXXX-XXXX-XXXX-XXXXXXXXX8f6",
-    "client_secret": "J5vbx0nim82qj4iT0efetY4N2sGmAwFA",
+    "client_secret": "J5vxxxxxxxxxxxxxxxxxxxwFA",
     "managed_image_resource_group_name": "rg-my-images",
     "build_resource_group_name": "rg-packer"
 }
