@@ -71,7 +71,7 @@ Le rôle de contributeur doit être attribué juste sur les 2 groupes de ressour
 
 J'ai préparé un petit script tout-en-un :
 
-pass:[{% gist 11733d072c25c661b3237ba65dc07d69 setup-azure.ps1 %}]
+pass:[{% gist 11733d072c25c661b3237ba65dc07d69 Setup-Azure.ps1 %}]
 
 Il produira une structure JSON de la sorte :
 ----
