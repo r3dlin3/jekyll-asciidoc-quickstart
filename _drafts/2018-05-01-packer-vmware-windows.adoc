@@ -26,3 +26,8 @@ J'utiliserai en particulier le "builder" pour https://www.packer.io/docs/builder
 
 
 TIP: calculer le hash d'un fichier avec PowerShell: `Get-FileHash -Path .\Windows.iso -Algorithm SHA1`
+
+
+== Références:
+
+http://www.hurryupandwait.io/blog/creating-windows-base-images-for-virtualbox-and-hyper-v-using-packer-boxstarter-and-vagrant
