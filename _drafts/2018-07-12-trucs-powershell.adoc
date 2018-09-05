@@ -1,0 +1,25 @@
+= Démarrer avec Ansible pour Windows
+:page-navtitle: Démarrer avec Ansible pour Windows
+:page-excerpt: Les bases d'Ansible pour Windows
+:page-tags: [ansible,windows]
+:experimental:
+:page-liquid:
+:icons: font
+
+
+== paramètres
+
+== erroractionpreference
+
+== paramvalidation
+
+== splat
+
+== Write-Output vs. Write-Host vs. Write-Verbose etc.
+== paramset
+
+== cmdletbinding
+pour le verbose
+
+== bonus
+snippet

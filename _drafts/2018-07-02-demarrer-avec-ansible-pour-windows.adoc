@@ -7,6 +7,7 @@
 :icons: font
 
 == Préparation de la cible Windows
+
 Ouvrir un prompt PowerShell en tant qu'admin et exécuter la commande suivante: 
 
     iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1'))"

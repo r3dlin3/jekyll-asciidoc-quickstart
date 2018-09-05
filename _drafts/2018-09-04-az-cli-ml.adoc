@@ -1,0 +1,56 @@
+= Gérer les certificats de Azure CLI
+:page-navtitle: Gérer les certificats de Azure CLI
+:page-excerpt: Si jamais vous avez déjà eu des soucis de certificat, avec Azure CLI, cet article est pour vous
+:page-tags: [azure,windows,az-cli]
+:experimental:
+:page-liquid:
+:icons: font
+
+== Introduction
+
+L'outil de ligne de commande Azure CLI permet aussi de https://docs.microsoft.com/en-us/machine-learning-server/operationalize/configure-admin-cli-launch[gérer Machine Learning Server].
+Cela permet notamment de:
+
+- Configurer les nœuds Web et compute
+- Chiffrer les mots de passe
+- Redémarrer les nœuds
+- Exécuter des tests de diagnostic
+- Etc.
+
+Or, dans mon cas, le Machine Learning Server utilise un certificat émis par une autorité de certification interne.
+Cela générait l'erreur suivante:
+----
+>az login --mls --mls-endpoint https://monendpoint/
+The behavior of this command has been altered by the following extension: azure-ml-admin-cli
+Username: XXX@XXX.com
+Password:
+2018-09-04 09:05:19,307 WARNING Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'SSLError(SSLError("bad handshake: Error([('SSL routines', 'tls_process_server_certificate', 'certificate verify failed')],)",),)': //login
+2018-09-04 09:05:19,323 WARNING Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'SSLError(SSLError("bad handshake: Error([('SSL routines', 'tls_process_server_certificate', 'certificate verify failed')],)",),)': //login
+2018-09-04 09:05:19,354 WARNING Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'SSLError(SSLError("bad handshake: Error([('SSL routines', 'tls_process_server_certificate', 'certificate verify failed')],)",),)': //login
+Assert that [--mls-endpoint https://monendpoint/] is correct.
+HTTPSConnectionPool(host='monendpoint', port=443): Max retries exceeded with url: //login (Caused by SSLError(SSLError("bad handshake: Error([('SSL routines', 'tls_process_server_certificate', 'certificate verify failed')],)",),))
+----
+
+NOTE: A noter la syntaxe de la commande `az login` pour ML Server, qui est un peu différente de la https://docs.microsoft.com/en-us/machine-learning-server/operationalize/configure-run-diagnostics#test-your-configuration[doc].
+
+== Résolution
+
+Azure CLI s'appuie sur python. Malgré mes tentatives pour ajouter les variables classiques (`CA_BUNDLE`, `CURL_CA_BUNDLE`, `REQUESTS_CA_BUNDLE`, `SSL_CERT_FILE`) mais rien n'y fait: la vérification de certificat échoue lamentablement.
+
+Un peu de recherche pointe vers le projet http://python-requests.org[Requests].
+Il s'appuie sur le projet sur https://certifiio.readthedocs.io/en/latest/[Certifi].
+
+Pour s'en convaincre, il suffit de lancer python et les quelques lignes suivantes:
+
+----
+cd C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2>python.exe
+C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2>python.exe
+Python 3.6.1 (v3.6.1:69c0db5, Mar 21 2017, 17:54:52) [MSC v.1900 32 bit (Intel)] on win32
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import requests.adapters
+>>> print(requests.adapters.DEFAULT_CA_BUNDLE_PATH)
+C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\lib\site-packages\certifi\cacert.pem
+----
+
+Il ne reste plus qu'à éditer `C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\lib\site-packages\certifi\cacert.pem`.
+A noter qu'il faut _ajouter_ ses autorités de certification au fichier et ne pas remplacer le contenu.
