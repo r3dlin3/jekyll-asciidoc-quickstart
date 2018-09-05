@@ -9,7 +9,7 @@
 == Introduction
 
 L'outil de ligne de commande Azure CLI permet aussi de https://docs.microsoft.com/en-us/machine-learning-server/operationalize/configure-admin-cli-launch[gérer Machine Learning Server].
-Cela permet notamment de:
+Cela permet notamment de :
 
 - Configurer les nœuds Web et compute
 - Chiffrer les mots de passe
@@ -18,7 +18,7 @@ Cela permet notamment de:
 - Etc.
 
 Or, dans mon cas, le Machine Learning Server utilise un certificat émis par une autorité de certification interne.
-Cela générait l'erreur suivante:
+Cela générait l'erreur suivante :
 ----
 >az login --mls --mls-endpoint https://monendpoint/
 The behavior of this command has been altered by the following extension: azure-ml-admin-cli
@@ -35,12 +35,12 @@ NOTE: A noter la syntaxe de la commande `az login` pour ML Server, qui est un pe
 
 == Résolution
 
-Azure CLI s'appuie sur python. Malgré mes tentatives pour ajouter les variables classiques (`CA_BUNDLE`, `CURL_CA_BUNDLE`, `REQUESTS_CA_BUNDLE`, `SSL_CERT_FILE`) mais rien n'y fait: la vérification de certificat échoue lamentablement.
+Azure CLI s'appuie sur python. Malgré mes tentatives pour ajouter les variables classiques (`CA_BUNDLE`, `CURL_CA_BUNDLE`, `REQUESTS_CA_BUNDLE`, `SSL_CERT_FILE`) mais rien n'y fait : la vérification de certificat échoue lamentablement.
 
 Un peu de recherche pointe vers le projet http://python-requests.org[Requests].
 Il s'appuie sur le projet sur https://certifiio.readthedocs.io/en/latest/[Certifi].
 
-Pour s'en convaincre, il suffit de lancer python et les quelques lignes suivantes:
+Pour s'en convaincre, il suffit de lancer python et les quelques lignes suivantes :
 
 ----
 cd C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2>python.exe
