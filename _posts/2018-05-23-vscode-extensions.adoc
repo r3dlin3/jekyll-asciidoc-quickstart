@@ -10,6 +10,8 @@ J'utilise https://code.visualstudio.com/[Visual Studio Code] depuis un moment.
 
 Cette page recense les extensions que j'utilise pour éviter les "c'est quoi déjà l'extension que j'utilise pour faire ce truc ?". Je compléterai au fur et à mesure.
 
+_Mise à jour 2018-09-05: Ajout extension pour AsciiDoc_
+
 == Azure
 
 * https://marketplace.visualstudio.com/items?itemName=msazurermtools.azurerm-vscode-tools[Azure Resource Manager Tools]  
@@ -28,11 +30,9 @@ Pas trop de débat :
 
 * https://marketplace.visualstudio.com/items?itemName=HookyQR.beautify[Beautify]
 
+
 == En cours de test
 
 * https://marketplace.visualstudio.com/items?itemName=ms-vscode.csharp[C#]
-
-== Manquantes
-
-* Edition d'adoc: il en existe une mais les prérequis sont importants et la coloration syntaxique ne reconnait les différents formats
+* https://marketplace.visualstudio.com/items?itemName=joaompinto.asciidoctor-vscode[AsciiDoc]
 
