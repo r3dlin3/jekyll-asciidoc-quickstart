@@ -1,6 +1,6 @@
 = Astuce du jour : mettre à jour tous ses modules AzureRm
 :page-navtitle: Astuce du jour : mettre à jour tous ses modules AzureRm
-:page-excerpt: Dans certains cas, il est intéressant de mettre à jour tous ses modules PowerShell Azure d'un coup. Voici un petit one-liner.
+:page-excerpt: Dans certains cas, il est intéressant de mettre à jour tous ses modules PowerShell Azure d'un coup. Voici un petit one-liner. Mis à jour le 2018-09-05.
 :page-tags: [azure,truc,powershell]
 :experimental:
 :page-liquid:
@@ -10,11 +10,18 @@
 == La ligne de commande
 
 La commande magique pour mettre à jour tous les modules AzureRM :
+[.line-through]
+----
+Get-Module -ListAvailable | ?{$_.Name -like "AzureRM.*"} | group Name | Update-Module
+----
 
-    Get-Module -ListAvailable | ?{$_.Name -like "AzureRM.*"} | group Name | Update-Module
+----
+Update-Module AzureRM
+----
 
 NOTE: Ça peut prendre _très_ longtemps
 
+Note pour plus tard: comment nettoyer les vieilles versions ?
 
 == Pour éviter les demandes de confirmation
 
