@@ -1,25 +1,177 @@
 = Démarrer avec Ansible pour Windows
-:page-navtitle: Démarrer avec Ansible pour Windows
-:page-excerpt: Les bases d'Ansible pour Windows
-:page-tags: [ansible,windows]
+:page-navtitle: Quelques trucs et astuces PowerShell
+:page-excerpt: Quelques trucs et astuces PowerShell
+:page-tags: [powershell,trucs]
 :experimental:
 :page-liquid:
 :icons: font
 
+== Intro
+PowerShell est aujourd'hui un langage largement utilisé et mature: la version 5.1 est embarquée dans Windows Server 2016 et Windows 10 tandis que PowerShell Core 6.0 est disponible depuis janvier 2018 en GA.
 
-== paramètres
+Il existe une littérature dithyrambique sur le sujet. j'ai cependant voulu écrire cet article pour partager mes (bonnes ?) pratiques.
 
-== erroractionpreference
+== Utiliser des paramètres
 
-== paramvalidation
+Il est très facile d'utiliser des paramètres. Pas de raison de s'en priver!
 
-== splat
+
+== $ErrorActionPreference
+
+`$ErrorActionPreference` fait partie des ces https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_preference_variables[variables] qui permettent de modifier le comportement de PowerShell. https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_preference_variables#erroractionpreference[`$ErrorActionPreference`] détermine le comportement en cas d'erreur.
+
+Par défaut, la valeur est `continue`, c'est-à-dire que PowerShell affiche l'erreur et continue.
+
+Personnellement, je ne comprends pas ce comportement par défaut. Quand une cmdlet plante, je n'ai pas envie que mon script continue... C'est pourquoi, dans tous mes scripts j'ajoute la ligne suivante:
+
+    $ErrorActionPreference = "stop"
+
+
+== Validation de paramètre
+
+La validation de paramètre est un mécanisme simple qui permet de gagner du temps en évitant:
+
+- L'écriture de code pour tester
+- L'affichage de message d'erreur
+
+Ainsi, au lieu de:
+----
+param(
+    $ComputerName
+)
+
+if (-not $ComputerName) {
+    Write-Error "ComputerName is mandatory"
+    Exit 1
+}
+(...)
+----
+Il est possible déclarer
+----
+param(
+    [Parameter(Mandatory)]
+    $ComputerName
+)
+(...)
+----
+Le résultat est différent:
+image:{{ "/assets/img/powershell_mandatory.png" | absolute_url }}[Exemple PowerShell Mandatory]
+
+D'un point de vue "Expérience Utilisateur", la valeur est demandée interactivement.
+D'un point de vue code, les contrôles sont déclaratifs. Rien à faire de particulier et en plus Visual Studio Code gère parfaitement la complétion.
+
+Ceci n'est qu'un exemple et d'autres contrôles peuvent être utiliser:
+
+`[ValidateLength(1,15)]`:: S'assure que la chaîne a entre 1 et 15 caractères
+`[ValidatePattern("[a-z]{6}\d{4}")]`:: Permet de valider une chaîne de caractère par rapport à une expression régulière
+`[ValidateCount(1,3)]`:: Permet de garantir la taille du tableau
+`[ValidateRange(1,12)]`:: Permet de donner un intervalle pour des entiers
+`ValidateSet[("Start","Stop")]`:: Permet de définir un ensemble de valeurs possibles. L'avantage est que PowerShell peut faire de la complétion!
+`[ValidateScript({Test-Path -Path $_ -PathType Leaf})]`:: Il est possible de coder son propre test. Intéressant pour tester l'existence d'un fichier ou au contraire, s'assurer que le fichier n'existe pas 
+
+== ParameterSetName
+
+
+
+== Argument splatting
+https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_splatting[Argument splatting] (Désolé, je n'ai pas de traduction pour ce terme) est une fonctionnalité méconnue de PowerShell.
+
+Basiquement, il est possible de "construire" les arguments à passer à une cmdlet. Ainsi, on construit une hashtable avec les paramètres à passer ou non.
+
+C'est très intéressant avec les `ParameterSetName`s car on peut appeler la même cmdlet mais avec des arguments différents en fonction du ParameterSetName.
+
+Ci-dessous un exemple. Mon script prend un paramètre optionnel `SubscriptionName`. Si une valeur est renseignée, je récupère LA souscription souhaitée, sinon j'appelle ma cmdlet `Get-AzureRmSubscription` sans paramètre et récupère ainsi toutes les souscriptions.
+----
+param(
+    [string]$SubscriptionName,
+    (...)
+)
+(...)
+$subSplat=@{}
+if (-not [string]::IsNullOrEmpty($SubscriptionName)) {
+    $subSplat.Add("SubscriptionName", $SubscriptionName)
+}
+
+$subs = Get-AzureRmSubscription @subSplat
+(...)
+----
 
 == Write-Output vs. Write-Host vs. Write-Verbose etc.
-== paramset
 
-== cmdletbinding
-pour le verbose
+
+
+
+== Switch case
+
+La directive https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_switch[`switch`] a une syntaxe toute particulière en PowerShell. Ce qui est tout autant particulier (et méconnu) est l'existence de flag à cette directive comme `-regexp` ou `-wildcard`.
+
+Il existe un article exhaustif sur le sujet: 
+https://kevinmarquette.github.io/2018-01-12-Powershell-switch-statement/
+
+
+== Strict
+
+Une bonne pratique est d'utiliser un https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/set-strictmode[mode stricte] en ajoutant la ligne suivante:
+
+    Set-StrictMode -Version latest
+
+Ceci va garantir que :
+
+- Les meilleures pratiques sont respectées
+- Une variable qui n'existe pas ne sera pas utilisée
+
+Souvent dans des cas de refactoring du code, de mauvais copié/collé, des noms de variable qui n'auraient jamais dû être là sont utilisés malencontreusement. Avec le mode stricte, PowerShell va générer une erreur et sortir.
+
+Le principal inconvénient est pour le test de présence de certaines propriétés dans un objet.
+
+J'ai donc une petite fonction en stock qui permet d'éviter une erreur en mode stricte
+
+----
+function Test-HasProperty($object, $propertyName) {
+    <#
+    .SYNOPSIS
+        Utility function to check if an object has a property. Useful in strict mode
+    #>
+    $propertyName -in $object.PSobject.Properties.Name
+}
+----
+
+== #Requires
+
+Je ne vois quasiment jamais la directive https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_requires[`#Requires`] utilisée, pourtant elle est très intéressante pour documenter:
+
+- La version PowerShell
+- Les modules nécessaires, notamment pour des dépendances particulières
+- La nécessité d'exécuter le script en tant qu'administrateur (UAC a parfois des comportements et des messages bizarres. Si des droits administrateurs sont requis, autant le préciser
+
+----
+#Requires -Version 6.0
+#Requires -Modules ActiveDirectory
+#Requires -RunAsAdministrator
+----
+
+
+== CmdletBinding
+https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_functions_advanced_methods[CmdletBinding] est un attribut de cmdlet très puissant.
+
+Personnellement, je l'utilise systématiquement pour pouvoir interprêter automatiquement le flag `-verbose`. Ainsi, dans l'exemple ci-dessous, `ex4.ps1` a l'attribut CmdletBinding et non `ex5.ps1`.
+
+image:{{ "/assets/img/powershell_verbose.png" | absolute_url }}[Exemple PowerShell CmdletBinding]
 
 == bonus
 snippet
+
+
+Follow naming conventions.
+
+    Use the Verb-Noun format, use an approved verb, and ensure that your Noun is unique and will not collide with another author’s function now or in in the future.
+        Approved Verbs
+        Example:  I’m writing commands to work with a Hyper-V lab.  Set-Lab and Get-Lab are generic and may be used by another author.  I can add a prefix like HV to avoid this – Set-HVLAB and Get-HVLab
+    Use common parameter names and types as appropriate.
+        Example:  Use ComputerName to specify systems.  Do not use ComputerNames, Computer, PC, or any other non-standard parameter name.  If desired, provide an alias for the parameter.
+
+Use the built in comment-based help system.  At a minimum, provide a helpful synopsis, description, parameter (for all), and example
+
+    About_Comment_Based_Help
+    Comment your way to help
+

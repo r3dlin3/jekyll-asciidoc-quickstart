@@ -82,15 +82,15 @@ theme_settings:
 
   # Localization strings
   str_follow_on: "Follow on"
-  str_rss_follow: "Follow RSS feed"
+  str_rss_follow: "Suivre sur RSS"
   str_email: "Email"
-  str_next_post: "Next post"
-  str_previous_post: "Previous post"
-  str_next_page: "Next"
-  str_previous_page: "Prev"
-  str_continue_reading: "Continue reading"
+  str_next_post: "Article suivant"
+  str_previous_post: "Article précédent"
+  str_next_page: "Suivant"
+  str_previous_page: "Précédent"
+  str_continue_reading: "Continuer la lecture"
   str_javascript_required_disqus: "Please enable JavaScript to view comments."
-  str_search_no_results: "No results found."
+  str_search_no_results: "Aucun résultat trouvé."
 
   # Colours, typography and padding
   # Open the "_sass > base" folder, and open "_variables.scss"
