@@ -12,6 +12,8 @@ Cette page recense les extensions que j'utilise pour éviter les "c'est quoi dé
 
 _Mise à jour 2018-09-05: Ajout extension pour AsciiDoc_
 
+_Mise à jour 2018-11-27: Ajout de quelques extensions (Bracket Pair Colorizer, ARM Params Generator, .NET Core Test Explorer, C# Extensions) et promotion de C# & AsciiDoc_
+
 == Azure
 
 * https://marketplace.visualstudio.com/items?itemName=msazurermtools.azurerm-vscode-tools[Azure Resource Manager Tools]  
@@ -30,9 +32,24 @@ Pas trop de débat :
 
 * https://marketplace.visualstudio.com/items?itemName=HookyQR.beautify[Beautify]
 
+== C#
+
+* https://marketplace.visualstudio.com/items?itemName=ms-vscode.csharp[C#]
+
+== AsciiDoc
+
+* https://marketplace.visualstudio.com/items?itemName=joaompinto.asciidoctor-vscode[AsciiDoc]
+
+== XML
+
+* https://marketplace.visualstudio.com/items?itemName=DotJoshJohnson.xml[XML Tools]: juste pour le "Format"
 
 == En cours de test
 
-* https://marketplace.visualstudio.com/items?itemName=ms-vscode.csharp[C#]
-* https://marketplace.visualstudio.com/items?itemName=joaompinto.asciidoctor-vscode[AsciiDoc]
+* C#
+** https://marketplace.visualstudio.com/items?itemName=formulahendry.dotnet-test-explorer[.NET Core Test Explorer]
+** https://marketplace.visualstudio.com/items?itemName=jchannon.csharpextensions[C# Extensions]
+* Azure
+** https://marketplace.visualstudio.com/items?itemName=CoenraadS.bracket-pair-colorizer[Bracket Pair Colorizer]: Intéressant quand on a des JSON à rallonge
+** https://marketplace.visualstudio.com/items?itemName=wilfriedwoivre.arm-params-generator[ARM Params Generator]: très sympatique extension qui génère des fichiers de paramètres à partir de template ARM
 
