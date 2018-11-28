@@ -1,20 +1,61 @@
-= Démarrer avec Ansible pour Windows
+= Quelques trucs et astuces PowerShell
 :page-navtitle: Quelques trucs et astuces PowerShell
-:page-excerpt: Quelques trucs et astuces PowerShell
+:page-excerpt: PowerShell est aujourd'hui un langage largement utilisé et mature. J'ai cependant voulu écrire cet article pour partager mes (bonnes ?) pratiques et astuces.
 :page-tags: [powershell,trucs]
 :experimental:
 :page-liquid:
 :icons: font
+:toc: macro
+:toc-title: Table des matières
 
 == Intro
-PowerShell est aujourd'hui un langage largement utilisé et mature: la version 5.1 est embarquée dans Windows Server 2016 et Windows 10 tandis que PowerShell Core 6.0 est disponible depuis janvier 2018 en GA.
 
-Il existe une littérature dithyrambique sur le sujet. j'ai cependant voulu écrire cet article pour partager mes (bonnes ?) pratiques.
+
+
+PowerShell est aujourd'hui un langage largement utilisé et mature : la version 5.1 est embarquée dans Windows Server 2016 et Windows 10 tandis que PowerShell Core 6.0 est disponible depuis janvier 2018 en GA.
+
+Il existe une littérature dithyrambique sur le sujet. J'ai cependant voulu écrire cet article pour partager mes (bonnes ?) pratiques.
+
+toc::[]
 
 == Utiliser des paramètres
 
-Il est très facile d'utiliser des paramètres. Pas de raison de s'en priver!
+On démarre sur les chapeaux de roue avec celle-là !
 
+Il est très facile d'utiliser des paramètres. Pas de raison de s'en priver !
+
+Donc pas de chaîne de caractère en dur (genre le nom d'un Storage Account) : on le passe en paramètre avec une valeur par défaut et ça pourra toujours resservir.
+
+== Afficher les infos d'un objet complexe
+
+Il est possible de mettre une variable dans une string pour en obtenir la valeur
+
+[source,PowerShell]
+----
+$name = Read-Host "Quel est ton nom ?"
+Write-Host "Hello $name"
+----
+
+Ainsi, après avoir répondu à la question (disons "World"), on obtiendra bien le fameux "Hello World".
+
+Mais quid d'objet plus complexe ? Admettons que je veuille afficher les infos d'un process.
+
+[source,PowerShell]
+----
+$a = Get-Process | select -First 1
+Write-Host "Le nom du process est $a.ProcessName"
+----
+Le résultat peut paraître surprenant :
+
+    Le nom du process est System.Diagnostics.Process (ApplicationFrameHost).ProcessName
+
+Pour obtenir la valeur de la propriété ProcessName, il faut "échapper" avec `$()`
+
+    Write-Host "Le nom du process est $($a.ProcessName)"
+
+Et voilà!
+
+    Le nom du process est ApplicationFrameHost AppVShNotif
 
 == $ErrorActionPreference
 
@@ -22,19 +63,19 @@ Il est très facile d'utiliser des paramètres. Pas de raison de s'en priver!
 
 Par défaut, la valeur est `continue`, c'est-à-dire que PowerShell affiche l'erreur et continue.
 
-Personnellement, je ne comprends pas ce comportement par défaut. Quand une cmdlet plante, je n'ai pas envie que mon script continue... C'est pourquoi, dans tous mes scripts j'ajoute la ligne suivante:
+Personnellement, je ne comprends pas ce comportement par défaut. Quand une cmdlet plante, je n'ai pas envie que mon script continue... C'est pourquoi, dans tous mes scripts j'ajoute la ligne suivante :
 
     $ErrorActionPreference = "stop"
 
 
 == Validation de paramètre
 
-La validation de paramètre est un mécanisme simple qui permet de gagner du temps en évitant:
+La validation de paramètre est un mécanisme simple qui permet de gagner du temps en évitant :
 
 - L'écriture de code pour tester
 - L'affichage de message d'erreur
 
-Ainsi, au lieu de:
+Ainsi, au lieu de :
 ----
 param(
     $ComputerName
@@ -54,33 +95,64 @@ param(
 )
 (...)
 ----
-Le résultat est différent:
+Le résultat est différent :
+
 image:{{ "/assets/img/powershell_mandatory.png" | absolute_url }}[Exemple PowerShell Mandatory]
 
-D'un point de vue "Expérience Utilisateur", la valeur est demandée interactivement.
+D'un point de vue "Expérience Utilisateur", la valeur est demandée interactivement : c'est pas plus mal.
+
 D'un point de vue code, les contrôles sont déclaratifs. Rien à faire de particulier et en plus Visual Studio Code gère parfaitement la complétion.
 
-Ceci n'est qu'un exemple et d'autres contrôles peuvent être utiliser:
+Ceci n'est qu'un exemple et d'autres contrôles peuvent être utiliser :
 
 `[ValidateLength(1,15)]`:: S'assure que la chaîne a entre 1 et 15 caractères
 `[ValidatePattern("[a-z]{6}\d{4}")]`:: Permet de valider une chaîne de caractère par rapport à une expression régulière
 `[ValidateCount(1,3)]`:: Permet de garantir la taille du tableau
 `[ValidateRange(1,12)]`:: Permet de donner un intervalle pour des entiers
-`ValidateSet[("Start","Stop")]`:: Permet de définir un ensemble de valeurs possibles. L'avantage est que PowerShell peut faire de la complétion!
+`[ValidateSet[("Start","Stop")]`:: Permet de définir un ensemble de valeurs possibles. L'avantage est que PowerShell peut faire de la complétion !
 `[ValidateScript({Test-Path -Path $_ -PathType Leaf})]`:: Il est possible de coder son propre test. Intéressant pour tester l'existence d'un fichier ou au contraire, s'assurer que le fichier n'existe pas 
 
 == ParameterSetName
 
+Une classique des bonnes pratiques : le ParameterSetName !
 
+Pour rentre les cmdlets plus flexibles, il est intéressant de définir des jeux de paramètres. Ainsi la cmdlet pourrait accueillir le nom d'une souscription ou l'identifiant d'une souscription. Inutile de faire 2 cmdlets pour autant, il suffit d'utiliser un ParameterSetName.
+
+
+Exemple :
+
+----
+param(
+    [Parameter(ParameterSetName="subname", Mandatory)]
+    [string]
+    $subname,
+
+    [Parameter(ParameterSetName="subid", Mandatory)]
+    [string]
+    $subid,
+    
+    
+    [Parameter(Mandatory)]
+    $inputFile
+)
+if ($PsCmdlet.ParameterSetName -eq "subname") {
+    Write-Host "Nom de la souscription : $subname"
+} else {
+    Write-Host "Identifiant de la souscription : $subid"
+}
+
+Write-Host $inputFile
+----
 
 == Argument splatting
-https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_splatting[Argument splatting] (Désolé, je n'ai pas de traduction pour ce terme) est une fonctionnalité méconnue de PowerShell.
+https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_splatting[Argument splatting] (Désolé, je n'ai pas de traduction pour ce terme) est une fonctionnalité souvent méconnue de PowerShell.
 
 Basiquement, il est possible de "construire" les arguments à passer à une cmdlet. Ainsi, on construit une hashtable avec les paramètres à passer ou non.
 
 C'est très intéressant avec les `ParameterSetName`s car on peut appeler la même cmdlet mais avec des arguments différents en fonction du ParameterSetName.
 
 Ci-dessous un exemple. Mon script prend un paramètre optionnel `SubscriptionName`. Si une valeur est renseignée, je récupère LA souscription souhaitée, sinon j'appelle ma cmdlet `Get-AzureRmSubscription` sans paramètre et récupère ainsi toutes les souscriptions.
+
 ----
 param(
     [string]$SubscriptionName,
@@ -98,20 +170,60 @@ $subs = Get-AzureRmSubscription @subSplat
 
 == Write-Output vs. Write-Host vs. Write-Verbose etc.
 
+Pour faire simple :
 
+- `Write-Host` à utiliser et à abuser pour affiche des infos sur l'état d'avancement du script
+- `Write-Output` à proscrire pour afficher des infos. L'objectif de `Write-Output` est d'ajouter un objet dans le pipeline. Utiliser `Write-Output` peut avoir des effets indésirables. Il a l'avantage de signifier que l'on veut mettre un objet dans le pipeline. Un peu comme un `return` : ça sert à rien mais c'est plus lisible
+- `Write-Verbose` à utiliser et à abuser! Pour afficher des infos de debug/plus verbeuses (cf. <<CmdletBinding>>)
+
+Prenons l'exemple suivant :
+
+----
+param()
+
+function Get-Output {
+    [CmdletBinding()]
+    param (
+
+    )
+    Write-Host "Hello1"
+    "Hello2"
+    Write-Output "Hello3"
+    return "Hello4"
+}
+$a = Get-Output
+
+Write-Host "Contenu de `$a :"
+$a
+----
+
+A votre avis, qu'est-ce qui sera affiché dans la console ? Avant et après "Contenu de `$a :" ? "Hello4"?
+
+Résultat
+----
+Hello1
+Contenu de $a :
+Hello2
+Hello3
+Hello4
+----
+"Hello2", "Hello3" et "Hello4" ont été ajouté au pipeline et assigné à `$a`.
+
+Seul Hello1 est afficher "correctement dans la fonction.
 
 
 == Switch case
 
 La directive https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_switch[`switch`] a une syntaxe toute particulière en PowerShell. Ce qui est tout autant particulier (et méconnu) est l'existence de flag à cette directive comme `-regexp` ou `-wildcard`.
 
-Il existe un article exhaustif sur le sujet: 
+Il existe un article exhaustif sur le sujet : 
+
 https://kevinmarquette.github.io/2018-01-12-Powershell-switch-statement/
 
 
 == Strict
 
-Une bonne pratique est d'utiliser un https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/set-strictmode[mode stricte] en ajoutant la ligne suivante:
+Une bonne pratique est d'utiliser un https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/set-strictmode[mode stricte] en ajoutant la ligne suivante :
 
     Set-StrictMode -Version latest
 
@@ -154,24 +266,30 @@ Je ne vois quasiment jamais la directive https://docs.microsoft.com/en-us/powers
 == CmdletBinding
 https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_functions_advanced_methods[CmdletBinding] est un attribut de cmdlet très puissant.
 
-Personnellement, je l'utilise systématiquement pour pouvoir interprêter automatiquement le flag `-verbose`. Ainsi, dans l'exemple ci-dessous, `ex4.ps1` a l'attribut CmdletBinding et non `ex5.ps1`.
+Personnellement, je l'utilise systématiquement pour pouvoir interpréter automatiquement le flag `-verbose`. Ainsi, dans l'exemple ci-dessous, `ex4.ps1` a l'attribut CmdletBinding et non `ex5.ps1`.
 
 image:{{ "/assets/img/powershell_verbose.png" | absolute_url }}[Exemple PowerShell CmdletBinding]
 
-== bonus
-snippet
+== Commentaires
 
+Les commentaires sont extrêmement importants dans le code. PowerShell n'échappe pas à cette règle !
 
-Follow naming conventions.
+Rappelons qu'il est possible de faire des commentaires de bloque grâce à `<# ... #>`.
 
-    Use the Verb-Noun format, use an approved verb, and ensure that your Noun is unique and will not collide with another author’s function now or in in the future.
-        Approved Verbs
-        Example:  I’m writing commands to work with a Hyper-V lab.  Set-Lab and Get-Lab are generic and may be used by another author.  I can add a prefix like HV to avoid this – Set-HVLAB and Get-HVLab
-    Use common parameter names and types as appropriate.
-        Example:  Use ComputerName to specify systems.  Do not use ComputerNames, Computer, PC, or any other non-standard parameter name.  If desired, provide an alias for the parameter.
+Sinon, inutile de réinventer la roue pour documenter ses cmdlets ou ses fonctions, PowerShell dispose déjà de ses propres mécanismes (cf. https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_comment_based_help[About Comment Based Help])
 
-Use the built in comment-based help system.  At a minimum, provide a helpful synopsis, description, parameter (for all), and example
+L'avantage est que le `Get-Help` du script fonctionnera et pourra ainsi les infos nécessaires, des exemples, etc.
 
-    About_Comment_Based_Help
-    Comment your way to help
+J'utilise principalement les mots-clés suivants :
+
+ .SYNOPSIS:: Brève description de la fonction ou du script
+ .DESCRIPTION:: Description plus détaillée si nécessaire
+ .PARAMETER <Parameter-Name>:: Permet de documenter un paramètre
+ .EXAMPLE:: Permet de donner un exemple d'usage avec la sortie
+
+A noter que pour une fonction, il est possible de mettre le bloc de commentaire avant la fonction, au début de la fonction (ou après).
+
+== Convention de nommage
+
+Il faut favoriser la convention VERB-NOUN en utilisant les verbes préconisés.
 
