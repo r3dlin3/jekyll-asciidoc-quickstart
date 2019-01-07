@@ -1,0 +1,78 @@
+= .Net Core, Docker et ACI
+:page-navtitle: .Net Core, Docker et ACI
+:page-excerpt: Création d'une image d'une application .Net Core et exécution avec Azure Container Instance
+:page-tags: [dotnet core,docker,acr,aci]
+:experimental:
+:page-liquid:
+:icons: font
+
+== Introduction
+
+Cet article concerne une première tentative (i.e. Hello World!) de création d'une application .Net ore et son empaquetage dans une image Docker.
+
+Il s'agira ensuite de la tester avec Azure Container Instance.
+
+Sans rien vous cacher, j'aurai également d'un Azure Container Registry pour porter mon image.
+
+== Projet .Net Core
+
+=== Création du projet
+
+A des fins de test, j'ai choisi une application MVC avec authentification Azure AD.
+
+J'ai donc créé une application dans Azure AD et lancer la commande:
+
+    dotnet new mvc -au SingleOrg --domain XXX.onmicrosoft.com --tenant-id XXX-XXX-XXX-XXX-XXXX --client-id XXX-XXX-XXX-XXXX-XXXX
+
+Petite modification dans `Startup.cs`, en ajoutant la ligne:
+[source,c#]
+----
+            //app.UseStaticFiles();
+           app.UseFileServer();
+           // app.UseCookiePolicy();
+----
+
+Et j'ai ajouté un fichier `index.html` dans `wwwroot`.
+
+Et comme j'avais besoin de protéger des ressources statiques, j'ai appliqué la modification proposée https://odetocode.com/blogs/scott/archive/2015/10/06/authorization-policies-and-middleware-in-asp-net-5.aspx[ici], à savoir créer un _middleware_.
+
+=== Test
+
+`dotnet run` me propose bien de m'authentifier pour l'accès au `/`, c'est-à-dire `index.html`
+
+== Et Docker ?
+
+Il est temps de passer aux choses sérieuses!
+
+=== Création d'une VM
+
+Pour pouvoir exécuter Docker:
+
+az vm create \
+  --resource-group CDM1KATRRSGF02 \
+  --name myVM \
+  --image UbuntuLTS \
+  --admin-username azureuser \
+  --generate-ssh-keys
+
+
+https://docs.docker.com/install/linux/docker-ce/ubuntu/#upgrade-docker-ce
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+$ sudo add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   $(lsb_release -cs) \
+   stable"
+   
+sudo apt-get update
+Install the latest version of Docker CE, or go to the next step to install a specific version:
+
+$ sudo apt-get install docker-ce
+
+usermod -a -G docker azureuser
+
+docker build .
+
+
+== Conclusion
+
+Tout le projet se trouve sur https://github.com/r3dlin3/dotnetcore-docker[GitHub].
