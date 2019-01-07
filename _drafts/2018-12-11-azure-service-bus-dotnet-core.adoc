@@ -1,0 +1,74 @@
+= CEP avec Azure Service Bus, .Net Core et Azure Logic App
+:page-navtitle: CEP avec Azure Service Bus, .Net Core et Azure Logic App
+:page-excerpt: Petit test de CEP (Complex Event Processing) avec .Net Core et Logic App pour envoyer des notifications
+:page-tags: [azure,logic app,dotnet core,cep]
+:experimental:
+:page-liquid:
+:icons: font
+
+== Introduction
+
+Le CEP (pour complex event processing) ou https://fr.wikipedia.org/wiki/Traitement_des_%C3%A9v%C3%A9nements_complexes[traitement des événements complexes] est un domaine qui permet de gérer des flux de données massifs: corrélation, détection de signaux faibles, etc.
+
+J'utilise ici le CEP dans un concept plus simple, proche du pattern "Publish/Subscibe" que l'on peut notamment retrouver avec des microservices.
+
+Arrêtons les _buzz words_ 5 minutes et parlons de mon cas pratique.
+
+Un (micro)service est responsable de créer des "objets" -- disons des contracts -- et je veux pouvoir faire des notifications en fonction de règles métiers.
+
+== Architecture
+
+Dans mon architecture, je vais utiliser :
+
+- Un programme en ligne de commande développé .Net Core qui sera responsable de générer des événements 
+- Azure Service Bus qui sera utilisé avec des _topics_ et des souscriptions pour diffuser les événements
+- Azure Logic App pour la partie notification. Dans mon cas, ce sera un mail mais Logic App dispose de nombreux connecteurs permettant d'envoyer un message sur Slack, Teams, etc. De plus, Logic App dispose de connecteurs pour Azure Service Bus
+
+NOTE: Il est possible de raffiner le modèle en appliquant des filtres sur les souscriptions (cf. https://docs.microsoft.com/en-us/azure/service-bus-messaging/topic-filters)
+
+== Création des resources Azure
+
+J'ai préparé un petit script PowerShell pour créer les différentes ressources :
+
+- Resource Group
+- Azure Service Bus, avec le topic et les souscriptions
+- Azure Logic App vide
+
+
+== Projet .Net Core
+La création du projet est "on ne peut plus simple"
+
+    dotnet new console -n SendReceive
+
+J'ajoute les dépendances qui vont bien:
+
+    dotnet add package Microsoft.Azure.ServiceBus
+    dotnet add package Newtonsoft.Json
+
+=== Configuration
+
+    dotnet add package Microsoft.Extensions.Configuration
+    dotnet add package Microsoft.Extensions.Configuration.Json
+
+=== Bogus
+
+https://github.com/bchavez/Bogus[Bogus] est une petite librairie sympathique qui permet de générer des données aléatoires _pas trop bidon_. Ainsi, il peut générer des adresses mails, des noms d'entreprises, des numéros d'IBAN, etc.
+
+Pour l'installer:
+
+    dotnet add package Bogus
+
+=== Exécution
+
+
+
+== Logic App
+
+Le Logic App est relativement simple et suit le séquencement suivant:
+
+- Déclencheur: Service Bus "When a message is received in a topic subscription (auto-complete)": 
+- Data Operations "Parse JSON": permet de parser le message
+- Condition : Pour définir le seuil (ex: Montant supérieur à XXX)
+- Office 365 Outlook "Send an email": à remplacer par le type de notification souhaité
+
+
