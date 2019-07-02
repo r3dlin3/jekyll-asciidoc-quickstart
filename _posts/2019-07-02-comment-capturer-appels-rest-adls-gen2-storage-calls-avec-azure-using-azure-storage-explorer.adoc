@@ -1,6 +1,6 @@
 = Comment capturer les appels REST vers Azure Data Lake gen2 avec Storage Explorer
-:page-navtitle: Comment capturer les appels REST vers Azure Data Lake gen2 avec Storage Explorer
-:page-excerpt: A l'aide de Fiddler, nous allons voir comment capturer les appels REST pour Data Lake Store gen 2
+:page-navtitle: Comment capturer les appels REST vers Azure Data Lake Storage Gen2 avec Storage Explorer
+:page-excerpt: A l'aide de Fiddler, nous allons voir comment capturer les appels REST pour Data Lake Storage Gen 2
 :page-tags: [azure,fiddler,rest]
 :experimental:
 :page-liquid:
