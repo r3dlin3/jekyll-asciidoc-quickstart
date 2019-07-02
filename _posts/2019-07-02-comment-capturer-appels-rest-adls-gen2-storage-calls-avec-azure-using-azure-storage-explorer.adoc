@@ -1,0 +1,112 @@
+= Comment capturer les appels REST vers Azure Data Lake gen2 avec Storage Explorer
+:page-navtitle: Comment capturer les appels REST vers Azure Data Lake gen2 avec Storage Explorer
+:page-excerpt: A l'aide de Fiddler, nous allons voir comment capturer les appels REST pour Data Lake Store gen 2
+:page-tags: [azure,fiddler,rest]
+:experimental:
+:page-liquid:
+:icons: font
+:toc: macro
+:toc-title: Table des matières
+
+== Intro
+
+Azure Data Lake gen2, qui n'est autre qu'un Storage Account avec un https://docs.microsoft.com/fr-fr/azure/storage/blobs/data-lake-storage-namespace[espace de noms hiérarchique], est disponible depuis quelque temps.
+
+Pour autant, Microsoft ne fournit pas de SDK, juste une https://docs.microsoft.com/en-us/rest/api/storageservices/data-lake-storage-gen2[API REST]. Et cette documentation peut s'avérer sibylline...
+
+Mes recherches m'ont mené sur cette http://sql.pawlikowski.pro/2019/03/09/how-to-sniff-adls-gen2-storage-rest-api-calls-to-azure-using-azure-storage-explorer/[page] mais malheureusement, elle n'est plus à jour avec les dernières versions.
+
+Nous allons voir comment capturer des appels avec Microsoft Azure Storage Explorer version 1.8.1.
+
+Ceci permettra d'apporter un nouvel éclairage sur la doc&nbsp;: l'implémentation n'est-elle pas la doc&nbsp;?
+
+== Le mode développeur du Microsoft Azure Storage Explorer
+
+Le plus simple est d'ouvrir le mode développeur en appuyant sur kbd:[F12] ou aller dans le menu *Help > Toggle Developer Tools*&nbsp;:
+
+image::{{ "/assets/img/2019-07-02-helpmenu.png" | absolute_url }}[Toggle Developer Tools,align="center"]
+
+En allant dans l'onglet "Network", on peut ainsi voir les URL, les entêtes des requêtes et des réponses.
+
+image::{{ "/assets/img/2019-07-02-MicrosoftAzureStorageExplorerNetwork.png" | absolute_url }}[Developer Tools de Microsoft Azure Storage Explorer,align="center"]
+
+Malheureusement, comme l'indique Microsoft Azure Storage Explorer, pour tout ce qui concerne le téléchargement, Microsoft Azure Storage Explorer s'appuie sur `AzCopy`&nbsp;:
+
+image::{{ "/assets/img/2019-07-02-azcopy.png" | absolute_url }}[For ADLS Gen2 Storage accounts, AzCopy will always be used for upload and download,align="center"]
+
+== Commandes AzCopy
+
+En réalisant un transfert, Microsoft Azure Storage Explorer nous propose de copier la commande AzCopy associée&nbsp;:
+
+image::{{ "/assets/img/2019-07-02-azcopycmd.png" | absolute_url }}[Copy AzCopy Command to Clipboard,align="center"]
+
+Ceci nous donne des commandes PowerShell, comme&nbsp;:
+
+----
+$env:AZCOPY_CRED_TYPE = "SharedKey";
+$env:ACCOUNT_NAME = "XXX";
+$env:ACCOUNT_KEY = "xbDE/...0isig==";
+./azcopy.exe copy "c:\path\to\test.png" "https://XXX.dfs.core.windows.net/root/test.png" --overwrite=false  --follow-symlinks --recursive --from-to=LocalBlobFS --put-md5;
+$env:AZCOPY_CRED_TYPE = "";
+$env:ACCOUNT_NAME = "";
+$env:ACCOUNT_KEY = "";
+----
+
+Microsoft Azure Storage Explorer vient avec des binaires d'AzCopy, présent par défaut dans `C:\Program Files (x86)\Microsoft Azure Storage Explorer\resources\app\node_modules\se-az-copy-exe-win\dist\bin`.
+
+Pour tracer les requêtes, nous allons nous appuyer sur Fiddler.
+
+== Fiddler
+
+https://www.telerik.com/fiddler[Fiddler] est un excellent proxy Web gratuit proposé par Telerik. Vous pouvez le télécharger et l'installer simplement.
+
+Le point important est de configurer Fiddler pour déchiffrer les flux HTTPS. Pour ce faire, après avoir démarré Fiddler, aller dans le menu *Tools > Options...*.
+
+Aller dans l'onglet *HTTPS* et cocher la case *Decrypt HTTPS traffic*. Des fenêtres vont inviter à faire confiance à un certificat&nbsp;: répondre "oui".
+
+image::{{ "/assets/img/2019-07-02-fiddler-options.png" | absolute_url }}[Copy AzCopy Command to Clipboard,align="center"]
+
+De retour sur la fenêtre *Options*, cliquer sur *OK*.
+
+== Capturer le trafic d'AzCopy
+
+Une fois Fiddler démarré et configuré, démarrez un prompt PowerShell et taper les commandes ci-dessous. Il faut penser à renseigner le nom du compte et la clé primaire. La ligne de commande a été adaptée pour prendre en compte le nom complet du binaire AzCopy et autoriser un écrasement (`--overwrite=true`).
+
+
+----
+cd "C:\Program Files (x86)\Microsoft Azure Storage Explorer\resources\app\node_modules\se-az-copy-exe-win\dist\bin"
+$env:HTTPS_PROXY="http://localhost:8888"
+$env:AZCOPY_CRED_TYPE = "SharedKey";
+$env:ACCOUNT_NAME = "XXX";
+$env:ACCOUNT_KEY = "xbDE/...sig==";
+./azcopy_windows_amd64.exe copy "C:\path\to\test1.png" "https://pocdlgen2.dfs.core.windows.net/root/test1.png" --overwrite=true --follow-symlinks --recursive --from-to=LocalBlobFS --put-md5;
+$env:AZCOPY_CRED_TYPE = "";
+$env:ACCOUNT_NAME = "";
+$env:ACCOUNT_KEY = "";
+----
+
+Si tout se passe bien, dans Fiddler, en allant dans *Inspector*, vous verrez le détail des requêtes et des réponses&nbsp;:
+
+image::{{ "/assets/img/2019-07-02-fiddler-capture.png" | absolute_url }}[Capture Fiddler,align="center"]
+
+[TIP]
+====
+Il est possible de récupérer la clé primaire directement dans Microsoft Azure Storage Explorer à partir du panneau *Actions* en bas à gauche simplement en cliquant sur "Copy Primary Key"&nbsp;:
+
+image::{{ "/assets/img/2019-07-02-storageexplorer-actions.png" | absolute_url }}[Panneau action dans Microsoft Azure Storage Explorer,align="center"]
+====
+
+[WARNING]
+====
+Si on vous ne voyez que des "tunnel to", c'est que Fiddler n'est pas correctement configuré pour déchiffrer le flux HTTPS&nbsp;:
+
+image::{{ "/assets/img/2019-07-02-fiddler-tunnel.png" | absolute_url }}[Tunnel avec Fiddler,align="center"]
+====
+
+
+
+
+
+
+
+
