@@ -20,7 +20,7 @@ layout: default
           </a>
         </h1>
         <p class="meta">
-          {{ post.date | date: site.date_format }}
+          {% include date.html date=post.date %}
         </p>
       </header>
       <div class="excerpt">

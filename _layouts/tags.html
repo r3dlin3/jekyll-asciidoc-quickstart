@@ -22,7 +22,7 @@ layout: page
             </a>
           </h3>
           <div class="meta">
-            {{ post.date | date: "%B %-d, %Y" }}
+            {% include date.html date=post.date %}
           </div>
         </div>
       {% endif %}

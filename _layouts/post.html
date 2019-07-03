@@ -6,7 +6,7 @@ layout: default
     <h1 class="title">{{ page.title }}</h1>
     {% if page.subtitle %}<h2 class="subtitle">{{ page.subtitle }}</h2>{% endif %}
     <p class="meta">
-      {{ page.date | date: site.date_format }}
+      {% include date.html date=page.date %}
       {% if page.author %} - {{ page.author }}{% endif %}
     </p>
   </header>
