@@ -30,18 +30,18 @@ Ainsi, à chaque installation ou mise à jour, la commande `Install-Module` ou `
 
 Il est possible de lister les sources avec la commande `Get-PSRepository` :
 
-----
+```powershell
 PS > Get-PSRepository
 
 Name                      InstallationPolicy   SourceLocation
 ----                      ------------------   --------------
 PSGallery                 Untrusted            https://www.powershellgallery.com/api/v2/
-----
+```
 
 En pratique, on accepte tout module en provenance de PSGallery. 
 Autant lui faire confiance et se poser des vraies questions quand la gestion des modules demande confirmation.
 Pour ce faire, après vérification de l'URL de PSGallery, exécuter la commande ci-dessous :
-
-    Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-
+```powershell
+Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+```
 

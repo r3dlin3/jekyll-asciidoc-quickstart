@@ -10,8 +10,6 @@
 
 == Intro
 
-
-
 PowerShell est aujourd'hui un langage largement utilisé et mature : la version 5.1 est embarquée dans Windows Server 2016 et Windows 10 tandis que PowerShell Core 6.0 est disponible depuis janvier 2018 en GA.
 
 Il existe une littérature dithyrambique sur le sujet. J'ai cependant voulu écrire cet article pour partager mes (bonnes ?) pratiques.
@@ -30,29 +28,29 @@ Donc pas de chaîne de caractère en dur (genre le nom d'un Storage Account) : o
 
 Il est possible de mettre une variable dans une string pour en obtenir la valeur
 
-[source,PowerShell]
-----
+[source,powershell]
+```powershell
 $name = Read-Host "Quel est ton nom ?"
 Write-Host "Hello $name"
-----
+```
 
 Ainsi, après avoir répondu à la question (disons "World"), on obtiendra bien le fameux "Hello World".
 
 Mais quid d'objet plus complexe ? Admettons que je veuille afficher les infos d'un process.
 
-[source,PowerShell]
-----
+[source,powershell]
+```powershell
 $a = Get-Process | select -First 1
 Write-Host "Le nom du process est $a.ProcessName"
-----
+```
 Le résultat peut paraître surprenant :
 
     Le nom du process est System.Diagnostics.Process (ApplicationFrameHost).ProcessName
 
 Pour obtenir la valeur de la propriété ProcessName, il faut "échapper" avec `$()`
-
-    Write-Host "Le nom du process est $($a.ProcessName)"
-
+```powershell
+Write-Host "Le nom du process est $($a.ProcessName)"
+```
 Et voilà!
 
     Le nom du process est ApplicationFrameHost AppVShNotif
@@ -64,9 +62,9 @@ Et voilà!
 Par défaut, la valeur est `continue`, c'est-à-dire que PowerShell affiche l'erreur et continue.
 
 Personnellement, je ne comprends pas ce comportement par défaut. Quand une cmdlet plante, je n'ai pas envie que mon script continue... C'est pourquoi, dans tous mes scripts j'ajoute la ligne suivante :
-
-    $ErrorActionPreference = "stop"
-
+```powershell
+$ErrorActionPreference = "stop"
+```
 
 == Validation de paramètre
 
@@ -76,7 +74,7 @@ La validation de paramètre est un mécanisme simple qui permet de gagner du tem
 - L'affichage de message d'erreur
 
 Ainsi, au lieu de :
-----
+```powershell
 param(
     $ComputerName
 )
@@ -86,15 +84,15 @@ if (-not $ComputerName) {
     Exit 1
 }
 (...)
-----
-Il est possible déclarer
-----
+```
+Il est possible déclarer :
+```powershell
 param(
     [Parameter(Mandatory)]
     $ComputerName
 )
 (...)
-----
+```
 Le résultat est différent :
 
 image:{{ "/assets/img/powershell_mandatory.png" | absolute_url }}[Exemple PowerShell Mandatory]
@@ -121,7 +119,7 @@ Pour rentre les cmdlets plus flexibles, il est intéressant de définir des jeux
 
 Exemple :
 
-----
+```powershell
 param(
     [Parameter(ParameterSetName="subname", Mandatory)]
     [string]
@@ -142,7 +140,7 @@ if ($PsCmdlet.ParameterSetName -eq "subname") {
 }
 
 Write-Host $inputFile
-----
+```
 
 == Argument splatting
 https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_splatting[Argument splatting] (Désolé, je n'ai pas de traduction pour ce terme) est une fonctionnalité souvent méconnue de PowerShell.
@@ -153,7 +151,7 @@ C'est très intéressant avec les `ParameterSetName`s car on peut appeler la mê
 
 Ci-dessous un exemple. Mon script prend un paramètre optionnel `SubscriptionName`. Si une valeur est renseignée, je récupère LA souscription souhaitée, sinon j'appelle ma cmdlet `Get-AzureRmSubscription` sans paramètre et récupère ainsi toutes les souscriptions.
 
-----
+```powershell
 param(
     [string]$SubscriptionName,
     (...)
@@ -166,7 +164,7 @@ if (-not [string]::IsNullOrEmpty($SubscriptionName)) {
 
 $subs = Get-AzureRmSubscription @subSplat
 (...)
-----
+```
 
 == Write-Output vs. Write-Host vs. Write-Verbose etc.
 
@@ -178,7 +176,7 @@ Pour faire simple :
 
 Prenons l'exemple suivant :
 
-----
+```powershell
 param()
 
 function Get-Output {
@@ -195,7 +193,7 @@ $a = Get-Output
 
 Write-Host "Contenu de `$a :"
 $a
-----
+```
 
 A votre avis, qu'est-ce qui sera affiché dans la console ? Avant et après "Contenu de `$a :" ? "Hello4"?
 
@@ -224,9 +222,9 @@ https://kevinmarquette.github.io/2018-01-12-Powershell-switch-statement/
 == Strict
 
 Une bonne pratique est d'utiliser un https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/set-strictmode[mode stricte] en ajoutant la ligne suivante :
-
-    Set-StrictMode -Version latest
-
+```powershell
+Set-StrictMode -Version latest
+```
 Ceci va garantir que :
 
 - Les meilleures pratiques sont respectées
@@ -238,7 +236,7 @@ Le principal inconvénient est pour le test de présence de certaines propriét�
 
 J'ai donc une petite fonction en stock qui permet d'éviter une erreur en mode stricte
 
-----
+```powershell
 function Test-HasProperty($object, $propertyName) {
     <#
     .SYNOPSIS
@@ -246,7 +244,7 @@ function Test-HasProperty($object, $propertyName) {
     #>
     $propertyName -in $object.PSobject.Properties.Name
 }
-----
+```
 
 == #Requires
 
@@ -256,11 +254,11 @@ Je ne vois quasiment jamais la directive https://docs.microsoft.com/en-us/powers
 - Les modules nécessaires, notamment pour des dépendances particulières
 - La nécessité d'exécuter le script en tant qu'administrateur (UAC a parfois des comportements et des messages bizarres. Si des droits administrateurs sont requis, autant le préciser
 
-----
+```powershell
 #Requires -Version 6.0
 #Requires -Modules ActiveDirectory
 #Requires -RunAsAdministrator
-----
+```
 
 
 == CmdletBinding

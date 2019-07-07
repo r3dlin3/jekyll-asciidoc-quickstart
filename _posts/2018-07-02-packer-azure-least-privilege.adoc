@@ -31,41 +31,43 @@ Pour ma part, je suis parti sur du PowerShell.
 === Connexion à Azure 
 
 Pas de subtilité ici :
-
-    Login-AzureRmAccount
-
+```powershell
+Login-AzureRmAccount
+```
 Et au besoin, si vous avez plusieurs souscriptions
-
-    Select-AzureRmSubscription -SubscriptionName <Ma Souscription>
-
+```powershell
+Select-AzureRmSubscription -SubscriptionName <Ma Souscription>
+```
 === Création d'un service principal
 
 La création d'un service principal se fait avec une cmdlet :
-
-    $sp = New-AzureRmADServicePrincipal -DisplayName "Azure Packer" `
+```powershell
+$sp = New-AzureRmADServicePrincipal -DisplayName "Azure Packer" `
         -Password (ConvertTo-SecureString "P@ssw0rd!" -AsPlainText -Force)
+```
 
 === Création des groupes de ressource
 
 La création de groupe de ressource se fait à l'aide de la cmdlet `New-AzureRmResourceGroup`.
 Il est recommandable
 
-----
+```powershell
 $rgName = "rg-my-images"
 $rgPackerName = "rg-packer"
 $location = "West Europe"
 New-AzureRmResourceGroup -Name $rgName -Location $location
 New-AzureRmResourceGroup -Name $rgPackerName -Location $location
-----
+```
 
 NOTE: la cmdlet `Get-AzureRmLocation` donne la liste des localisations possibles.
 
 === Droits sur les groupes de ressource
 
 Le rôle de contributeur doit être attribué juste sur les 2 groupes de ressource.
-
-    New-AzureRmRoleAssignment -RoleDefinitionName Contributor -ServicePrincipalName $sp.ApplicationId -ResourceGroupName $rgName
-    New-AzureRmRoleAssignment -RoleDefinitionName Contributor -ServicePrincipalName $sp.ApplicationId -ResourceGroupName $rgPackerName
+```powershell
+New-AzureRmRoleAssignment -RoleDefinitionName Contributor -ServicePrincipalName $sp.ApplicationId -ResourceGroupName $rgName
+New-AzureRmRoleAssignment -RoleDefinitionName Contributor -ServicePrincipalName $sp.ApplicationId -ResourceGroupName $rgPackerName
+```
 
 == Script tout-en-un
 
@@ -74,7 +76,7 @@ J'ai préparé un petit script tout-en-un :
 pass:[{% gist 11733d072c25c661b3237ba65dc07d69 Setup-Azure.ps1 %}]
 
 Il produira une structure JSON de la sorte :
-----
+```json
 {
     "tenant_id": "c18XXXXX-XXXX-XXXX-XXXX-XXXXXXXXX90a",
     "subscription_id": "a02XXXXX-XXXX-XXXX-XXXX-XXXXXXXXXc54",
@@ -83,7 +85,7 @@ Il produira une structure JSON de la sorte :
     "managed_image_resource_group_name": "rg-my-images",
     "build_resource_group_name": "rg-packer"
 }
-----
+```
 
 Restera à remplacer les valeurs dans le champ idoine dans fichier packer.
 

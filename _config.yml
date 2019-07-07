@@ -16,7 +16,7 @@ asciidoctor:
   safe: unsafe
   attributes:
     - idseparator=_
-    - source-highlighter=coderay
+    - source-highlighter=rouge
     - icons=font
 
 sass:
@@ -106,5 +106,5 @@ theme_settings:
 paginate: 5
 paginate_path: "blog/page:num"
 
-highlighter: coderay
+highlighter: rouge
 

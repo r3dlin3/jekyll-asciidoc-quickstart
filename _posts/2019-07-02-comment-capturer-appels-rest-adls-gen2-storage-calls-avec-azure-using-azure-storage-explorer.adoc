@@ -42,7 +42,7 @@ image::{{ "/assets/img/2019-07-02-azcopycmd.png" | absolute_url }}[Copy AzCopy C
 
 Ceci nous donne des commandes PowerShell, comme&nbsp;:
 
-----
+```powershell
 $env:AZCOPY_CRED_TYPE = "SharedKey";
 $env:ACCOUNT_NAME = "XXX";
 $env:ACCOUNT_KEY = "xbDE/...0isig==";
@@ -50,7 +50,7 @@ $env:ACCOUNT_KEY = "xbDE/...0isig==";
 $env:AZCOPY_CRED_TYPE = "";
 $env:ACCOUNT_NAME = "";
 $env:ACCOUNT_KEY = "";
-----
+```
 
 Microsoft Azure Storage Explorer vient avec des binaires d'AzCopy, présent par défaut dans `C:\Program Files (x86)\Microsoft Azure Storage Explorer\resources\app\node_modules\se-az-copy-exe-win\dist\bin`.
 
@@ -72,8 +72,7 @@ De retour sur la fenêtre *Options*, cliquer sur *OK*.
 
 Une fois Fiddler démarré et configuré, démarrez un prompt PowerShell et taper les commandes ci-dessous. Il faut penser à renseigner le nom du compte et la clé primaire. La ligne de commande a été adaptée pour prendre en compte le nom complet du binaire AzCopy et autoriser un écrasement (`--overwrite=true`).
 
-
-----
+```powershell
 cd "C:\Program Files (x86)\Microsoft Azure Storage Explorer\resources\app\node_modules\se-az-copy-exe-win\dist\bin"
 $env:HTTPS_PROXY="http://localhost:8888"
 $env:AZCOPY_CRED_TYPE = "SharedKey";
@@ -83,7 +82,7 @@ $env:ACCOUNT_KEY = "xbDE/...sig==";
 $env:AZCOPY_CRED_TYPE = "";
 $env:ACCOUNT_NAME = "";
 $env:ACCOUNT_KEY = "";
-----
+```
 
 Si tout se passe bien, dans Fiddler, en allant dans *Inspector*, vous verrez le détail des requêtes et des réponses&nbsp;:
 

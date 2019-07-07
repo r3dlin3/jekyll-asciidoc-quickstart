@@ -37,7 +37,7 @@ La déclaration du fichier se fait avec la méthode https://docs.microsoft.com/f
 =====================================================================
 Par défaut, l'écrasement de fichier est autorisé. Si vous voulez empêcher l'écrasement d'un fichier, il faut ajouter `If-None-Match` avec la valeur "*".
 
-En .Net Core, il est possible de fixer cette entête sur l'objet `HttpRequestMessage` comme suit&nbsp;:
+En .Net Core, il est possible de fixer cet entête sur l'objet `HttpRequestMessage` comme suit&nbsp;:
 
     req.Headers.IfNoneMatch.Add(EntityTagHeaderValue.Any)
 =====================================================================
@@ -78,6 +78,7 @@ ou si vous êtes déjà dans le bon répertoire&nbsp;:
 
 
 Quelques références:
+
 * https://docs.microsoft.com/en-us/dotnet/core/testing/unit-testing-with-nunit[Unit testing C# with NUnit and .NET Core]
 * https://github.com/dotnet/core/blob/master/.gitignore[.gitignore]
 
