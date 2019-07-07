@@ -73,7 +73,7 @@ New-AzureRmRoleAssignment -RoleDefinitionName Contributor -ServicePrincipalName 
 
 J'ai préparé un petit script tout-en-un :
 
-pass:[{% gist 11733d072c25c661b3237ba65dc07d69 Setup-Azure.ps1 %}]
+pass:[<script src="https://gist.github.com/11733d072c25c661b3237ba65dc07d69.js?file=Setup-Azure.ps1"></script>]
 
 Il produira une structure JSON de la sorte :
 ```json
@@ -91,4 +91,4 @@ Restera à remplacer les valeurs dans le champ idoine dans fichier packer.
 
 Un exemple est disponible ci-dessous :
 
-pass:[{% gist 11733d072c25c661b3237ba65dc07d69 packer.json %}]
+pass:[<script src="https://gist.github.com/11733d072c25c661b3237ba65dc07d69.js?file=packer.json"></script>]
