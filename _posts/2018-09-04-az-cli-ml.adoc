@@ -1,5 +1,5 @@
-= Gérer les certificats de Azure CLI
-:page-navtitle: Gérer les certificats de Azure CLI
+= Gérer les certificats d'Azure CLI
+:page-navtitle: Gérer les certificats d'Azure CLI
 :page-excerpt: Si jamais vous avez déjà eu des soucis de certificat, avec Azure CLI, cet article est pour vous
 :page-tags: [azure,windows,az-cli]
 :experimental:

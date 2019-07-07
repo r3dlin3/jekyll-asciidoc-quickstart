@@ -1,0 +1,100 @@
+= Charger des fichiers sur un Data Lake Storage Gen 2 en .Net Core 
+:page-navtitle: Charger des fichiers sur un Data Lake Storage Gen 2 en .Net Core 
+:page-excerpt: En l'absence d'API officielle, voici un petit exemple .Net Core pour charger des fichier
+:page-tags: [azure,dotnet-core,rest]
+:experimental:
+:page-liquid:
+:icons: font
+:toc: macro
+:toc-title: Table des matières
+
+== Intro
+
+Azure Data Lake Gen2 est maintenant mon composant de stockage Azure favori pour des gros volumes de données et qui requiert du contrôle d'accès suivant une arborescence, grâce aux https://docs.microsoft.com/fr-fr/azure/storage/blobs/data-lake-storage-namespace[espaces de noms hiérarchique].
+
+Comme présenté dans un précédent link:{{ site.baseurl }}{% post_url 2019-07-02-comment-capturer-appels-rest-adls-gen2-storage-calls-avec-azure-using-azure-storage-explorer %}[article],  Microsoft ne fournit pas de SDK à ce jour, juste une https://docs.microsoft.com/en-us/rest/api/storageservices/data-lake-storage-gen2[API REST]. 
+
+Cette API REST est conçue pour s'adapter à Azure Storage Blob mais aussi être compatible avec un _FileSystem_ Hadoop.
+On verra que cela peut complexifier certaines choses. Dans tous les cas, cette API se rapproche d'un de l'API https://azure.microsoft.com/fr-fr/blog/high-throughput-with-azure-blob-storage/[High-Throughput Block Blob (HTBB)] et permet donc un transfert par bloc optimisé.
+
+En l'absence d'API .Net Core, j'ai donc démarré un petit projet sur https://github.com/r3dlin3/datalake.gen2[GitHub]. Ce projet est sans prétention et ne vise pas à implémenter l'ensemble des services de la REST API. Il n'implémente pas de transfert optimisé, de gestion des appels concurrents, etc. En outre, pour des transferts optimisés, pour le moment, seul AzCopy peut vous aider.
+
+Vous trouverez cependant quelques perles que j'ai récupérées en chemin...
+
+== Charger un fichier
+
+Le chargement de fichier va en réalité nécessiter 3 opérations&nbsp;:
+
+* Créer -- ou plutôt déclarer -- le fichier
+* Transférer les octets par bloc
+* Finaliser le transfert -- autrement dit, fermer le fichier.
+
+Au-delà du côté non naturel de ces 3 appels, il est à noter que chaque appel REST va compter comme une opération. Cela peut avoir des conséquences au niveau de la facturation Azure si vous avez beaucoup de petits fichiers.
+
+La déclaration du fichier se fait avec la méthode https://docs.microsoft.com/fr-fr/rest/api/storageservices/datalakestoragegen2/path/create[Create] pour une _resource_ `file`.
+
+[WARNING]
+=====================================================================
+Par défaut, l'écrasement de fichier est autorisé. Si vous voulez empêcher l'écrasement d'un fichier, il faut ajouter `If-None-Match` avec la valeur "*".
+
+En .Net Core, il est possible de fixer cette entête sur l'objet `HttpRequestMessage` comme suit&nbsp;:
+
+    req.Headers.IfNoneMatch.Add(EntityTagHeaderValue.Any)
+=====================================================================
+
+Le transfert se fait grâce à la méthode https://docs.microsoft.com/fr-fr/rest/api/storageservices/datalakestoragegen2/path/update[Update] avec le paramètre `action=append`.
+
+Le transfert se faisant par bloc, il faut donner l'emplacement de ce bloc. Le premier commence à 0. Cette position est à mettre dans le paramètre d'URL `position`.
+
+Finalement, le fichier doit être fermé. On fait donc appel à la méthode https://docs.microsoft.com/fr-fr/rest/api/storageservices/datalakestoragegen2/path/update[Update] avec le paramètre `action=flush`. Cette fois-ci, le paramètre `position` prend comme valeur la taille du fichier complet.
+
+== Projet .Net Core
+
+La documentation Microsoft est bien faite mais à toutes fins utiles, je rappelle ici quelques commandes.
+
+Créer un projet console dans le répertoire `Ma.Super.Appli` avec un namespace par défaut `Ma.Super.Appli`&nbsp;:
+
+    dotnet new console -n Ma.Super.Appli
+
+Créer un projet NUnit dans le répertoire `Ma.Super.Appli.Tests`&nbsp;:
+
+    dotnet new nunit -n Ma.Super.Appli.Tests
+
+Faire une référence à un autre projet:
+
+    dotnet add reference ../Ma.Super.Appli/Ma.Super.Appli.csproj
+
+Créer un fichier de solution&nbsp;:
+
+    dotnet new sln -n monsuperprojet.sln
+
+Ajouter les projets précédemment créés au fichier solution&nbsp;:
+
+    dotnet sln monsuperprojet.sln.sln add Ma.Super.Appli\Ma.Super.Appli.csproj
+
+ou si vous êtes déjà dans le bon répertoire&nbsp;:
+
+    dotnet sln add Ma.Super.Appli\Ma.Super.Appli.csproj
+
+
+Quelques références:
+* https://docs.microsoft.com/en-us/dotnet/core/testing/unit-testing-with-nunit[Unit testing C# with NUnit and .NET Core]
+* https://github.com/dotnet/core/blob/master/.gitignore[.gitignore]
+
+
+== Signature
+
+Pour le moment, je n'ai expérimenté que l'authentification par _Shared Key_. D'après la page du https://docs.microsoft.com/en-us/azure/storage/blobs/data-lake-storage-abfs-driver#authentication[driver ABFS], l'API devrait supporter également l'authentification Azure AD.
+
+L'authentification par _Shared Key_ est expliquée sur la doc https://docs.microsoft.com/fr-fr/rest/api/storageservices/authorize-with-shared-key[Microsoft]. 
+
+Je me suis appuyé sur les appels d'Azure Storage Explorer et d'AzCopy (cf. l'article link:{{ site.baseurl }}{% post_url 2019-07-02-comment-capturer-appels-rest-adls-gen2-storage-calls-avec-azure-using-azure-storage-explorer %}[Comment capturer les appels REST vers Azure Data Lake gen2 avec Storage Explorer]) pour établir un jeu de test.
+
+Cela a permis de gérer quelque "bizarrerie" comme la gestion de l'entête `Content-Length` qui doit être omis dans la signature s'il est à 0.
+
+
+
+
+
+
+
