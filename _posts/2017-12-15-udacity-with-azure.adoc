@@ -8,7 +8,7 @@
 
 == Introduction
 
-Udacity propose un https://eu.udacity.com/course/scalable-microservices-with-kubernetes--ud615[cours gratuit] sur Docker, les microservices et Kubernetes (en anglais). Tout est très bien décrit, y compris les commandes mais cela se base (naturellement) sur Google Container Engine (GKE).
+Udacity propose un link:pass:[https://eu.udacity.com/course/scalable-microservices-with-kubernetes--ud615][cours gratuit] sur Docker, les microservices et Kubernetes (en anglais). Tout est très bien décrit, y compris les commandes mais cela se base (naturellement) sur Google Container Engine (GKE).
 
 Disposant déjà d'une souscription Azure et Azure proposant également une offre managée sur Kubernetes : Azure Container Service (AKS).
 

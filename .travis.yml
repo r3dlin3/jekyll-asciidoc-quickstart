@@ -1,7 +1,7 @@
 language: ruby
-rvm: 2.4.1
+rvm: 2.6.3
 install: bundle install
-script: bundle exec jekyll build && bundle exec htmlproofer ./_site
+script: bundle exec jekyll build && bundle exec htmlproofer ./_site --check-favicon --check-html --assume-extension --internal-domains r3dlin3.github.io
 deploy:
   provider: pages
   skip_cleanup: true
