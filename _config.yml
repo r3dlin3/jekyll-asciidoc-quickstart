@@ -52,7 +52,7 @@ theme_settings:
   #   <p>Remove all header text in <code>_config.yml</code> to disable this feature.</p>
   #header_text_feature_image:
   footer_text: >
-   Powered by <a href="https://jekyllrb.com/">Jekyll</a> with <i class="fa fa-heart" aria-hidden="true" style="color:Tomato"/></i>
+   Powered by <a href="https://jekyllrb.com/">Jekyll</a> with <i class="fa fa-heart" aria-hidden="true" style="color:Tomato"></i>
 
   # Icons
   rss: true
