@@ -18,6 +18,12 @@ asciidoctor:
     - idseparator=_
     - source-highlighter=rouge
     - icons=font
+    - experimental
+    - page-liquid
+    - sectanchors
+    - sectlinks
+    - toc=macro
+    - toc-title=Table des matières
 
 sass:
   sass_dir: _sass

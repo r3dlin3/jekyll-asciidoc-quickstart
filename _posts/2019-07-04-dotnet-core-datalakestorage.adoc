@@ -2,11 +2,6 @@
 :page-navtitle: Charger des fichiers sur un Data Lake Storage Gen 2 en .Net Core 
 :page-excerpt: En l'absence d'API officielle, voici un petit exemple .Net Core pour charger des fichier
 :page-tags: [azure,dotnet-core,rest]
-:experimental:
-:page-liquid:
-:icons: font
-:toc: macro
-:toc-title: Table des matières
 
 == Intro
 

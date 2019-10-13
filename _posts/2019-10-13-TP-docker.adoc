@@ -2,11 +2,11 @@
 :page-navtitle: Petit TP Docker
 :page-excerpt: Petit retour sur la "Dockerisation" d'une application Python 2.7 simple
 :page-tags: [docker,python]
-:experimental:
-:page-liquid:
-:icons: font
-:sectanchors:
-:sectlinks:
+// :experimental:
+// :page-liquid:
+//:icons: font
+// :sectanchors:
+// :sectlinks:
 //:toc: macro
 //:toc-title: Table des matières
 

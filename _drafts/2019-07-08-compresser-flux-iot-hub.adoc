@@ -1,0 +1,227 @@
+= Compresser les données vers Azure IoT Hub avec un client .Net Core
+:page-navtitle: Charger des fichiers sur un Data Lake Storage Gen 2 en .Net Core 
+:page-excerpt: En l'absence d'API officielle, voici un petit exemple .Net Core pour charger des fichier
+:page-tags: [azure,dotnet-core,rest]
+:experimental:
+:page-liquid:
+:icons: font
+:toc: macro
+:toc-title: Table des matières
+
+== Intro
+
+=== Iot Hub
+
+rg={your resource group name}
+iothubname={your iot hub name}
+az group create --name $rg --location westeurope
+
+az iot hub create --name $iothubname \
+   --resource-group $rg --sku F1
+
+
+
+=== Storage account
+
+https://docs.microsoft.com/en-us/azure/storage/common/storage-azure-cli
+
+storagename={your storage account name}
+containername={your container name}
+storagename=storageXXX
+containername=iothub
+
+az storage account create \
+    --location westeurope \
+    --name $storagename \
+    --resource-group $rg \
+    --sku Standard_LRS
+
+export AZURE_STORAGE_CONNECTION_STRING=`az storage account show-connection-string --name $storagename --resource-group $rg -o tsv`
+
+az storage container create --name $containername
+
+az storage account keys list \
+    --account-name $storagename \
+    --resource-group $rg \
+    --output table
+KeyName    Permissions    Value
+---------  -------------  ----------------------------------------------------------------------------------------
+key1       Full           tVyb2Snzz+lORJGtPOh98+b++5q58FH................QwRIvlxwhfNeeT1XDvNNZGXfvzIFC3yCj07QJKA==
+key2       Full           WRbFUM4dwRZ4t2uD6rpI9kgtlIkf2m/................5TcdYLLNGspZzarAiYk5UXJdmmaD6e8ppsKgALg==
+
+
+az extension add --name azure-cli-iot-ext
+https://github.com/Azure/azure-iot-cli-extension
+https://docs.microsoft.com/en-us/cli/azure/ext/azure-cli-iot-ext/iot?view=azure-cli-latest
+
+=== Create device
+iotdevice={Your Device Name}
+iotdevice="dotnetcore-20190708"
+az iot hub device-identity create --hub-name $iothubname --device-id $iotdevice
+az iot hub device-identity show-connection-string --hub-name $iothubname --device-id $iotdevice --output tsv
+HostName=XXX.azure-devices.net;DeviceId=20190708-dotnetcore;SharedAccessKey=/Jx8DOZcWy8ZJTBBsecHaCm8Scol4JDESTjza+Vr300=
+
+
+https://docs.microsoft.com/en-us/azure/stream-analytics/stream-analytics-quick-create-powershell
+
+
+
+https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-security#access-control-and-permissions
+
+
+$ az iot hub show-connection-string --hub-name $iothubname --policy-name service -o tsv
+[
+  {
+    "connectionString": [
+      "HostName=XXX.azure-devices.net;SharedAccessKeyName=service;SharedAccessKey=QrJ0qtTqvH5gpx/oGdSJgSJAROrw+zvqn6DBf4C3Amg="
+    ],
+    "name": "XXX"
+  }
+]
+
+
+=== Create ASA
+JobDefinition.json 
+
+{
+  "location":"westeurope",
+  "properties":{
+    "sku":{
+      "name":"standard"
+    },
+    "eventsOutOfOrderPolicy":"adjust",
+    "eventsOutOfOrderMaxDelayInSeconds":10,
+    "compatibilityLevel": 1.1
+  }
+}
+
+$rg="{your resource group name}"
+$jobName = "MyStreamingJob"
+$jobDefinitionFile = ".\JobDefinition.json"
+New-AzStreamAnalyticsJob `
+  -ResourceGroupName $rg `
+  -File $jobDefinitionFile `
+  -Name $jobName `
+  -Force
+
+
+
+JobInputDefinition.json
+
+{
+    "properties": {
+        "type": "Stream",
+        "datasource": {
+            "type": "Microsoft.Devices/IotHubs",
+            "properties": {
+                "iotHubNamespace": "XXX",
+                "sharedAccessPolicyName": "service",
+                "sharedAccessPolicyKey": "QrJ0qtTqvH5gpx/oGdSJgSJAROrw+zvqn6DBf4C3Amg=",
+                "endpoint": "messages/events",
+                "consumerGroupName": "$Default"
+                }
+        },
+        "compression": {
+            "type": "GZip"
+        },
+        "serialization": {
+            "type": "Json",
+            "properties": {
+                "encoding": "UTF8"
+            }
+        }
+    },
+    "name": "inIoTHub",
+    "type": "Microsoft.StreamAnalytics/streamingjobs/inputs"
+}
+
+$jobInputName = "inIoTHub"
+$jobInputDefinitionFile = ".\JobInputDefinition.json"
+New-AzStreamAnalyticsInput `
+  -ResourceGroupName $rg `
+  -JobName $jobName `
+  -File $jobInputDefinitionFile `
+  -Name $jobInputName
+
+Remove-AzStreamAnalyticsInput `
+  -ResourceGroupName $rg `
+  -JobName $jobName `
+  -Name $jobInputName
+
+{
+    "properties": {
+        "datasource": {
+            "type": "Microsoft.Storage/Blob",
+            "properties": {
+                "storageAccounts": [
+                    {
+                      "accountName": "storageXXX",
+                      "accountKey": "tVyb2Snzz+lORJGtPOh98+b++5q58FHKimnjLQu8fH2HTp2QwRIvlxwhfNeeT1XDvNNZGXfvzIFC3yCj07QJKA=="
+                    }
+                ],
+                "container": "iothub",
+                "pathPattern": "output/",
+                "dateFormat": "yyyy/MM/dd",
+                "timeFormat": "HH"
+            }
+        },
+        "serialization": {
+            "type": "Json",
+            "properties": {
+                "encoding": "UTF8",
+                "format": "LineSeparated"
+            }
+        }
+    },
+    "name": "outBlob",
+    "type": "Microsoft.StreamAnalytics/streamingjobs/outputs"
+}
+
+
+$jobOutputName = "outBlob"
+$jobOutputDefinitionFile = ".\JobOutputDefinition.json"
+New-AzStreamAnalyticsOutput `
+  -ResourceGroupName $rg `
+  -JobName $jobName `
+  -File $jobOutputDefinitionFile `
+  -Name $jobOutputName -Force
+
+Remove-AzStreamAnalyticsOutput `
+  -ResourceGroupName $rg `
+  -JobName $jobName `
+  -Name $jobOutputName
+
+JobTransformationDefinition.json
+
+{
+    "name":"MyTransformation",
+    "type":"Microsoft.StreamAnalytics/streamingjobs/transformations",
+    "properties":{
+        "streamingUnits":1,
+        "script":null,
+        "query":" SELECT * INTO outBlob FROM inIoTHub"
+    }
+}
+
+$jobTransformationName = "MyTransformation"
+$jobTransformationDefinitionFile = ".\JobTransformationDefinition.json"
+New-AzStreamAnalyticsTransformation `
+  -ResourceGroupName $rg `
+  -JobName $jobName `
+  -File $jobTransformationDefinitionFile `
+  -Name $jobTransformationName -Force
+
+
+Test-AzStreamAnalyticsInput `
+    -ResourceGroupName $rg `
+    -JobName $jobName `
+    -Name $jobInputName 
+Test-AzStreamAnalyticsOutput `
+    -ResourceGroupName $rg `
+    -JobName $jobName `
+    -Name $jobOutputName 
+
+Start-AzStreamAnalyticsJob -Name $jobName -ResourceGroupName $rg -OutputStartMode JobStartTime
+Start-AzStreamAnalyticsJob -Name $jobName -ResourceGroupName $rg -OutputStartMode LastOutputEventTime 
+Stop-AzStreamAnalyticsJob -Name $jobName -ResourceGroupName $rg
+
