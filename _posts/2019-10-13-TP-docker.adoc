@@ -1,6 +1,6 @@
 = Petit TP Docker
 :page-navtitle: Petit TP Docker
-:page-excerpt: Petit retour sur la "Dockerisation" d'une application Python 2.7 simple
+:page-excerpt: Petit retour sur la Dockerisation d'une application Python 2.7 simple
 :page-tags: [docker,python]
 // :experimental:
 // :page-liquid:
