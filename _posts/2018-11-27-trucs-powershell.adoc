@@ -28,7 +28,6 @@ Donc pas de chaîne de caractère en dur (genre le nom d'un Storage Account) : o
 
 Il est possible de mettre une variable dans une string pour en obtenir la valeur
 
-[source,powershell]
 ```powershell
 $name = Read-Host "Quel est ton nom ?"
 Write-Host "Hello $name"
@@ -38,7 +37,6 @@ Ainsi, après avoir répondu à la question (disons "World"), on obtiendra bien 
 
 Mais quid d'objet plus complexe ? Admettons que je veuille afficher les infos d'un process.
 
-[source,powershell]
 ```powershell
 $a = Get-Process | select -First 1
 Write-Host "Le nom du process est $a.ProcessName"
