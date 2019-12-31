@@ -1,0 +1,71 @@
+= SonarQube sur Windows avec Docker
+:page-navtitle: SonarQube sur Windows avec Docker
+:page-excerpt: Exécuter SonarQube sur Windows grâce à Docker
+:page-tags: [docker,sonarqube,windows]
+
+Il existe différente façon de faire tourner SonarQube sur Windows.
+
+Mon choix s'est porté sur Docker pour sa simplicité et sa portabilité. 
+SonarQube fournit une https://hub.docker.com/_/sonarqube[image officielle], autant en profiter.
+
+WARNING: Cet article fait l'hypothèse que vous avez un environnement Docker fonctionnel.
+
+== Prérequis
+
+Pour assurer la persistance  de l'installation, nous allons créer des répertoires sur le disque.
+Ces répertoires contiendront&nbsp;:
+
+- La base de données
+- La configuration
+- Les plugins
+- Les logs
+- etc.
+
+Pour ce faire, ouvrir un prompt PowerShell et exécuter les commandes suivantes&nbsp;:
+
+```powershell
+$SONARQUBE_HOME="C:\temp\sonarqube"
+mkdir $SONARQUBE_HOME
+mkdir $SONARQUBE_HOME/conf
+mkdir $SONARQUBE_HOME/extensions
+mkdir $SONARQUBE_HOME/logs
+mkdir $SONARQUBE_HOME/data
+```
+
+== Récupérer SonarQube
+
+Récupérons maintenant SonarQube.
+Il existe différentes versions disponibles sur Docker Hub mais nous allons utiliser https://hub.docker.com/_/sonarqube[l'image officielle] et la version 8.1 community.
+
+```shell
+docker pull sonarqube:8.1-community-beta
+```
+
+== Exécuter SonarQube
+
+Une seule ligne de commande est nécessaire pour faire tourner SonarQube. Toujours dans le prompt PowerShell (noter les ``` ci-dessous), exécuter&nbsp;:
+
+```powershell
+docker run -d --name sonarqube `
+  -p 8000:9000 ` <1>
+  -v $SONARQUBE_HOME/conf:/opt/sonarqube/conf ` <2>
+  -v $SONARQUBE_HOME/extensions:/opt/sonarqube/extensions `
+  -v $SONARQUBE_HOME/logs:/opt/sonarqube/logs `
+  -v $SONARQUBE_HOME/data:/opt/sonarqube/data `
+  -e sonar.forceAuthentication=true ` <3>
+  -e sonar.telemetry.enable=false `
+  sonarqube:8.1-community-beta <4>
+```
+
+<1> Sur mon poste, le port 9000 étant déjà pris, j'ai fait correspondre le port 9000 de SonarQube avec mon port 8000. Avec cette commande, SonarQube sera donc accessible à l'adresse http://localhost:8000
+<2> Suis une série de ligne pour créer des volumes, c'est-à-dire faire correspondre un répertoire local avec un répertoire dans le container
+<3> Il est possible de configurer SonarQube en passant des paramètres au démarrage
+<4> On retrouve ici la version 8.1 Community
+
+Comme le container est présent sur le poste, il démarre rapidement.
+
+Après quelques minutes, en accédant à http://localhost:8000, vous aurez l'écran de login. Il ne restera plus qu'à saisir admin/admin&nbsp;:
+
+image:/assets/img/2019-12-30-SonarQube.png[Login SonarQube]
+
+TIP: cette version 8.1 vient avec tous les analyseurs de code standard (C#, JS, etc.). Des profils de base sont créés, il est donc possible de passer directement à la création d'un link:{{ site.baseurl }}{% post_url 2019-12-31-sonarqube-dotnet %}[projet])
