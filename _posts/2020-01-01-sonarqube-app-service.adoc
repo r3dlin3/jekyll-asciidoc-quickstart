@@ -269,7 +269,7 @@ Les containers peuvent être supprimés, ainsi que les volumes avec la commande
 
 === Création de l'App Service avec Docker Compose
 
-Le déploiement d'un App Service avec Docker Compose est assez proche de <<version-simple,la version simple>>.
+Le déploiement d'un App Service avec Docker Compose est assez proche de <<version_simple,la version simple>>.
 
 Ouvrir un prompt PowerShell et exécuter les commandes suivantes&nbsp;:
 
