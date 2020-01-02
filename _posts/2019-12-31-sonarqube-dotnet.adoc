@@ -1,0 +1,79 @@
+= Analyse de .NET Core avec SonarQube sur Windows
+:page-navtitle: Analyse de .NET Core avec SonarQube sur Windows
+:page-excerpt: Analyser un projet .NET Core avec SonarQube sur Windows
+:page-tags: [docker,sonarqube,windows,dotnet-core]
+
+Un https://www.nuget.org/packages/dotnet-sonarscanner[SonarScanner] est disponible pour .Net Core. Nous allons voir comment l'installer puis l'utiliser.
+
+Tout d'abord, créons un nouveau projet. Si vous avez suivi le 
+link:{{ site.baseurl }}{% post_url 2019-12-30-sonarqube-docker-windows %}[
+précédent tutoriel], se connecter à http://localhost:8000.
+
+WARNING: Même si l'on va analyser un code .Net Core, Java est requis&nbsp;!
+
+
+== Création du projet
+
+Dans l'interface, cliquer sur le "+" en haut à droite, puis "Create new project"&nbsp;:
+
+image:/assets/img/2019-12-31-create-new-project.png[Créer un nouveau projet]
+
+Renseigner un identifiant du projet et un nom d'affichage et cliquer sur "Set Up"&nbsp;:
+
+image:/assets/img/2019-12-31-create-new-project2.png[Créer un nouveau projet]
+
+Il faut alors créer un token si vous n'en disposez pas déjà d'un. Si l'on fait l'hypothèse qu'il s'agit du premier projet, nous n'avons pas de token, donc créons-en un.
+
+Choisir "Generate a token", choisir un nom et cliquer "Generate".
+
+image:/assets/img/2019-12-31-token1.png[Créer un nouveau projet]
+
+*Noter précieusement la valeur du token* et cliquer sur "Continue".
+
+image:/assets/img/2019-12-31-token2.png[Créer un nouveau projet]
+image:/assets/img/2019-12-31-token3.png[Créer un nouveau projet]
+
+== Installation du SonarScanner
+
+SonarQube fournit un scanner .Net Core. L'installation se fait simplement par la commande suivante&nbsp;:
+
+```shell
+dotnet tool install --global dotnet-sonarscanner
+```
+
+== Configuration du SonarScanner
+
+Pour éviter de taper systématiquement l'URL de SonarQube et le token, il est possible de configurer le scanner.
+
+La documentation précise qu'il faut mettre le fichier `SonarQube.Analysis.xml` dans le répertoire d'installation mais on ne sait pas exactement où a été installé l'utilitaire avec la commande précédente.
+
+La commande `where dotnet-sonarscanner` retourne alors `C:\Users\<username>\.dotnet\tools\dotnet-sonarscanner.exe`. C'est presque ça.
+
+Ouvrir l'explorateur et aller dans `C:\Users\<username>\.dotnet\tools\.store\dotnet-sonarscanner\4.8.0\dotnet-sonarscanner\4.8.0\tools\netcoreapp3.0\any\`. Le chemin est à adapter en fonction de la version .Net Core à utiliser.
+
+Editer le fichier `SonarQube.Analysis.xml` pour y mettre l'URL et le token généré précédemment&nbsp;:
+
+```xml
+<SonarQubeAnalysisProperties xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+    xmlns="http://www.sonarsource.com/msbuild/integration/2015/1">
+    <Property Name="sonar.host.url">http://localhost:8000</Property>
+    <Property Name="sonar.login">[my-user-token]</Property>
+</SonarQubeAnalysisProperties>
+```
+
+
+== Scanner
+
+Une fois le scanner configuré, le scan s'effectue en 3 étapes&nbsp;:
+
+1. Démarrer le scan avec la commande `dotnet sonarscanner begin /k:"project-key"`
+2. Construire le projet, tester, etc. avec la commande `dotnet build`
+3. Analyser et envoyer à SonarQube avec la commande `dotnet sonarscanner end`
+
+
+
+
+
+
+

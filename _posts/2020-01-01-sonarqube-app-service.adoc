@@ -1,0 +1,321 @@
+= SonarQube sur App Service
+:page-navtitle: SonarQube sur App Service
+:page-excerpt: Faire tourner SonarQube dans Azure sur App Service en utilisant une image Docker
+:page-tags: [docker,sonarqube,azure,app-service]
+
+link:{{ site.baseurl }}{% post_url 2019-12-30-sonarqube-docker-windows %}[SonarQube sur son poste], c'est top&nbsp;!
+Mais il peut être nécessaire de le rendre accessible depuis Internet, depuis Azure DevOps ou simplement partager l'instance entre plusieurs personnes et plusieurs projets.
+
+Il existe différentes stratégies pour héberger SonarQube sur Azure et le rendre accessible&nbsp;:
+
+- https://github.com/RazorSPoint/SonarQubeAsAService[Utiliser App Service et le tomcat intégré]
+- Héberger SonarQube sur une machine virtuelle
+- etc.
+
+J'ai choisi ici d'utiliser Docker pour les raisons déjà évoquées&nbsp;:
+
+- Simplicité&nbsp;: en utilisant l'image officielle de Docker, on peut démarrer sans passer de temps à installer le logiciel
+- Portabilité&nbsp;: je peux utiliser le même genre de configuration sur mon poste ou dans Azure
+
+Il n'existe pas moins de 6 façons d'exécuter Docker dans Azure. J'ai donc retenu d'utiliser App Service dont les coûts pour un App Service Plan Linux ont diminué. Ainsi, nous allons pouvoir faire tourner App Service sur une instance B2 à ~€21.547/mois (offre promotionnelle visiblement).
+
+NOTE: Azure Container Instance nous permettrait de régler plus finement la mémoire et le CPU alloués ainsi que d'arrêter le container au besoin mais App Service intègre une connexion HTTPS par défaut avec un certificat reconnu, ce qui particulièrement intéressant pour des raisons de sécurité évidentes.
+
+toc::[]
+
+== Architecture
+
+L'architecture se composera simplement de&nbsp;:
+
+- Un App Service Plan Linux
+- Un App Service s'appuyant sur une image Docker
+
+Pas de base de données externe.
+
+== Version simple
+
+Dans un premier temps, nous allons procéder à la création d'un container sur la base de https://hub.docker.com/_/sonarqube[l'image officielle] seule.
+Pour ce faire, ouvrir un prompt PowerShell et exécuter les commandes AZ CLI suivantes&nbsp;:
+```powershell
+# Variables à adapter
+$rg="<resource-group-name>" # Nom du groupe de ressources
+$ASP="<app-service-plan>" # Nom de l'App Service Plan
+$appName="<app-name>" # Nom de l'App Service (va déterminer l'URL d'accès)
+
+# Création du groupe de ressources. La localisation est à adapter. Ici "France Central"
+az group create --location "France Central" --name $rg
+
+#Création de l'App Service Plan. 
+az appservice plan create --name $ASP --resource-group $rg --sku B2 --is-linux
+
+# Création de L'App Service sur la base de l'image officielle
+az webapp create --resource-group $rg --plan $ASP --name $appName --deployment-container-image-name sonarqube:8.1-community-beta
+
+# Publication du port 9000
+az webapp config appsettings set  --resource-group $rg --name $appName --settings WEBSITES_PORT=9000
+
+# Configuration du stockage permanent
+az webapp config appsettings set --resource-group $rg --name $appName --settings WEBSITES_ENABLE_APP_SERVICE_STORAGE=true
+
+# Configuration des logs
+az webapp log config --resource-group $rg --name $appName --docker-container-logging filesystem
+
+# Petit redémarrage
+az webapp restart --resource-group $rg --name $appName
+
+# Accès à SonarQube
+start "https://$appName.azurewebsites.net"
+
+# Récupération des logs
+az webapp log tail --resource-group $rg --name $appName
+```
+
+NOTE: Sans l'accès à l'URL, le déploiement de l'image ne semble pas se faire
+
+WARNING: Le premier démarrage, incluant le téléchargement de l'image est assez long.
+
+== Docker Compose
+
+Le support de Docker Compose est encore en preview mais il permet de&nbsp;:
+
+- Contrôler les variables d'environnements
+- Déclarer des volumes
+- Ajouter une base de données externe telle que postgre
+
+Malheureusement, plusieurs problèmes se sont posés, nécessitant la création d'une image personnalisée (mais héritée de l'image officielle).
+L'utilisation d'une image personnalisée a pu apporter le support de https://docs.microsoft.com/fr-fr/azure/app-service/containers/configure-custom-container#enable-ssh[SSH] dans App Service.
+
+Les problèmes étaient, par ordre d'apparition&nbsp;:
+
+. Erreur "max virtual memory areas vm.max_map_count [65530] is too low, increase to at least [262144]". C'est erreur est remontée par Elastic Search.
+ Sachant qu'il n'est pas possible de modifier cette valeur sur un App Service, plusieurs solutions sont possibles&nbsp;:
+  .. Modifier les paramètres d'Elastic Search (cf. https://jira.sonarsource.com/browse/SONAR-12264)
+  .. Empêcher SonarQube de forcer la vérification. https://github.com/SonarSource/sonarqube/blob/8.1.0.31237/server/sonar-main/src/main/java/org/sonar/application/command/EsJvmOptions.java#L114[Cette vérification est forcée] lorsqu'une base autre que H2 est utilisée.
+
+. App Service remplace les "." des variables d'environnement par des "_", ce qui ne m'a pas permis de facilement surchargé les paramètres de SonarQube
+
+. Le container s'exécute en tant que l'utilisateur "sonarqube" par défaut, ce qui est une bonne chose d'un point de vue sécurité, mais ce qui ne permet pas de démarrer le service SSH simplement
+
+Le projet est disponible sur https://github.com/r3dlin3/sonarqube-on-azure/[GitHub]
+
+Commençons donc par la création d'une image Docker.
+
+=== Image Docker
+
+L'image est préparée à partir de l'image officielle `sonarqube:8.1-community-beta`.
+
+.Dockerfile
+[source,dockerfile]
+----
+FROM sonarqube:8.1-community-beta
+
+# ssh
+ENV SSH_PASSWD "root:Docker!"
+USER root
+RUN apt-get update \
+     && apt-get install -y openssh-server dialog --no-install-recommends \
+     && rm -rf /var/lib/apt/lists/* \
+     && echo "$SSH_PASSWD" | chpasswd 
+ADD sshd_config /etc/ssh/
+EXPOSE 9000 2222
+
+COPY --chown=sonarqube:sonarqube run.sh "$SONARQUBE_HOME/bin/"
+----
+
+Il consiste en&nbsp;:
+
+- Devenir root pour pouvoir installer le serveur OpenSSH et exécuter le container en tant que root
+- Personnaliser la configuration d'OpenSSH à partir d'un https://github.com/Azure-App-Service/node/blob/master/10.14/sshd_config[fichier d'exemple]
+- Définir le mot de passe de root
+- Modifier la directive `EXPOSE` pour exposer le serveur OpenSSH en plus de SonarQube
+- La copie du fichier personnalisé `run.sh`
+
+Le fichier `run.sh` reprend quasiment entièrement le https://github.com/SonarSource/docker-sonarqube/blob/master/8/community/run.sh[fichier] de l'image officielle, à quelques détails près.
+
+.run.sh
+[source,bash]
+----
+while IFS='=' read -r envvar_key envvar_value
+do
+    if [[ "$envvar_key" =~ sonar.* ]] || [[ "$envvar_key" =~ ldap.* ]]; then
+        sq_opts+=("-D${envvar_key}=${envvar_value}")
+    fi
+    if [[ "$envvar_key" =~ sonar_* ]]; then
+        # Replacing '_' by '.'
+        envvar_key="$(sed s/_/./g <<<$envvar_key)"
+        sq_opts+=("-D${envvar_key}=${envvar_value}")
+    fi
+done < <(env)
+...
+if [ "$init_only" = false ]; then
+  echo "Starting SSH ..."
+  service ssh start
+  su sonarqube -c 'java -jar "lib/sonar-application-$SONAR_VERSION.jar" -Dsonar.log.console=true "$@"' -- "run.sh" "${sq_opts[@]}" "$@"
+fi
+----
+
+La première partie se charge de restaurer le "." sur les variables d'environnement.
+
+La deuxième partie se charge de&nbsp;:
+
+1. Démarrer le service SSH
+2. Exécuter SonarQube en tant qu'utilisateur sonarqube. En effet, Elastic Search ne démarre pas s'il est exécuté en tant que root. Peut-être existait-il un flag à chercher au fin fond d'une doc mais cela semblait une bonne pratique de ne pas l'exécuter en tant que root.
+
+
+=== Construction de l'image
+
+L'image va être construite et poussée sur un Azure Container Registry.
+
+
+Pour ce faire, dans un prompt PowerShell&nbsp;:
+
+1. Création d'un Azure Container Registry
++
+```powershell
+$acr="myregistry"
+$rg="<resource-group-name>"
+az acr create -n $acr -g $rg --sku Basic --admin-enabled true
+```
++
+2. Login
++
+```powershell
+az acr login -n $acr
+```
++
+3. Récupération des credentials
++
+```powershell
+az acr credential show -n $acr --password-name password
+```
++
+4. Construction de l'image et publication
++
+```powershell
+$tag="8"
+$image="sonarqubeonazure"
+docker build  -t $image:$tag -f ".\8.Dockerfile" .
+docker tag $image:$tag $acr.azurecr.io/$image:$tag
+docker push $acr.azurecr.io/$image:$tag
+```
+
+=== Préparation du Docker Compose
+
+SonarQube fournit un https://github.com/SonarSource/docker-sonarqube/blob/branch-8.1/recipes/docker-compose-postgres-example.yml[exemple] assez proche de la cible
+
+.docker-compose.yml
+[source,yaml]
+----
+version: '3.3'
+
+services:
+  sonarqube:
+    depends_on:
+      - db
+    image: myregistry.azurecr.io/sonarqubeonazure:7
+    ports:
+      - "7000:9000"
+    networks:
+      - sonarnet
+    environment:
+      - sonar.forceAuthentication=true
+      - sonar.telemetry.enable=false
+      - sonar.es.bootstrap.checks.disable=true
+      - SONARQUBE_JDBC_URL=jdbc:postgresql://db:5432/sonar
+      - SONARQUBE_JDBC_USERNAME=sonar
+      - SONARQUBE_JDBC_PASSWORD=sonar
+    volumes:
+      - sonarqube_conf:/opt/sonarqube/conf
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+  
+  db:
+    image: postgres
+    networks:
+      - sonarnet
+    environment:
+      - POSTGRES_USER=sonar
+      - POSTGRES_PASSWORD=sonar
+    volumes:
+      - postgresql:/var/lib/postgresql
+      # This needs explicit mapping due to https://github.com/docker-library/postgres/blob/4e48e3228a30763913ece952c611e5e9b95c8759/Dockerfile.template#L52
+      - postgresql_data:/var/lib/postgresql/data
+  
+networks:
+  sonarnet:
+    driver: bridge
+  
+volumes:
+  sonarqube_conf:
+  sonarqube_data:
+  sonarqube_extensions:
+  postgresql:
+  postgresql_data:
+----
+
+Les différences avec l'exemple concernent&nbsp;:
+
+- L'utilisation des variables d'environnement SONARQUBE_JDBC_USERNAME et SONARQUBE_JDBC_PASSWORD
+- Ajout de la directive `depends_on`
+- Et bien sûr, ajout de la variable d'environnement `sonar.es.bootstrap.checks.disable` pour désactiver le check
+
+On peut alors tester le fichier docker compose à l'aide de la commande&nbsp;:
+
+  docker-compose up
+
+Les containers peuvent être supprimés, ainsi que les volumes avec la commande 
+
+  docker-compose down -v
+
+=== Création de l'App Service avec Docker Compose
+
+Le déploiement d'un App Service avec Docker Compose est assez proche de <<version-simple,la version simple>>.
+
+Ouvrir un prompt PowerShell et exécuter les commandes suivantes&nbsp;:
+
+```powershell
+# Variables à adapter
+$rg="<resource-group-name>" # Nom du groupe de ressources
+$ASP="<app-service-plan>" # Nom de l'App Service Plan
+$appName="<app-name>" # Nom de l'App Service (va déterminer l'URL d'accès)
+$dockerComposePath=".\docker-compose.yml" # Chemin vers le fichier Docker Compose
+
+# Création du groupe de ressources. La localisation est à adapter. Ici "France Central"
+az group create --location "France Central" --name $rg
+
+# Création de l'App Service Plan. 
+az appservice plan create --name $ASP --resource-group $rg --sku B2 --is-linux
+
+# Création de L'App Service à partir du fichier Docker Compose
+az webapp create --resource-group $rg --plan $ASP --name $appName --multicontainer-config-type compose --multicontainer-config-file $dockerComposePath --docker-registry-server-user $acr --docker-registry-server-password "3...9bHTFzFd"
+
+# Publication du port 7000
+az webapp config appsettings set  --resource-group $rg --name $appName --settings WEBSITES_PORT=7000
+
+# Configuration du stockage permanent
+az webapp config appsettings set --resource-group $rg --name $appName --settings WEBSITES_ENABLE_APP_SERVICE_STORAGE=true
+
+az webapp config appsettings set --resource-group $rg --name $appName --settings DOCKER_REGISTRY_SERVER_URL=https://$acr.azurecr.io
+az webapp config appsettings set --resource-group $rg --name $appName --settings DOCKER_REGISTRY_SERVER_USERNAME=$acr
+az webapp config appsettings set --resource-group $rg --name $appName --settings DOCKER_REGISTRY_SERVER_PASSWORD=3...9bHTFzFd
+
+# Configuration des logs
+az webapp log config --resource-group $rg --name $appName --docker-container-logging filesystem
+
+# Petit redémarrage
+az webapp restart --resource-group $rg --name $appName
+
+# Accès à SonarQube
+start "https://$appName.azurewebsites.net"
+
+# Récupération des logs
+az webapp log tail --resource-group $rg --name $appName
+
+```
+
+
+WARNING: Le téléchargement de l'image, le démarrage de l'application sont toujours aussi long. Mais éventuellement, cela marchera...
+
+== Accès SSH
+
+Comme évoqué précédemment, si nécessaire, il est possible d'accéder à SonarQube en SSH en allant à l'adresse https://$appName.scm.azurewebsites.net/webssh/host

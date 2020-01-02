@@ -69,3 +69,26 @@ Après quelques minutes, en accédant à http://localhost:8000, vous aurez l'éc
 image:/assets/img/2019-12-30-SonarQube.png[Login SonarQube]
 
 TIP: cette version 8.1 vient avec tous les analyseurs de code standard (C#, JS, etc.). Des profils de base sont créés, il est donc possible de passer directement à la création d'un link:{{ site.baseurl }}{% post_url 2019-12-31-sonarqube-dotnet %}[projet])
+
+== Arrêter SonarQube
+
+Lorsque SonarQube n'est plus nécessaire, il est possible de l'arrêter&nbsp;:
+
+```shell
+docker stop sonarqube
+```
+
+Et pour reprendre ultérieurement&nbsp;:
+
+```shell
+docker start sonarqube
+```
+
+== Nettoyage
+
+Et si vous voulez nettoyer, 2 commandes pour supprimer le container et l'image&nbsp;:
+
+```shell
+docker rm sonarqube
+docker image rm sonarqube
+```
