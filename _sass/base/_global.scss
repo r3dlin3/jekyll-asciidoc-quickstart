@@ -142,3 +142,9 @@ img[align=right] {
 .text-center {
   text-align: center;
 }
+
+.listingblock .title {
+  color: $link-color;
+  font-style: italic;
+  margin-bottom: -0.6em;
+}
