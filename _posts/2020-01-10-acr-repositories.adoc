@@ -37,7 +37,7 @@ Par exemple, avec l'espace de nom `samples` :
   samples/hello-world:v1
   samples/nginx:v1
 
-=== Carte d'étendue/mappage d'étendue/_scope map_[[scope-map]]
+=== Carte d'étendue/mappage d'étendue/_scope map_
 
 Une _scope map_ (les traductions françaises sont peu satisfaisantes...) permet de lister des référentiels (repository) et des droits associés.
 
@@ -58,7 +58,7 @@ On remerciera ici Microsoft d'apporter ici un peu de confusion dans un monde inf
 
 Bien évidemment, on dissociera d'emblée ce terme avec les standards OAuth2.0/OpenID Connect.
 
-Ici, le terme "jeton d'accès" est la correspondance entre un jeu de crédentiels (1 login de connexion et 2 mots de passe) et une <<scope-map,scope map>>.
+Ici, le terme "jeton d'accès" est la correspondance entre un jeu de crédentiels (1 login de connexion et 2 mots de passe) et une <<carte_détenduemappage_détenduescope_map,scope map>>.
 
 
 == Création d'un ACR
