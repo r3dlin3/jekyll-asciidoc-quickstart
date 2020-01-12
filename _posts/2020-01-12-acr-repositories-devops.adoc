@@ -33,9 +33,9 @@ image:/assets/img/2020-01-12-acr-repositories-devops/2020-01-12-service-connecti
 Renseigner les informations&nbsp;:
 
 - Docker Registry&nbsp;: de la forme `\https://<nom de l'ACR>.azurecr.io`
-- Docker ID: le nom du jeton d'accès <<création_dune_jeton_daccès,précédemment créé>>
-- Docker Password: Un des 2 mots de passe du  jeton d'accès <<création_dune_jeton_daccès,précédemment créé>>
-- Service connection name: A noter pour la suite. J'ai donné le nom du jeton d'accès mais ce n'est pas obligatoire
+- Docker ID&nbsp;: le nom du jeton d'accès <<création_dune_jeton_daccès,précédemment créé>>
+- Docker Password&nbsp;: Un des 2 mots de passe du  jeton d'accès <<création_dune_jeton_daccès,précédemment créé>>
+- Service connection name&nbsp;: A noter pour la suite. J'ai donné le nom du jeton d'accès mais ce n'est pas obligatoire
 
 
 image:/assets/img/2020-01-12-acr-repositories-devops/2020-01-12-service-connections-3.png[Info Service Connection].
