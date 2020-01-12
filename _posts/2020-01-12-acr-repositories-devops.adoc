@@ -1,0 +1,114 @@
+= Utilisation des autorisations d'étendue de référentiel dans ACR avec Azure DevOps
+:page-navtitle: Utilisation des autorisations d'étendue de référentiel dans ACR avec Azure DevOps
+:page-excerpt: Azure Container Registry introduit les autorisations d'étendue de référentiel. Voici un exemple d'utilisation avec Azure DevOps.
+:page-tags: [docker,azure-devops,azure,acr,pipeline,yaml]
+
+Dans un link:{{ site.baseurl }}{% post_url 2020-01-10-acr-repositories %}[précédent article], j'expliquais comment créer une autorisation d'étendue de référentiel dans ACR. Nous allons voir comment l'utiliser dans Azure DevOps.
+
+== Création d'une jeton d'accès
+
+Comme nous l'avions vu, nous pouvons créer un jeton d'accès à partir d'une _scope map_ existante ou en un créer directement avec la _scope map_.
+Suivant la deuxième option, voici la commande&nbsp;:
+
+```shell
+az acr token create -n test-azure-devops -r testscopemap --repository samples/go content/write content/read
+```
+
+== Création d'une connexion de service dans Azure DevOps
+
+Dans Azure DevOps, dans votre projet, aller dans les _settings_ en cliquant sur la route dentée en bas à droite image:/assets/img/2020-01-12-acr-repositories-devops/2020-01-12-settings.png[Menu Settings].
+
+Dans le menu, choisir "Service Connections"&nbsp;:
+
+image:/assets/img/2020-01-12-acr-repositories-devops/2020-01-12-service-connections-menu.png[Menu Service Connections].
+
+Si vous êtes comme moi et qu'il s'agit de votre premier _Service Connection_, cliquer sur "Create service connection"&nbsp;:
+
+image:/assets/img/2020-01-12-acr-repositories-devops/2020-01-12-service-connections-1.png[Créer Service Connection].
+
+Chercher les connexions de type "Docker" et choisir "Docker Registry"&nbsp;:
+
+image:/assets/img/2020-01-12-acr-repositories-devops/2020-01-12-service-connections-2.png[Type de Service Connection].
+
+Renseigner les informations&nbsp;:
+
+- Docker Registry&nbsp;: de la forme `\https://<nom de l'ACR>.azurecr.io`
+- Docker ID: le nom du jeton d'accès <<création_dune_jeton_daccès,précédemment créé>>
+- Docker Password: Un des 2 mots de passe du  jeton d'accès <<création_dune_jeton_daccès,précédemment créé>>
+- Service connection name: A noter pour la suite. J'ai donné le nom du jeton d'accès mais ce n'est pas obligatoire
+
+
+image:/assets/img/2020-01-12-acr-repositories-devops/2020-01-12-service-connections-3.png[Info Service Connection].
+
+Après avoir cliquer sur "Save", la page des connexions d'affiche&nbsp;:
+
+image:/assets/img/2020-01-12-acr-repositories-devops/2020-01-12-service-connections-4.png[Liste des Service Connections].
+
+== Création du pipeline dans Azure DevOps
+
+Dans le menu de gauche, dans le menu "Pipelines"&nbsp;:
+
+image:/assets/img/2020-01-12-acr-repositories-devops/2020-01-12-pipeline-menu.png[Menu Pipelines].
+
+Si comme moi, vous créez le premier pipeline, alors cliquer sur "Create Pipeline"&nbsp;:
+
+image:/assets/img/2020-01-12-acr-repositories-devops/2020-01-12-pipeline-0.png[Create Pipeline].
+
+Mon projet est dans Azure Repos Git, adosser à mon projet.
+Si vous êtes comme dans mon cas, choisir "Azure Repos Git YAML"&nbsp;:
+
+image:/assets/img/2020-01-12-acr-repositories-devops/2020-01-12-pipeline-1.png[Create Pipeline].
+
+Choisir votre repository git&nbsp;:
+
+image:/assets/img/2020-01-12-acr-repositories-devops/2020-01-12-pipeline-2.png[Choix du repository git].
+
+Choisir un "starter pipeline"&nbsp;:
+
+image:/assets/img/2020-01-12-acr-repositories-devops/2020-01-12-pipeline-3.png[Type de Pipeline].
+
+Il est alors possible de renseigner son pipeline
+
+.azure-pipelines.yml
+[source,yaml]
+----
+trigger:
+- master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  imageName: 'samples/go'
+  dockerRegistryServiceConnection: test-azure-devops
+
+steps:
+- task: Docker@2
+  displayName: Login to ACR
+  inputs:
+    command: login
+    containerRegistry: $(dockerRegistryServiceConnection)
+
+- task: Docker@2
+  displayName: Build and push an image to container registry
+  inputs:
+    command: buildAndPush
+    repository: $(imageName)
+    containerRegistry: $(dockerRegistryServiceConnection)
+----
+
+La première tâche va permettre de se connecter vis-à-vis de l'ACR en utilisant le jeton d'accès précédemment créé et les droits associés.
+
+La deuxième tâche construit l'image et pousse l'image dans l'ACR.
+
+Cliquer sur "Save and Run".
+
+== Tout est vert&nbsp;!
+
+Après exécution, on peut voir que la connexion s'est bien passée ainsi que la construction de l'image et le transfert vers l'ACR&nbsp;:
+
+image:/assets/img/2020-01-12-acr-repositories-devops/2020-01-12-pipeline-succes.png[Pipeline en succès].
+
+On peut vérifier dans l'ACR le référentiel ainsi créé&nbsp;:
+
+image:/assets/img/2020-01-12-acr-repositories-devops/2020-01-12-acr-repositories.png[Référentiel de l'ACR].
