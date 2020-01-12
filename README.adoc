@@ -17,3 +17,17 @@ Pour servir localement les pages :
 Avec les brouillons :
     
     bundle exec jekyll serve --drafts
+
+== FAQ Jekyll/Asciidoc
+
+=== Faire référence à un autre article
+
+    link:{{ site.baseurl }}{% post_url 2019-12-30-sonarqube-docker-windows %}[SonarQube sur son poste]
+
+=== HTML Proofer
+
+Réf: https://github.com/18F/html-proofer-docker
+
+    bundle exec jekyll clean
+    bundle exec jekyll build
+    docker run --rm -v $pwd\_site:/mounted-site 18fgsa/html-proofer /mounted-site --url-ignore http://localhost:8000 --internal-domains r3dlin3.github.io
