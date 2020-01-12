@@ -318,4 +318,4 @@ WARNING: Le téléchargement de l'image, le démarrage de l'application sont tou
 
 == Accès SSH
 
-Comme évoqué précédemment, si nécessaire, il est possible d'accéder à SonarQube en SSH en allant à l'adresse https://$appName.scm.azurewebsites.net/webssh/host
+Comme évoqué précédemment, si nécessaire, il est possible d'accéder à SonarQube en SSH en allant à l'adresse \https://$appName.scm.azurewebsites.net/webssh/host
