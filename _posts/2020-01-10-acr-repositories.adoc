@@ -1,0 +1,196 @@
+= Utilisation des autorisations d'étendue de référentiel dans ACR
+:page-navtitle: Utilisation des autorisations d'étendue de référentiel dans ACR
+:page-excerpt: Azure Container Registry introduit les autorisations d'étendue de référentiel. Voici un exemple d'utilisation pour restreindre les droits sur les référentiels d'ACR.
+:page-tags: [docker,azure,acr]
+
+Jusqu'à aujourd'hui, on pouvait gérer les droits Azure Container Registry grâce aux mécanismes RBAC standards.
+Par exemple&nbsp;:
+
+- https://docs.microsoft.com/fr-fr/azure/role-based-access-control/built-in-roles#acrpull[AcrPull] pour pouvoir récupérer (_pull_) une image
+- https://docs.microsoft.com/fr-fr/azure/role-based-access-control/built-in-roles#acrpush[AcrPush] pour pouvoir envoyer (_push_) une image
+
+Avec les *autorisations d'étendu de référentiel* (pas sûr de la traduction...), il est possible de de restreindre les droits à un ou des référentiels (_repositories_).
+
+WARNING: Cette fonctionnalité n'est disponible qu'avec un ACR Premium.
+
+Nous allons voir comment&nbsp;:
+
+- Créer un ACR
+- Créer des autorisations d'étendue de référentiel
+- Utiliser ces autorisations d'étendue de référentiel
+
+CAUTION: Au moment de la rédaction de cet article, cette fonctionnalité est récente et toujours en prévisualisation.
+
+== Concepts
+
+=== référentiels/_repositories_/espace de noms/namespace
+Les référentiels sont des collections d'images ayant le même nom, mais des étiquettes différentes.
+Par exemple, les trois images suivantes se trouvent dans le référentiel "acr-helloworld"&nbsp;:
+
+  acr-helloworld:latest
+  acr-helloworld:v1
+  acr-helloworld:v2
+
+Les noms des référentiels peuvent également comprendre des *espaces de noms*. 
+Par exemple, avec l'espace de nom `samples` :
+
+  samples/hello-world:v1
+  samples/nginx:v1
+
+=== Carte d'étendue/mappage d'étendue/_scope map_[[scope-map]]
+
+Une _scope map_ (les traductions françaises sont peu satisfaisantes...) permet de lister des référentiels (repository) et des droits associés.
+
+Les droits possibles sont&nbsp;:
+
+- `content/write`&nbsp;: droit d'envoyer une image (_push_)
+- `content/read`&nbsp;: droit de récupérer une image (_pull_)
+- `metadata/read`&nbsp;: droit de lire les métadonnées comme les balises (_tags_)
+- `metadata/write`&nbsp;: droit de mettre à jour les métadonnées d'une image
+- `content/delete`&nbsp;: droit de supprimer une image
+
+CAUTION: Pour pouvoir pousser une image, le droit `content/read` est nécessaire en même temps que le droit `content/write`.
+
+
+=== Jeton d’accès
+
+On remerciera ici Microsoft d'apporter ici un peu de confusion dans un monde informatique qui n'en manque pas.
+
+Bien évidemment, on dissociera d'emblée ce terme avec les standards OAuth2.0/OpenID Connect.
+
+Ici, le terme "jeton d'accès" est la correspondance entre un jeu de crédentiels (1 login de connexion et 2 mots de passe) et une <<scope-map,scope map>>.
+
+
+== Création d'un ACR
+
+Les commandes seront données en Azure CLI *exécutées sous un prompt PowerShell*.
+
+Commençons par créer le groupe de ressources&nbsp;:
+
+```shell
+az group create -l francecentral -n rg-test-acr
+```
+
+Créons maintenant l'ACR en premium
+
+```shell
+az acr create -n testscopemap -g rg-test-acr --sku Premium
+```
+
+NOTE: le nom de l'ACR doit être unique globalement, c'est-à-dire pour tous les clients de Microsoft
+
+== Création d'une _scope map_ et du jeton d'accès
+
+Par la suite, je vais construire une image en Go. 
+Je vais donc créer un référentiel pour cette image&nbsp;: `samples/go`. Il me faudra les droits de lecture et écriture pour pouvoir pousser l'image.
+```shell
+az acr scope-map create -n GoSampleScopeMap -r testscopemap --repository samples/go content/write content/read --description "Scope map for go samples"
+```
+
+Le résultat de la commande est comme suit&nbsp;:
+
+```json
+{
+  "actions": [
+    "repositories/samples/go/content/write",
+    "repositories/samples/go/content/read"
+  ],
+  "creationDate": "2020-01-12T15:52:01.191235+00:00",
+  "description": "Scope map for go samples",
+  "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/resourceGroups/rg-test-acr/providers/Microsoft.ContainerRegistry/registries/testscopemap/scopeMaps/GoSampleScopeMap",
+  "name": "GoSampleScopeMap",
+  "provisioningState": "Succeeded",
+  "resourceGroup": "rg-test-acr",
+  "scopeMapType": "UserDefined",
+  "type": "Microsoft.ContainerRegistry/registries/scopeMaps"
+}
+```
+
+Les _scope maps_ peuvent être mis à jour ultérieurement pour ajouter ou supprimer d'autres référentiels avec la commande https://docs.microsoft.com/en-us/cli/azure/acr/scope-map?view=azure-cli-latest#az-acr-scope-map-update[`az acr scope-map update`].
+
+Pour créer un jeton d'accès pour la _scope map_ créé précédemment, exécuter la commande suivante&nbsp;:
+
+```shell
+az acr token create -n TestDocker -r testscopemap --scope-map GoSampleScopeMap
+```
+
+Le retour est alors&nbsp;:
+
+```json
+{
+  "creationDate": "2020-01-12T15:56:42.673384+00:00",
+  "credentials": {
+    "certificates": [],
+    "passwords": [
+      {
+        "creationTime": "2020-01-12T15:56:54.807783+00:00",
+        "expiry": null,
+        "name": "password1",
+        "value": "/qY1exMos...GNGYp43iPMe"
+      },
+      {
+        "creationTime": "2020-01-12T15:56:54.807783+00:00",
+        "expiry": null,
+        "name": "password2",
+        "value": "bODh6ePvNXK...E25POt+ba"
+      }
+    ],
+    "username": "TestDocker"
+  },
+  "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/resourceGroups/rg-test-acr/providers/Microsoft.ContainerRegistry/registries/testscopemap/tokens/TestDocker",
+  "name": "TestDocker",
+  "objectId": null,
+  "provisioningState": "Succeeded",
+  "resourceGroup": "rg-test-acr",
+  "scopeMapId": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/resourceGroups/rg-test-acr/providers/Microsoft.ContainerRegistry/registries/testscopemap/scopeMaps/GoSampleScopeMap",
+  "status": "enabled",
+  "type": "Microsoft.ContainerRegistry/registries/tokens"
+}
+```
+
+2 mots de passe sont générés. Bien les conserver pour la suite.
+
+Il est possible de créer la _scope map_ et le jeton d'accès en une seule commande&nbsp;:
+
+```shell
+az acr token create -n TestDocker2 -r testscopemap --repository samples/go content/write content/read
+```
+
+NOTE: Dans ce cas, le nom de la _scope map_ est générée automatiquement, de la forme `<NomToken>-scope-map`
+
+Finalement, il est possible de regénérer un mot de passe et lui assigner une durée de validité (par défaut, la durée du mot de passe est infinie).
+La commande suivante regénère le premier mot de passe pour une durée de validité de 30 jours&nbsp;:
+
+```shell
+az acr token credential generate --name TestDocker2 --registry testscopemap --days 30 --password1 --query 'passwords[0].value' --output tsv
+```
+
+== Utiliser les autorisations d'étendue de référentiel
+
+Les autorisations d'étendue de référentiel sont utilisées au moment de la connexion à l'ACR.
+
+J'ai une image locale `hello-go:latest` à pousser dans le référentiel défini précédemment.
+
+La première étape consiste à donner le bon label à l'image.
+Pour rappel, dans mon exemple `testscopemap` est le nom de l'ACR.
+
+```shell
+docker tag hello-go:latest testscopemap.azurecr.io/samples/go:1
+```
+
+
+Pour se connecter, dans un prompt PowerShell&nbsp;:
+```powershell
+$TOKEN_NAME="TestDocker"
+$TOKEN_PWD="/qY1exMos...GNGYp43iPMe"
+$ACR="testscopemap"
+docker login --username $TOKEN_NAME -p $TOKEN_PWD "$ACR.azurecr.io"
+```
+
+Il ne reste plus qu'à pousser&nbsp;
+
+```shell
+docker push testscopemap.azurecr.io/samples/go:1
+```
+
+Et voilà&nbsp;!
