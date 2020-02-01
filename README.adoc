@@ -24,6 +24,14 @@ Avec les brouillons :
 
     link:{{ site.baseurl }}{% post_url 2019-12-30-sonarqube-docker-windows %}[SonarQube sur son poste]
 
+=== Bloc de code source
+
+.azure-pipelines.yml
+[source,yaml]
+----
+----
+
+
 === HTML Proofer
 
 Réf: https://github.com/18F/html-proofer-docker
