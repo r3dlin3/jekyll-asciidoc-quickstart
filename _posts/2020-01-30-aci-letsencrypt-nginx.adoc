@@ -562,7 +562,7 @@ J'ai donc triché en utilisant la forme Exec et la commande `sh -c`&nbsp;:
     "sh",
     "-c",
     "envsubst '$NGINX_HOST' < /tmp/nginx/mysite.template > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"
-],
+]
 ----
 
 
@@ -799,7 +799,7 @@ Ainsi, dans l'ARM template, l'utilisation de l'image `microsoft/azure-cli` se fa
 {
     "name": "AZURE_STORAGE_KEY",
     "value": "[listKeys(parameters('storageAccountName'),'2017-10-01').keys[0].value]"
-},
+}
 ----
 
 Ou même, la commande de génération de certificat avec l'image `neilpang/acme.sh` qui utilise une variable de mon ARM template:
@@ -810,7 +810,7 @@ Ou même, la commande de génération de certificat avec l'image `neilpang/acme.
     "--standalone",
     "-d",
     "[variables('fqdn')]"
-],
+]
 ----
 
 La https://docs.microsoft.com/fr-fr/azure/templates/Microsoft.ContainerInstance/2018-10-01/containerGroups[référence ARM] est relativement bien documentée.
