@@ -1,0 +1,523 @@
+= Grafana et InfluxDB sur Azure Container Instances
+:page-navtitle: Grafana et InfluxDB sur Azure Container Instances
+:page-excerpt: Azure Container Instances permet d'exécuter des containers. Voici un petit exemple de groupe de containers avec Grafana et InfluxDB.
+:page-tags: [docker,aci,azure,influxdb,grafana]
+
+Azure Container Instances (ACI) fait partie des nombreuses façons d'exécuter des containers sur Azure.
+Un des avantages d'ACI par rapport à App Service (présenté dans un link:{{ site.baseurl }}{% post_url 2020-01-01-sonarqube-app-service %}[précédent article]) est la 
+capacité à exposer plusieurs ports.
+
+Ainsi, nous allons exposer un https://grafana.com/[Grafana] et une base https://www.influxdata.com/products/influxdb-overview/[InfluxDB].
+https://grafana.com/[Grafana] est une solution open source pour la création de tableau de bord.
+https://www.influxdata.com/products/influxdb-overview/[InfluxDB] est son compagnon de choix pour le stockage de série temporelle (_time series_).
+
+NOTE: Dans cet article, pour des raisons de simplicité, je n'exposerai pas Grafana en HTTPS. 
+Il faudra se référer à mon précédent article link:{{ site.baseurl }}{% post_url 2020-01-30-aci-letsencrypt-nginx %}[Certificat Let's Encrypt sur Azure Container Instances et NGINX] pour la mise en place de HTTPS.
+
+== La solution
+
+Comme évoqué, la solution tournera sur Azure Container Instances. 
+
+Grafana a besoin d'une base de données pour sa configuration. Grafana https://grafana.com/docs/grafana/latest/installation/requirements/#supported-databases[supporte 3 bases de données]&nbsp;:
+
+- SQLite
+- MySQL
+- PostgreSQL
+
+Pour éviter de perdre la configuration à chaque redémarrage, la persistance des données est assurée par Azure Files. Malheureusement, à cause de certaines https://docs.microsoft.com/fr-fr/rest/api/storageservices/features-not-supported-by-the-azure-file-service[limitations]
+
+CAUTION: Il n'a pas été possible de faire persister SQLite (embarqué par défaut dans Grafana) (une sombre histoire de verrou) ou d'utiliser l'image de base de PostgreSQL (une sombre histoire de propriétaire sur des fichiers).
+
+On utilisera donc l'image docker de https://hub.docker.com/_/mysql[MySQL].
+
+NOTE: MySQL ne sera pas exposé sur Internet
+
+== Les sources de données Grafana
+
+Il est https://grafana.com/docs/grafana/v6.5/administration/provisioning/#datasources[possible de fournir une liste de sources de données] par fichier YAML.
+
+Nous allons utiliser ce mécanisme pour configurer automatiquement InfluxDB.
+
+Ainsi la configuration de la source de données en YAML sera&nbsp;:
+
+.influxdb.yaml
+[source,yaml]
+----
+apiVersion: 1
+
+deleteDatasources:
+  - name: InfluxDB
+    orgId: 1
+
+datasources:
+  - name: InfluxDB
+    type: influxdb
+    access: proxy
+    orgId: 1
+    database: PERF
+    user: influxadmin
+    password: influxadmin
+    url: http://localhost:8086
+----
+
+Ce fichier sera passé comme secret.
+On utilisera la fonction `base64` d'ARM template pour passer le fichier YAML en secret.
+
+== Note sur les groupes de container dans Azure Container Instances
+
+Azure Container Instances utilisent un format de données "propriétaire" qui n'est ni Docker Compose, ni un fichier de déploiement Kubernetes.
+
+Le point important à garder en tête est que l'on va déclarer chaque port exposer un container, puis ensuite quels sont les ports exposés par le groupe de container. Il n'est pas possible de mapper des ports, comme rappeler dans la https://docs.microsoft.com/fr-fr/azure/container-instances/container-instances-troubleshooting#container-group-ip-address-may-not-be-accessible-due-to-mismatched-ports[FAQ].
+
+La communication entre les containers se fait non pas en utilisant le nom du container (comme dans Docker Compose) mais *localhost*&nbsp;!
+
+Ainsi Grafana pointera dans sa configuration vers localhost:3036 pour sa base de données et localhost:8086 pour le cas d'InfluxDB.
+
+== Automatisation du déploiement
+
+Il est possible d'utiliser du YAML ou de l'ARM template.
+Comme évoqué dans mon link:{{ site.baseurl }}{% post_url 2020-01-30-aci-letsencrypt-nginx %}#conclusion[précédent article], je recommande fortement l'utilisation d'ARM template qui va permettre de rendre dynamique certains paramètres de déploiement.
+
+Pour autant, je vais limiter les paramètres possibles.
+
+=== Variables d'environnement
+
+Les variables d'environnement que nous allons utiliser sont décrites ci-dessous.
+
+.MySQL
+|===
+|Nom |Description
+|MYSQL_DATABASE|Nom de la base crée au démarrage
+|MYSQL_USER, MYSQL_PASSWORD|Nom de l'utilisateur et mot de passe propriétaire de la base
+|MYSQL_RANDOM_ROOT_PASSWORD|Va générer un mot de passe aléatoire pour l'utilisateur root
+|===
+
+D'autres variables d'environnement sont disponibles et sont décrites sur la https://hub.docker.com/_/mysql[page] de l'image Docker de MySQL.
+
+.InfluxDB
+|===
+|Nom |Description
+|INFLUXDB_DB|Nom de la base crée au démarrage
+|INFLUXDB_ADMIN_USER, INFLUXDB_ADMIN_PASSWORD|Nom de l'utilisateur et mot de passe administrateur de la base
+|===
+
+D'autres variables d'environnement sont disponibles et sont décrites sur la https://hub.docker.com/_/influxdb[page] de l'image Docker d'InfluxDB.
+
+Grafana dispose d'un mécanisme très extensible qui permet de définir n'importe quelle paramètre https://grafana.com/docs/grafana/latest/installation/configuration/#using-environment-variables[à partir de variables d'environnement].
+
+
+.Grafana
+|===
+|Nom |Description
+|`GF_DATABASE_URL` | URL de connexion à MySQL
+|`GF_SECURITY_ADMIN_PASSWORD` |Mot de passe de l'utilisateur admin (cela évitera de passer dans l'assistant de configuration)
+|===
+
+Dans mon link:{{ site.baseurl }}{% post_url 2020-01-30-aci-letsencrypt-nginx %}[précédent article], j'avais également utilisé la variable `GF_SERVER_DOMAIN` pour configurer Grafana derrière NGINX.
+
+=== ARM template
+
+L'ARM template et les paramètres sont définis ci-dessous.
+
+.grafana.json
+[source,json]
+----
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "grafanaAdminPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Password for Grafana admin."
+            }
+        },
+        "containerGroupName": {
+            "type": "string",
+            "metadata": {
+                "description": "Container Group name."
+            }
+        },
+        "dnsLabel": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "DNS label used to by the container group. The FQDN is <dnsLabel>.<region>.azurecontainer.io"
+            }
+        },
+        "storageAccountName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of the Storage Account"
+            }
+        },
+        "storageAccountType": {
+            "type": "string",
+            "defaultValue": "Standard_LRS",
+            "allowedValues": [
+                "Standard_LRS",
+                "Standard_GRS",
+                "Standard_ZRS",
+                "Premium_LRS"
+            ],
+            "metadata": {
+                "description": "Storage Account type"
+            }
+        },
+        "accessTier": {
+            "type": "string",
+            "defaultValue": "Hot",
+            "allowedValues": [
+                "Hot",
+                "Cool"
+            ],
+            "metadata": {
+                "description": "The access tier used for billing."
+            }
+        },
+        "storageAccountKind": {
+            "type": "string",
+            "defaultValue": "StorageV2",
+            "allowedValues": [
+                "StorageV2",
+                "Storage",
+                "BlobStorage",
+                "FileStorage",
+                "BlockBlobStorage"
+            ],
+            "metadata": {
+                "description": "Storage Account type"
+            }
+        },
+        "advancedThreatProtectionEnabled": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Enable or disable Advanced Threat Protection."
+            }
+        },
+        "shares": {
+            "type": "array",
+            "metadata": {
+                "description": "List of the file share names."
+            }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "The region to deploy the resources into"
+            }
+        },
+        "tagValues": {
+            "type": "object",
+            "defaultValue": {
+            }
+        }
+    },
+    "variables": {
+        "dnsLabel": "[if(empty(parameters('dnsLabel')), parameters('containerGroupName'), parameters('dnsLabel'))]",
+        "fqdn": "[toLower(concat(variables('dnsLabel'),'.',replace(parameters('location'), ' ', ''),'.azurecontainer.io'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[parameters('storageAccountName')]",
+            "location": "[parameters('location')]",
+            "apiVersion": "2018-07-01",
+            "sku": {
+                "name": "[parameters('storageAccountType')]"
+            },
+            "kind": "[parameters('storageAccountKind')]",
+            "properties": {
+                "accessTier": "[parameters('accessTier')]",
+                "encryption": {
+                    "keySource": "Microsoft.Storage",
+                    "services": {
+                        "blob": {
+                            "enabled": true
+                        },
+                        "file": {
+                            "enabled": true
+                        }
+                    }
+                },
+                "supportsHttpsTrafficOnly": true
+            },
+            "resources": [
+                {
+                    "condition": "[parameters('advancedThreatProtectionEnabled')]",
+                    "type": "providers/advancedThreatProtectionSettings",
+                    "name": "Microsoft.Security/current",
+                    "apiVersion": "2017-08-01-preview",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Storage/storageAccounts/', parameters('storageAccountName'))]"
+                    ],
+                    "properties": {
+                        "isEnabled": true
+                    }
+                }
+            ]
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
+            "apiVersion": "2019-04-01",
+            "name": "[concat(parameters('storageAccountName'), '/default/', parameters('shares')[copyIndex()])]",
+            "copy": {
+                "name": "sharecopy",
+                "count": "[length(parameters('shares'))]"
+            },
+            "dependsOn": [
+                "[parameters('storageAccountName')]"
+            ]
+        },
+        {
+            "name": "[parameters('containerGroupName')]",
+            "type": "Microsoft.ContainerInstance/containerGroups",
+            "dependsOn": [
+                "sharecopy"
+            ],
+            "apiVersion": "2018-10-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "containers": [
+                    {
+                        "name": "mysql",
+                        "properties": {
+                            "image": "mysql",
+                            "environmentVariables": [
+                                {
+                                    "name": "MYSQL_USER",
+                                    "value": "grafana"
+                                },
+                                {
+                                    "name": "MYSQL_PASSWORD",
+                                    "secureValue": "grafana"
+                                },
+                                {
+                                    "name": "MYSQL_RANDOM_ROOT_PASSWORD",
+                                    "value": "yes"
+                                },
+                                {
+                                    "name": "MYSQL_DATABASE",
+                                    "value": "grafana"
+                                }
+                            ],
+                            "resources": {
+                                "requests": {
+                                    "cpu": 0.5,
+                                    "memoryInGb": 0.5
+                                }
+                            },
+                            "ports": [
+                                {
+                                    "port": 3306
+                                },
+                                {
+                                    "port": 443
+                                }
+                            ],
+                            "volumeMounts": [
+                                {
+                                    "name": "mysql-data",
+                                    "mountPath": "/var/lib/mysql"
+                                }
+                            ]
+                        }
+                    },
+                                        {
+                        "name": "influxdb",
+                        "properties": {
+                            "image": "influxdb",
+                            "environmentVariables": [
+                                {
+                                    "name": "INFLUXDB_DB",
+                                    "value": "PERF"
+                                },
+                                {
+                                    "name": "INFLUXDB_ADMIN_USER",
+                                    "value": "influxadmin"
+                                },
+                                {
+                                    "name": "INFLUXDB_ADMIN_PASSWORD",
+                                    "secureValue": "influxadmin"
+                                }
+                            ],
+                            "resources": {
+                                "requests": {
+                                    "cpu": 0.5,
+                                    "memoryInGb": 0.5
+                                }
+                            },
+                            "ports": [
+                                {
+                                    "port": 8086
+                                }
+                            ],
+                            "volumeMounts": [
+                                {
+                                    "name": "influxdb-volume",
+                                    "mountPath": "/var/lib/influxdb"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "grafana",
+                        "properties": {
+                            "image": "grafana/grafana",
+
+                            "ports": [
+                                {
+                                    "port": 3000
+                                }
+                            ],
+                            "environmentVariables": [
+                                {
+                                    "name": "GF_SECURITY_ADMIN_PASSWORD",
+                                    "secureValue": "[parameters('grafanaAdminPassword')]"
+                                },
+                                {
+                                    "name": "GF_DATABASE_URL",
+                                    "secureValue": "mysql://grafana:grafana@localhost:3306/grafana"
+                                }
+                            ],
+                            "resources": {
+                                "requests": {
+                                    "cpu": 1,
+                                    "memoryInGb": 0.5
+                                }
+                            },
+                            "volumeMounts": [
+                                {
+                                    "name": "grafana-volume",
+                                    "mountPath": "/var/lib/grafana"
+                                },
+                                {
+                                    "name": "grafana-provisioning",
+                                    "mountPath": "/etc/grafana/provisioning/datasources"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "osType": "Linux",
+                "restartPolicy": "OnFailure",
+                "ipAddress": {
+                    "type": "Public",
+                    "ports": [
+                        {
+                            "port": 3000
+                        },
+                        {
+                            "port": 8086
+                        }
+                    ],
+                    "dnsNameLabel": "[variables('dnsLabel')]"
+                },
+                "volumes": [
+                    {
+                        "name": "mysql-data",
+                        "azureFile": {
+                            "shareName": "mysql-data",
+                            "storageAccountName": "[parameters('storageAccountName')]",
+                            "storageAccountKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts',parameters('storageAccountName')),'2017-10-01').keys[0].value]"
+                        }
+                    },
+                    {
+                        "name": "influxdb-volume",
+                        "azureFile": {
+                            "shareName": "influxdb-volume",
+                            "storageAccountName": "[parameters('storageAccountName')]",
+                            "storageAccountKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts',parameters('storageAccountName')),'2017-10-01').keys[0].value]"
+                        }
+                    },
+                    {
+                        "name": "grafana-volume",
+                        "azureFile": {
+                            "shareName": "grafana-volume",
+                            "storageAccountName": "[parameters('storageAccountName')]",
+                            "storageAccountKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts',parameters('storageAccountName')),'2017-10-01').keys[0].value]"
+                        }
+                    },
+                    {
+                        "name": "grafana-provisioning",
+                        "secret": {
+                            "influxdb.yaml": "[base64('apiVersion: 1
+
+deleteDatasources:
+  - name: InfluxDB
+    orgId: 1
+
+datasources:
+  - name: InfluxDB
+    type: influxdb
+    access: proxy
+    orgId: 1
+    database: PERF
+    user: influxadmin
+    password: influxadmin
+    url: http://localhost:8086
+                            ')]"
+                        }
+                    }
+                ]
+            }
+        }
+
+    ],
+    "outputs": {
+    }
+}
+----
+
+.grafana.parameters.json
+[source,json]
+----
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "grafanaAdminPassword": {
+            "value": "grafanapwd"
+        },
+        "containerGroupName": {
+            "value": "test-grafana-influxdb"
+        },
+        "storageAccountName": {
+            "value": "stotestacmenginx"
+        },
+        "shares": {
+            "value": [
+                "mysql-data",
+                "influxdb-volume",
+                "grafana-volume"
+            ]
+        },
+        "location": {
+            "value": "West Europe"
+        }
+    }
+}
+----
+
+Il est possible de déployer par PowerShell&nbsp;:
+```PowerShell
+ New-AzResourceGroupDeployment -ResourceGroupName $rg -TemplateFile .\influxdb-grafana.json -TemplateParameterFile .\influxdb-grafana.parameters.json -Verbose
+```
+
+Egalement, en Az CLI&nbsp;:
+
+```shell
+az group deployment create --resource-group $rg --template-file ./influxdb-grafana.json --parameters @influxdb-grafana.parameters.json --handle-extended-json-format
+```
+
+Il faudra bien penser au paramètre `--handle-extended-json-format` qui apporte le support du multiligne en JSON.
+
+=== Conclusion
+
+En quelques minutes, il est possible de monter un Grafana et une base InfluxDB. 
+
+Les cas d'usage d'InfluxDB et Grafana ne manquent pas&nbsp;: IoT, surveillance applicative, etc.
+Un cas d'utilisation pourrait être aussi des tests de charge avec https://pypi.org/project/locust-influx/[Locust]. 
+A suivre...
