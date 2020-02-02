@@ -480,6 +480,17 @@ WARNING: Au moment de la rédaction de cet article, Azure Container Instances n'
 
 Il suffit alors de déployer cet ARM template et ses paramètres. Je recommande l'utilisation de la cmdlet PowerShell `New-AzResourceGroupDeployment`.
 
+Une fois le déploiement réalisé, il faut supprimer les ACI manuellement&nbsp;:
+
+```shell
+rg=XXX
+cn=testacmenginx
+az container delete -g $rg -y -n ${cn}
+az container delete -g $rg -y -n ${cn}-cli-private
+az container delete -g $rg -y -n ${cn}-cli-certs
+az container delete -g $rg -y -n ${cn}-install
+```
+
 == Etape 2&nbsp;: utilisation des certificats par NGINX
 
 Dans cette étape, nous allons déployer un NGINX avec SSL.
