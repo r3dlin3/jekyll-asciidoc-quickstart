@@ -23,7 +23,7 @@ NOTE: Toutes les commandes PowerShell données ci-dessous sont à exécuter dans
 
 == Installation d'Hyper-V
 
-L'installation d'Hyper-V peut faire simplement en PowerShell grâce à la ligne de commande
+L'installation d'Hyper-V peut faire simplement en PowerShell grâce à la ligne de commande suivante&nbsp;:
 
 ```PowerShell
 Install-WindowsFeature -Name Hyper-V,Containers -IncludeAllSubFeature -IncludeManagementTools
@@ -33,7 +33,7 @@ En principe, un redémarrage est nécessaire. Ceci étant, on peut attendre la f
 
 == Installation de Docker
 
-Toujours en PowerShell:
+Toujours en PowerShell&nbsp;:
 
 ```PowerShell
 Install-Module -Name DockerMsftProvider -Repository PSGallery -Force
@@ -46,9 +46,9 @@ En forçant la mise à jour, on obtient une version 19.03, beaucoup plus accepta
 == Groupe de sécurité
 
 Par défaut, il faut être administrateur de la machine pour pouvoir communiquer avec le démon Docker, pour construire ou exécuter une image par exemple.
-Il est cependant possible d'autoriser un groupe spécifique, qu'on appelera "docker".
+Il est cependant possible d'autoriser un groupe spécifique, qu'on appellera "docker".
 
-Les commandes PowerShell ci-dessous permettent de créer le groupe, s'il n'existe pas déjà&nbsp;
+Les commandes PowerShell ci-dessous permettent de créer le groupe, s'il n'existe pas déjà&nbsp;:
 
 ```PowerShell
 $dockerGroup = "docker"
@@ -101,7 +101,7 @@ $configfile | Out-File -FilePath C:\ProgramData\docker\config\daemon.json -Encod
 == Noyau
 
 Un noyau LinuxKit est nécessaire. Les commandes suivantes vont télécharger le noyau à partir de la dernière release et le pousser dans le bon répertoire.
-Ecraser le contenu du de `C:\Program Files\Linux Containers\`, notamment le fichier `initrd` faisait que rien ne fonctionnait.
+Ecraser le contenu du répertoire `C:\Program Files\Linux Containers\`, notamment le fichier `initrd` faisait que rien ne fonctionnait.
 
 ```PowerShell
 $Archive = Join-Path $env:TEMP "release.zip"
