@@ -1,0 +1,120 @@
+= Des containers Linux sur Windows Server 2019 
+:page-navtitle: Des containers Linux sur Windows Server 2019
+:page-excerpt: La documentation Microsoft est légère sur l'utilisation des containers Linux sur Windows Server 2019. Voici un article rapide qui décrive les étapes nécessaires.
+:page-tags: [docker,2019,Windows Server 2019]
+
+== Introduction
+
+Microsoft fournit de la https://docs.microsoft.com/en-us/virtualization/windowscontainers/quick-start/set-up-environment?tabs=Windows-Server[doc] pour installer Docker sur Windows Server 2019.
+Dès que l'on parle Linux, on est renvoyé vers de la https://docs.microsoft.com/en-us/virtualization/windowscontainers/deploy-containers/linux-containers[doc] pour Windows 10, qui pousse vers l'utilisation de Docker Desktop.
+En outre, la https://docs.docker.com/docker-for-windows/install/[doc de Docker] est référencée.
+
+Pour autant, je voulais une solution qui fonctionne sans Docker Desktop, qui requiert aujourd'hui un compte, ce qui ne convient pas dans un contexte "Serveur".
+
+Cette page est TRES fortement inspirée d'un https://bcthomas.com/2019/02/getting-started-with-linux-containers-on-windows-server-2019/#enable-linux-container-support[article] de https://twitter.com/NZ_BenThomas[Ben Thomas].
+Il s'agit en premier lieu d'une traduction. J'ai cependant adapté quelques étapes car cela n'a pas fonctionné pour moi.
+
+La procédure a été testée sur Windows Server 2019 1809, qui bénéficie d'un support long terme.
+
+WARNING: Pour faire ce test sur une VM Azure, il faut s'assurer que la VM supporte la virtualisation imbriquée. La liste des types de VM supportant la virtualisation imbriquée est disponible sur le site de Microsoft.
+On pourra faire des tests avec les VM de série D_v3 ou Ds_v3 par exemple.
+
+NOTE: Toutes les commandes PowerShell données ci-dessous sont à exécuter dans un prompt PowerShell *En tant qu'administrateur*.
+
+== Installation d'Hyper-V
+
+L'installation d'Hyper-V peut faire simplement en PowerShell grâce à la ligne de commande
+
+```PowerShell
+Install-WindowsFeature -Name Hyper-V,Containers -IncludeAllSubFeature -IncludeManagementTools
+```
+
+En principe, un redémarrage est nécessaire. Ceci étant, on peut attendre la fin de la procédure.
+
+== Installation de Docker
+
+Toujours en PowerShell:
+
+```PowerShell
+Install-Module -Name DockerMsftProvider -Repository PSGallery -Force
+Install-Package -Name docker -ProviderName DockerMsftProvider -Update -Force
+```
+
+Pour une raison que j'ignore, docker vient avec une version 17.0. 
+En forçant la mise à jour, on obtient une version 19.03, beaucoup plus acceptable.
+
+== Groupe de sécurité
+
+Par défaut, il faut être administrateur de la machine pour pouvoir communiquer avec le démon Docker, pour construire ou exécuter une image par exemple.
+Il est cependant possible d'autoriser un groupe spécifique, qu'on appelera "docker".
+
+Les commandes PowerShell ci-dessous permettent de créer le groupe, s'il n'existe pas déjà&nbsp;
+
+```PowerShell
+$dockerGroup = "docker"
+$g = Get-LocalGroup $dockerGroup -EA 0
+if ($g) {
+   Write-Host "Group $dockerGroup already exists"
+}
+else {
+   Write-Host "Group $dockerGroup does not exist"
+   New-LocalGroup -Name "docker"
+}
+```
+
+== Activer le support des containers Linux
+
+L'activation des containers Linux peut se faire avec la commande PowerShell suivante&nbsp;:
+
+```PowerShell
+[Environment]::SetEnvironmentVariable("LCOW_SUPPORTED", "1", "Machine")
+```
+
+Le moteur Docker sous Windows 2019 peut gérer des images Windows ou Linux. Pour exécuter des images Linux il est nécessaire de préciser le paramètre `--platform=linux`.
+Il est cependant possible de définir la plateforme par défaut avec la commande suivante&nbsp;:
+
+```PowerShell
+[Environment]::SetEnvironmentVariable("LCOW_API_PLATFORM_IF_OMITTED", "linux", "Machine")
+```
+
+== Configuration du moteur
+
+Microsoft 
+https://docs.microsoft.com/en-us/virtualization/windowscontainers/manage-docker/configure-docker-daemon[décrit] toutes les options disponibles.
+
+Nous aurons besoin de&nbsp;:
+
+- Activer le mode expérimental
+- Configurer le groupe de sécurité
+
+Encore une fois, la commande PowerShell
+```PowerShell
+$configfile = @"
+{
+    "experimental": true,
+    "group": "docker"
+}
+"@
+$configfile | Out-File -FilePath C:\ProgramData\docker\config\daemon.json -Encoding ascii -Force
+```
+
+== Noyau
+
+Un noyau LinuxKit est nécessaire. Les commandes suivantes vont télécharger le noyau à partir de la dernière release et le pousser dans le bon répertoire.
+Ecraser le contenu du de `C:\Program Files\Linux Containers\`, notamment le fichier `initrd` faisait que rien ne fonctionnait.
+
+```PowerShell
+$Archive = Join-Path $env:TEMP "release.zip"
+Invoke-WebRequest -Uri "https://github.com/linuxkit/lcow/releases/download/v4.14.35-v0.3.9/release.zip" -UseBasicParsing -OutFile $Archive
+$target = Join-Path $env:TEMP "Linux Containers"
+md $target
+Expand-Archive $Archive -DestinationPath $target
+$kernel = Join-Path $target "kernel"
+Copy-Item $kernel "$Env:ProgramFiles\Linux Containers\."
+```
+
+== Test
+
+Après redémarrage, vous devriez être en mesure d'exécuter la commande ci-dessous (sans être administrateur) et obtenir un prompt bash&nbsp;:
+
+    docker run --rm -it ubuntu bash
