@@ -1,7 +1,7 @@
 = Des containers Linux sur Windows Server 2019 
 :page-navtitle: Des containers Linux sur Windows Server 2019
 :page-excerpt: La documentation Microsoft est légère sur l'utilisation des containers Linux sur Windows Server 2019. Voici un article rapide qui décrive les étapes nécessaires.
-:page-tags: [docker,2019,Windows Server 2019]
+:page-tags: [docker,2019,WindowsServer2019]
 
 == Introduction
 
