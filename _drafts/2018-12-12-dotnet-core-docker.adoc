@@ -8,7 +8,7 @@
 
 == Introduction
 
-Cet article concerne une première tentative (i.e. Hello World!) de création d'une application .Net ore et son empaquetage dans une image Docker.
+Cet article concerne une première tentative (i.e. Hello World!) de création d'une application .Net Core et son empaquetage dans une image Docker.
 
 Il s'agira ensuite de la tester avec Azure Container Instance.
 

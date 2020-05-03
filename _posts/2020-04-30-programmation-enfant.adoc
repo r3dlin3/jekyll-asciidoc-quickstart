@@ -1,0 +1,129 @@
+= Exercices de programmation pour enfant
+:page-navtitle: Exercices de programmation pour enfant
+:page-excerpt: Quels exercices peut-on donner à des enfants de 8-10 ans pour appréhender la programmation sans être trop rébarbatif ?
+:page-tags: [enfants,programmation]
+
+
+Quand on recherche des éléments pour enseigner la programmation, on tombe souvent sur la question des outils, voire du langage à choisir.
+Ainsi, on peut tomber sur ce https://github.com/elefevre/programmation-pour-les-enfants[repo GitHub] qui recense une liste impressionnante d'outils.
+
+Mes enfants ont déjà appréhendé la programmation au travers des https://code.org/hourofcode/overview[heures de code] de https://code.org[code.org].
+
+Je voulais sortir du mode "programmation par bloc" à la Scratch pour aller vers un vrai langage de programmation. 
+
+Quels exercices peut-on donner à des enfants de 8-10 ans pour appréhender la programmation sans être trop rébarbatif ? 
+**Cet article se veut agnostique par rapport au langage**.
+
+Sachez cependant que mon choix s'est porté sur **Python**, ce qui va aussi me permettre de me dérouiller sur ce langage.
+Il existe probablement des tonnes de vidéo pour présenter Python. Une rapide recherche m'a conduit vers cette https://www.youtube.com/watch?v=VmOPhT4HFNE&list=PLVUDmbpupCaobTdn2MIqD-DV6AUvEuUll[liste de vidéos] qui constitue une bonne introduction.
+
+Finalement, même si au début, j'étais que convaincu que https://docs.python.org/3/library/idle.html[IDLE], l'éditeur par défaut ferait bien l'affaire, j'ai finalement installé https://codewith.mu/[Code with Mu].
+J'ai le secret espoir qu'on pourra utiliser un de ses https://codewith.mu/en/tutorials/1.0/modes[modes] (PyGame Zero ou Adafruit par exemple).
+
+== Leçon 1 - Intro
+
+Commençons par les basiques&nbsp;: la présentation d'un ordinateur.
+
+Rien de tel que d'ouvrir le capot de son ordinateur portable pour y voir un disque dur, la RAM, la carte mère et deviner le processeur sous son radiateur.
+
+Il faudra également insister sur les interfaces&nbsp;:
+
+- Les interfaces homme-machine&nbsp;: clavier, écran, souris
+- Les ports USB, Ethernet, etc.
+
+== Leçon 2 - le clavier
+
+Ecrire avec un clavier n'a absolument rien de naturel&nbsp;!
+
+Il conviendra donc&nbsp;:
+
+- D'avoir une vague réflexion sur l'ordre des lettres sur un clavier
+- D'apprendre à faire des minuscules et des majuscules (la touche kbd:[Caps Lock] reste optionnelle)
+- De comprendre comment faire le caractère du haut ou de droite, respectivement avec kbd:[Shift] et kbd:[Alt Gr], en comprenant que l'on peut garder enfoncé ces touches de modification (quel bonheur de voir nos enfants tenter d'appuyer sur kbd:[Shift] et une touche simultanément pour un résultat aléatoire)
+- D'apprendre quelques symboles utiles à la programmation comme "accolade", "dièse", "barre oblique", etc.
+
+TIP: En bonus&nbsp;: kbd:[Ctrl+C] et kbd:[Ctrl+V] pour faire de nos bambins des consultants émérites&nbsp;!
+
+== Leçon 3 - Les variables
+
+A ce stade, vous allez me dire : "toujours pas d'exercice de programmation !". J'y arrive&nbsp;!
+
+La première chose à voir est certainement ce qu'est une variable pour stocker un paramètre ou le résultat d'une fonction.
+
+=== Exercice
+
+J'ai 12 bonbons. Il y a 2 enfants. En partageant équitablement, combien de bonbons chaque enfant aura&nbsp;?
+
+Et s'il y avait 3 enfants&nbsp;?
+
+=== Notions
+
+Variables, Fonction d'affichage (`print`), Utilisation du mode interactif (https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop[REPL]) vs. Création d'un programme dans un fichier
+
+
+== Leçon 4 - boucle `for` et fonctions
+
+=== Exercice
+
+Afficher la table de multiplication de 5, d'abord sans boucle `for`, puis avec.
+
+En faire une fonction pour afficher n'importe quelle table de multiplication.
+
+Afficher toutes les tables de multiplication de 1 à 10.
+
+=== Notions
+
+Opérateurs (`+`, `*`), boucle `for`, fonctions.
+
+TIP: Les enfants connaissent les boucles "répéter n fois" dans la programmation par bloc.
+
+TIP: Bonus : afficher une chaîne formatée pour afficher le résultat de la multiplication
+
+== Leçon 5 - conjuguer les verbes du premier groupe
+
+=== Exercice
+
+Demander un verbe du premier groupe et le conjuguer au présent de l'indicatif, au futur, etc.
+
+TIP: Bonus : remonter une erreur si verbe "aller" ou verbe qui ne se termine pas par "-er" ou afficher "j'" à la place de "je" si verbe commençant par une voyelle.
+
+=== Notions
+
+Interaction avec l'utilisation (`input`), concaténation de chaîne de caractères. Eventuellement, introduction aux conditions.
+
+== Leçon 5 - les conditions
+
+=== Exercice
+
+Définir un nombre hasard et tenter de le deviner avec le minimum de tentatives
+
+=== Notions
+
+Boucle `while`, conditions, utilisation de module (pour `random`).
+
+TIP: Les enfants connaissent les boucles "répéter tant que" dans la programmation par bloc.
+
+== Leçon 6 - Le système de fichier
+
+=== Exercice
+
+A la façon de Raymond Queneau pour ses https://www.youtube.com/watch?v=2NhFoSFNQMQ[_Cent mille milliards de poèmes_], lire un fichier texte qui contiendrait des vers et essayer de générer aléatoirement des poèmes.
+
+INFO: On peut en voir une adaptation Web par https://x42.com/active/queneau.html[Magnus Bodin].
+
+=== Notions
+
+Utilisation de module (pour `random`), lecture de fichier.
+
+== Conclusion
+
+Voici un premier ensemble d'exercices qui doivent permettre d'aborder la base&nbsp;:
+
+- Les variables
+- Les boucles `for` et `while`
+- Les conditions `if`
+- Les accès aux fichiers
+
+C'est suffisant pour aborder d'autres exercices comme https://www.youtube.com/watch?v=bo8JU94jdDE[le lièvre et la tortue].
+
+Il reste bien d'autres choses à voir mais cela pourra faire l'objet d'un autre article.
