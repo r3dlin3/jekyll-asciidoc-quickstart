@@ -1,0 +1,52 @@
+= Intégrer Bulma CSS et Vue.js
+:page-navtitle: Intégrer Bulma CSS et Vue.js
+:page-excerpt: Vue.js and Bulma CSS sont 2 frameworks qu'il est facile d'intégrer. Voici comment faire en 5 étapes.
+:page-tags: [typescript,vue.js,css]
+
+https://vuejs.org/[Vue.js] est un framework de développement Web très intéressant. J'avais également envie de voir autre chose que Bootstrap. J'ai donc donné un coup d'essai à https://bulma.io/[Bulma].
+
+Comme j'ai dû combiner 3 articles et quelques résultats sur Stack Overflow pour avoir une bonne intégration entre les deux, voici un article pour décrire le _modus operandi_ avec un projet utilisant TypeScript.
+
+== Création du projet
+
+Lors de la création du projet, pensez à prévoir un préprocesseur CSS. J'utilise `node-sass` mais je n'ai pas fait de comparaison avec `dart-sass`.
+
+== Installation
+
+L'installation se fait simplement avec la commande suivante&nbsp;:
+
+    yarn add bulma
+
+== Personnalisation
+
+Créer un fichier ``.sass` dans le répertoire `assets` avec le contenu suivant&nbsp;:
+[source,sass]
+----
+@charset "utf-8"
+
+$rouge: #DF776D
+$primary: $rouge
+
+@import "../../node_modules/bulma/bulma.sass"
+----
+
+== Importer la feuille de style
+
+Ouvrir le fichier `src\main.ts` et ajouter la ligne suivante&nbsp;:
+[source,typescript]
+----
+import "./assets/main.sass";
+----
+
+== Les icônes
+
+Bulma s'appuie sur https://fontawesome.com/[Font Awesome 5] pour afficher des icônes. Pour pouvoir les utiliser, il faut donc penser à charger le fichier de Font Awesome.
+
+Pour ce faire, ouvrir `public\index.html` et ajouter dans la balise `head` la ligne suivante&nbsp;:
+
+[source,html]
+----
+<script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+----
+
+Comme Font Awesome va continuer à évoluer, vous pouvez vous référer à la page de démarrage de https://bulma.io/documentation/overview/start/[Bulma] ou de https://fontawesome.com/start[Font Awesome] pour avoir la dernière version disponible.
