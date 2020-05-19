@@ -117,17 +117,22 @@ Use eftec\bladeone\BladeOne;
 
 $views = __DIR__ . '/views';
 $cache = __DIR__ . '/cache';
-$blade = new BladeOne($views,$cache,BladeOne::MODE_AUTO);
+$blade = new BladeOne($views,$cache,BladeOne::MODE_AUTO); <1>
 
 $lang='fr'; // try es,jp or fr
-include './locales/'.$lang.'.php';
+include './locales/'.$lang.'.php'; <2>
 
 $blade->missingLog='./missingkey.txt'; // (optional) if a traduction is missing the it will be saved here.
-echo $blade->run("translation",array("variable1"=>"value1"));
+echo $blade->run("translation",array("variable1"=>"value1")); <3>
 
 ----
+<1> Initialisation du moteur avec les répertoires de cache et de vue.
+<2> Chargement du dictionnaire (statique) pour les traductions
+<3> Génération du contenu à partir de la vue
 
-Un petit coup de `php -S localhost:8000`, on saute sur http://localhost:8000/translation.php et voilà&nbsp:
+
+
+Un petit coup de `php -S localhost:8000`, on saute sur http://localhost:8000/translation.php et voilà&nbsp;:
 
 image::{{ "/assets/img/2020-05-19-translation.png" | absolute_url }}[Résultat,align="center"]
 
@@ -140,3 +145,5 @@ Ce projet offre des avantages comme&nbsp;:
 - L'indépendance par rapport aux locales du serveur
 - L'indépendance par rapport au système d'exploitation du serveur
 - La rapidité et flexibilité de Blade
+
+A conserver en tête donc pour des _petits_ projets requérant de l'internationalisation.

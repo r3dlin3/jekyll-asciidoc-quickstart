@@ -9,7 +9,7 @@ Comme j'ai dû combiner 3 articles et quelques résultats sur Stack Overflow pou
 
 == Création du projet
 
-Lors de la création du projet, pensez à prévoir un préprocesseur CSS. J'utilise `node-sass` mais je n'ai pas fait de comparaison avec `dart-sass`.
+Lors de la création du projet, pensez à prévoir *un préprocesseur CSS*. J'utilise `node-sass` mais je n'ai pas fait de comparaison avec `dart-sass`.
 
 == Installation
 
@@ -20,6 +20,8 @@ L'installation se fait simplement avec la commande suivante&nbsp;:
 == Personnalisation
 
 Créer un fichier ``.sass` dans le répertoire `assets` avec le contenu suivant&nbsp;:
+
+../assets/main.sass
 [source,sass]
 ----
 @charset "utf-8"
@@ -50,3 +52,7 @@ Pour ce faire, ouvrir `public\index.html` et ajouter dans la balise `head` la li
 ----
 
 Comme Font Awesome va continuer à évoluer, vous pouvez vous référer à la page de démarrage de https://bulma.io/documentation/overview/start/[Bulma] ou de https://fontawesome.com/start[Font Awesome] pour avoir la dernière version disponible.
+
+== Conclusion
+
+Et voilà 5 étapes pour démarrer du bon pied avec https://vuejs.org/[Vue.js] et https://bulma.io/[Bulma]&nbsp;!
