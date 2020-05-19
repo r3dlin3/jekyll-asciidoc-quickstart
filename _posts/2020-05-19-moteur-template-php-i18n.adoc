@@ -1,0 +1,142 @@
+= Moteur de template PHP et internationalisation
+:page-navtitle: Moteur de template PHP et internationalisation
+:page-excerpt: Mes déboires en matière d'internationalisation avec PHP m'ont amené vers BladeOne. Voici le pourquoi et un rapide tutorial.
+:page-tags: [php,i18n,blade]
+
+== Introduction
+
+Les frameworks PHP comme https://laravel.com/[Laravel], https://symfony.com/[Symfony] ou https://phalcon.io[Phalcon]
+dispose tous d'un moteur de template propre, respectivement https://laravel.com/docs/7.x/blade[Blade],
+https://twig.symfony.com/[Twig] ou https://docs.phalcon.io/4.0/en/volt[Volt].
+
+Reprenant un projet PHP qui n'utilisait aucun framework, il me fallait une solution qui tourne sans framework imposé.
+
+== Et pourquoi pas Twig ?
+
+Mon choix s'est d'abord porté sur https://twig.symfony.com/[Twig], qui existe en autonome en principe.
+
+J'ai dû m'en détourner pour les raisons suivantes&nbsp;:
+
+* La toute dernière version (3.x) ne supporte plus l'https://twig-extensions.readthedocs.io/en/latest/i18n.html[extensions d'internalisation] mais requiert `symfony/twig-bridge` pour le tag https://symfony.com/doc/current/reference/twig_reference.html#trans[`trans`]. Or, `symfony/twig-bridge`. Il n'y a pas de documentation pour l'intégration dans un projet sans Symfony
+* Ces extensions d'internationalisation reposent sur https://www.php.net/manual/en/book.gettext.php[`gettext`]. 
+  `gettext` est une solution très préformante, cependant&nbsp;:
+
+** Il n'y a pas d'outil gratuit qui permette une extraction des chaînes de caractères&nbsp;:
+    
+*** https://poedit.net[Poedit] est certainement une très bonne solution mais l'extraction des chaînes d'un fichier Twig requiert la licence pro.
+*** Toute autre solution est vouée à générée les pages de Twig en fichier PHP et utiliser `xgettext`. Malheureusement, on perd le fichier d'origine.
+
+** Les fichiers de traduction sont mis en cache par le serveur. La mise à jour d'un fichier compilé (_i.e._ `.mo`) peut requérir un redémarrage.
+** Le comportement est différent entre Windows et Linux. Par exemple, Windows ne définit la constante `LC_MESSAGES`, ce qui impose de forcer la locale pour `LC_ALL` ce qui peut avoir des conséquences importantes (dans la gestion des nombres, etc.).
+** Il faut que la locale soit présente sur le serveur, ce qui est rédhibitoire pour un serveur partagé.
+
+== Le sauveur&nbsp;?
+Pour toute ces raisons, je me suis donc intéressé au projet https://github.com/EFTEC/BladeOne/[BladeOne], une implémentation autonome et légère de Blade.
+Elle supporte un module d'internationalisation intégré au moteur&nbsp;: https://github.com/EFTEC/BladeOne/blob/master/BladeOneLang.md[BladeOneLang].
+
+Il est clair que la gestion des traductions ne pourrait convenir à un projet d'envergure mais pour un projet sans Framework comme le mien, c'est parfait&nbsp;!
+
+=== Installation
+
+L'installation se fait le plus simplement du monde grâce à `composer`&nbsp;:
+
+    composer require eftec/bladeone
+
+Il existe d'autres méthodes documentées dans le https://github.com/EFTEC/BladeOne/blob/master/README.md#usage[README].
+
+Il faut ensuite prévoir la création de 3 répertoires&nbsp;:
+
+`cache`:: Pour le cache
+`views`:: Pour les vues
+
+=== Utilisation
+
+Cet exemple ultrasimple va se décomposer en 3 fichiers&nbsp;:
+
+- La vue
+- La traduction
+- Le fichier PHP exécuté
+
+Commençons par la vue. BladeOneLang définit 3 méthodes pour aider à la traduction&nbsp;:
+
+@_e:: Va rechercher la chaîne à partir de la clé
+@_ef:: Va permettre d'avoir des paramètres
+@_n:: Va permettre de mettre au pluriel
+
+L'exemple ci-dessous est un exemple de remplacement&nbsp;:
+
+.views\translation.blade.php
+[source,html]
+----
+{% raw %}
+<h1>Translation</h1>
+
+Hat:<br>
+@_e('Hat')<br><br>
+<hr>
+
+Trust this site always :<br>
+@_e('Trust this site always')<br><br>
+<hr>
+
+'%s is a nice cat' with '{{$variable1}}' :<br>
+@_ef('%s is a nice cat', $variable1)<br><br>
+
+{% endraw %}
+----
+
+La traduction se fait simplement dans un tableau associatif. Le tableau statique `BladeOne::$dictionary` sera utilisé pour la traduction&nbsp;:
+
+.locales\fr.php
+[source,php]
+----
+<?php
+
+use eftec\bladeone\BladeOne;
+
+BladeOne::$dictionary=array(
+    'Hat'=>'Chapeau',
+    'Cat'=>'Chat',
+    '%s is a nice cat'=>'%s est un bon chat',
+    "Trust this site always" => "Toujours faire confiance à ce site",
+    "Deny" => "Refuser"
+);
+
+----
+
+Finalement, le bout de code d'exécution&nbsp;:
+
+.translation.php
+[source,php]
+----
+<?php
+
+require "vendor/autoload.php";
+
+Use eftec\bladeone\BladeOne;
+
+$views = __DIR__ . '/views';
+$cache = __DIR__ . '/cache';
+$blade = new BladeOne($views,$cache,BladeOne::MODE_AUTO);
+
+$lang='fr'; // try es,jp or fr
+include './locales/'.$lang.'.php';
+
+$blade->missingLog='./missingkey.txt'; // (optional) if a traduction is missing the it will be saved here.
+echo $blade->run("translation",array("variable1"=>"value1"));
+
+----
+
+Un petit coup de `php -S localhost:8000`, on saute sur http://localhost:8000/translation.php et voilà&nbsp:
+
+image::{{ "/assets/img/2020-05-19-translation.png" | absolute_url }}[Résultat,align="center"]
+
+== Conclusion
+
+https://github.com/EFTEC/BladeOne/[BladeOne] n'est probablement pas le projet du siècle mais propose une réponse simple et élégante pour celui ou celle qui ne veut pas s'imposer un framework complet mais souhaite tout de même séparer la vue du reste de l'application tout en conservant des capacités d'internationalisation.
+
+Ce projet offre des avantages comme&nbsp;:
+
+- L'indépendance par rapport aux locales du serveur
+- L'indépendance par rapport au système d'exploitation du serveur
+- La rapidité et flexibilité de Blade
