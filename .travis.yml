@@ -1,7 +1,7 @@
 language: ruby
 rvm: 2.6.3
 install: bundle install
-script: bundle exec jekyll build && bundle exec htmlproofer ./_site --check-favicon --check-html --assume-extension --internal-domains r3dlin3.github.io --url-ignore http://localhost:8000,http://localhost:8000/,https://\$appName.scm.azurewebsites.net/webssh/host
+script: bundle exec jekyll build && bundle exec htmlproofer ./_site --check-favicon --check-html --assume-extension --internal-domains r3dlin3.github.io --url-ignore "/localhost:8000/,https://\$appName.scm.azurewebsites.net/webssh/host"
 deploy:
   provider: pages
   skip_cleanup: true

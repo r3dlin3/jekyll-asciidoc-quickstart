@@ -41,4 +41,4 @@ Réf: https://github.com/18F/html-proofer-docker
 
     bundle exec jekyll clean
     bundle exec jekyll build
-    docker run --rm -v $pwd\_site:/mounted-site 18fgsa/html-proofer /mounted-site --url-ignore http://localhost:8000 --internal-domains r3dlin3.github.io --check-favicon --check-html --assume-extension
+    docker run --rm -v $pwd\_site:/mounted-site 18fgsa/html-proofer /mounted-site --check-favicon --check-html --assume-extension --internal-domains r3dlin3.github.io --url-ignore "/localhost:8000/,https://\$appName.scm.azurewebsites.net/webssh/host"
