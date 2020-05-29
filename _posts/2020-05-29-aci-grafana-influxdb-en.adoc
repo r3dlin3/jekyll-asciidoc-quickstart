@@ -1,6 +1,6 @@
 = Grafana and InfluxDB on Azure Container Instances
 :page-navtitle: Grafana and InfluxDB on Azure Container Instances
-:page-excerpt: Azure Container Instances allow to run containers. Here he is a small exmple with a group of containers of Grafana and InfluxDB
+:page-excerpt: Azure Container Instances allow to run containers. Here he is a small example with a group of containers of Grafana and InfluxDB.
 :page-tags: [docker,aci,azure,influxdb,grafana,english]
 
 _This the translation of a link:{{ site.baseurl }}{% post_url 2020-02-01-aci-grafana-influxdb %}[previous article]
