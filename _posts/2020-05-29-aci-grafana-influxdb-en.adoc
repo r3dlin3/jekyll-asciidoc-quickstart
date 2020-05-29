@@ -1,44 +1,47 @@
-= Grafana et InfluxDB sur Azure Container Instances
-:page-navtitle: Grafana et InfluxDB sur Azure Container Instances
-:page-excerpt: Azure Container Instances permet d'exécuter des containers. Voici un petit exemple de groupe de containers avec Grafana et InfluxDB.
-:page-tags: [docker,aci,azure,influxdb,grafana]
+= Grafana and InfluxDB on Azure Container Instances
+:page-navtitle: Grafana and InfluxDB on Azure Container Instances
+:page-excerpt: Azure Container Instances allow to run containers. Here he is a small exmple with a group of containers of Grafana and InfluxDB
+:page-tags: [docker,aci,azure,influxdb,grafana,english]
 
-Azure Container Instances (ACI) fait partie des nombreuses façons d'exécuter des containers sur Azure.
-Un des avantages d'ACI par rapport à App Service (présenté dans un link:{{ site.baseurl }}{% post_url 2020-01-01-sonarqube-app-service %}[précédent article]) est la 
-capacité à exposer plusieurs ports.
+_This the translation of a link:{{ site.baseurl }}{% post_url 2020-02-01-aci-grafana-influxdb %}[previous article]
+published in French._
 
-Ainsi, nous allons exposer un https://grafana.com/[Grafana] et une base https://www.influxdata.com/products/influxdb-overview/[InfluxDB].
-https://grafana.com/[Grafana] est une solution open source pour la création de tableau de bord.
-https://www.influxdata.com/products/influxdb-overview/[InfluxDB] est son compagnon de choix pour le stockage de série temporelle (_time series_).
+Azure Container Instances (ACI) is one of many ways to run containers on Azure. One of the advantages of ACI over App Service (presented in a link:{{ site.baseurl }}{% post_url 2020-01-01-sonarqube-app-service %}[previous article (in French)]) is the ability to expose multiple ports.
 
-NOTE: Dans cet article, pour des raisons de simplicité, je n'exposerai pas Grafana en HTTPS. 
-Il faudra se référer à mon précédent article link:{{ site.baseurl }}{% post_url 2020-01-30-aci-letsencrypt-nginx %}[Certificat Let's Encrypt sur Azure Container Instances et NGINX] pour la mise en place de HTTPS.
+So we're going to expose a https://grafana.com/[Grafana] instance and an https://www.influxdata.com/products/influxdb-overview/[InfluxDB] database.
+https://grafana.com/[Grafana] is an open source solution for creating dashboard. https://www.influxdata.com/products/influxdb-overview/[InfluxDB] is its companion of choice for time series storage.
 
-== La solution
 
-Comme évoqué, la solution tournera sur Azure Container Instances. 
+NOTE: In this article, for simplicity sake, I will not expose Grafana over HTTPS.
+You will have to refer to my previous article link:{{ site.baseurl }}{% post_url 2020-01-30-aci-letsencrypt-nginx %}[Certificat Let's Encrypt sur Azure Container Instances et NGINX (in French)] for the implementation of HTTPS.
 
-Grafana a besoin d'une base de données pour sa configuration. Grafana https://grafana.com/docs/grafana/latest/installation/requirements/#supported-databases[supporte 3 bases de données]&nbsp;:
 
-- SQLite
-- MySQL
-- PostgreSQL
 
-Pour éviter de perdre la configuration à chaque redémarrage, la persistance des données est assurée par Azure Files. 
+== The solution
 
-CAUTION: Malheureusement, à cause de certaines https://docs.microsoft.com/fr-fr/rest/api/storageservices/features-not-supported-by-the-azure-file-service[limitations], il n'a pas été possible de faire persister SQLite (embarqué par défaut dans Grafana) (une sombre histoire de verrou) ou d'utiliser l'image de base de PostgreSQL (une sombre histoire de propriétaire sur des fichiers).
+As mentioned, the solution will run on Azure Container Instances.
 
-On utilisera donc l'image docker de https://hub.docker.com/_/mysql[MySQL].
+Grafana needs a database for its configuration. Grafana supports https://grafana.com/docs/grafana/latest/installation/requirements/#supported-databases[ 3 kind of databases]:
+ 
+1.	Sqlite
+2.	Mysql
+3.	Postgresql
 
-NOTE: MySQL ne sera pas exposé sur Internet
+To avoid losing the configuration if the container restarts, the data is persistently stored on Azure Files.
 
-== Les sources de données Grafana
+CAUTION: Unfortunately, due to some https://docs.microsoft.com/fr-fr/rest/api/storageservices/features-not-supported-by-the-azure-file-service[limitations], it was not possible to persist on Azure Files the SQLite database (embarked by default in Grafana) (a dark story about locks) or to use the Docker image provided by PostgreSQL (a dark  story about files and their owner).
 
-Il est https://grafana.com/docs/grafana/v6.5/administration/provisioning/#datasources[possible de fournir une liste de sources de données] par fichier YAML.
+We will therefore use MySQL and its https://hub.docker.com/_/mysql[Docker image].
 
-Nous allons utiliser ce mécanisme pour configurer automatiquement InfluxDB.
+NOTE: MySQL will not be published on the Internet.
 
-Ainsi la configuration de la source de données en YAML sera&nbsp;:
+== Grafana data sources
+
+It is  https://grafana.com/docs/grafana/v6.5/administration/provisioning/#datasources[possible to provide a list of data sources] per YAML file.
+
+We will use this mechanism to automatically set up InfluxDB as a data source.
+
+So, the configuration of the data source in YAML will be:
 
 .influxdb.yaml
 [source,yaml]
@@ -60,64 +63,64 @@ datasources:
     url: http://localhost:8086
 ----
 
-Ce fichier sera passé comme secret.
-On utilisera la fonction `base64` d'ARM template pour passer le fichier YAML en secret.
+This file will be passed as a secret. The `base64` function of ARM template will be used to encode the content and pass it as a secret.
 
-== Note sur les groupes de container dans Azure Container Instances
+== Note about container groups in Azure Container Instances
 
-Azure Container Instances utilisent un format de données "propriétaire" qui n'est ni Docker Compose, ni un fichier de déploiement Kubernetes.
+Azure Container Instances use a "proprietary" format that is neither Docker Compose nor a Kubernetes deployment file.
 
-Le point important à garder en tête est que l'on va déclarer chaque port exposé par un container, puis ensuite quels sont les ports exposés par le groupe de container. Il n'est pas possible de changer le port exposé par un container par rapport au port du groupe (par une translation), comme rappelé dans la https://docs.microsoft.com/fr-fr/azure/container-instances/container-instances-troubleshooting#container-group-ip-address-may-not-be-accessible-due-to-mismatched-ports[FAQ].
+The important point to keep in mind is that we will declare each port expose by a container, and then which of them are exposed by the container group. It is not possible to translate ports, as recall in the https://docs.microsoft.com/en-us/azure/container-instances/container-instances-troubleshooting#container-group-ip-address-may-not-be-accessible-due-to-mismatched-ports[FAQ].
 
-La communication entre les containers se fait non pas en utilisant le nom du container (comme dans Docker Compose) mais *localhost*&nbsp;!
+Also, beware that communication between containers is not using the name of the container (as in Docker Compose) but *localhost*!
 
-Ainsi Grafana pointera dans sa configuration vers localhost:3036 pour sa base de données et localhost:8086 pour le cas d'InfluxDB.
+Thus, Grafana will point in its configuration to `localhost:3036` for its database and `localhost:8086` for the case of InfluxDB.
 
-== Automatisation du déploiement
+== Automated deploiement
 
-Il est possible d'utiliser du YAML ou de l'ARM template.
-Comme évoqué dans mon link:{{ site.baseurl }}{% post_url 2020-01-30-aci-letsencrypt-nginx %}#conclusion[précédent article], je recommande fortement l'utilisation d'ARM template qui va permettre de rendre dynamique certains paramètres de déploiement.
+It is possible to use YAML or ARM template. As mentioned in my link:{{ site.baseurl }}{% post_url 2020-01-30-aci-letsencrypt-nginx %}#conclusion[previous article (in French)],I highly recommend the use of ARM template that will allow to have some dynamic settings that can be changed during deployment.
 
-Pour autant, je vais limiter les paramètres possibles.
+However, I will limit the number of parameters.
 
-=== Variables d'environnement
+=== Environment variables
 
-Les variables d'environnement que nous allons utiliser sont décrites ci-dessous.
+The environment variables we will use are described below.
 
 .MySQL
 |===
-|Nom |Description
-|MYSQL_DATABASE|Nom de la base crée au démarrage
-|MYSQL_USER, MYSQL_PASSWORD|Nom de l'utilisateur et mot de passe propriétaire de la base
-|MYSQL_RANDOM_ROOT_PASSWORD|Va générer un mot de passe aléatoire pour l'utilisateur root
+|Name |Description
+|MYSQL_DATABASE|The name of a database to be created on image startup.
+|MYSQL_USER, MYSQL_PASSWORD|Username and password of a user created that has superuser permissions on the database
+|MYSQL_RANDOM_ROOT_PASSWORD|Will generate a random password for the root user
 |===
 
-D'autres variables d'environnement sont disponibles et sont décrites sur la https://hub.docker.com/_/mysql[page] de l'image Docker de MySQL.
+Other environment variables are available and are described on MySQL's Docker image https://hub.docker.com/_/mysql[page].
+
 
 .InfluxDB
 |===
-|Nom |Description
-|INFLUXDB_DB|Nom de la base crée au démarrage
-|INFLUXDB_ADMIN_USER, INFLUXDB_ADMIN_PASSWORD|Nom de l'utilisateur et mot de passe administrateur de la base
+|Name |Description
+|INFLUXDB_DB|The name of a database to be created on image startup.
+|INFLUXDB_ADMIN_USER, INFLUXDB_ADMIN_PASSWORD|Username and password of database admin.
 |===
 
-D'autres variables d'environnement sont disponibles et sont décrites sur la https://hub.docker.com/_/influxdb[page] de l'image Docker d'InfluxDB.
+Other environment variables are available and are described on InfluxDB's Docker image https://hub.docker.com/_/influxdb[page].
 
-Grafana dispose d'un mécanisme très extensible qui permet de définir n'importe quel paramètre https://grafana.com/docs/grafana/latest/installation/configuration/#using-environment-variables[à partir de variables d'environnement].
 
+Grafana has a very extensible mechanism that allows to define any https://grafana.com/docs/grafana/latest/installation/configuration/#using-environment-variables[parameter from environment variables].
+We will use the following environment variable.
 
 .Grafana
 |===
-|Nom |Description
-|`GF_DATABASE_URL` | URL de connexion à MySQL
-|`GF_SECURITY_ADMIN_PASSWORD` |Mot de passe de l'utilisateur admin (cela évitera de passer dans l'assistant de configuration)
+|Name |Description
+|`GF_DATABASE_URL` | Connection URL to MySQL
+|`GF_SECURITY_ADMIN_PASSWORD` |Password for admin (this will avoid going through the configuration assistant)
 |===
 
-Dans mon link:{{ site.baseurl }}{% post_url 2020-01-30-aci-letsencrypt-nginx %}[précédent article], j'avais également utilisé la variable `GF_SERVER_DOMAIN` pour configurer Grafana derrière NGINX.
+In my link:{{ site.baseurl }}{% post_url 2020-01-30-aci-letsencrypt-nginx %}[previous article], I also used the variable `GF_SERVER_DOMAIN` to set up Grafana behind NGINX.
 
 === ARM template
 
-L'ARM template et les paramètres sont définis ci-dessous.
+The ARM template and settings are shown below.
 
 .grafana.json
 [source,json]
@@ -501,23 +504,23 @@ datasources:
 }
 ----
 
-Il est possible de déployer par PowerShell&nbsp;:
+It is possible to deploy by using the following PowerShell command:
+
 ```PowerShell
  New-AzResourceGroupDeployment -ResourceGroupName $rg -TemplateFile .\influxdb-grafana.json -TemplateParameterFile .\influxdb-grafana.parameters.json -Verbose
 ```
 
-Egalement, en Az CLI&nbsp;:
+Also, by using Az CLI:
 
 ```shell
 az group deployment create --resource-group $rg --template-file ./influxdb-grafana.json --parameters @influxdb-grafana.parameters.json --handle-extended-json-format
 ```
 
-Il faudra bien penser au paramètre `--handle-extended-json-format` qui apporte le support du multiligne en JSON.
+You will have to use the setting `--handle-extended-json-format` that provides support for multiline in JSON.
 
 == Conclusion
 
-En quelques minutes, il est possible de monter un Grafana et une base InfluxDB. 
+Within a few minutes, it is possible to assemble a Grafana and an InfluxDB database.
 
-Les cas d'usage d'InfluxDB et Grafana ne manquent pas&nbsp;: IoT, surveillance applicative, etc.
-Un cas d'utilisation pourrait être aussi des tests de charge avec https://pypi.org/project/locust-influx/[Locust]. 
-A suivre...
+There is a lot of use cases that might benefits for an InfluxDB and Grafana: IoT, application monitoring, etc. A use case could also be load tests with https://pypi.org/project/locust-influx/[Locust]. To be continued...
+
