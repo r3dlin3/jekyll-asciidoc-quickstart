@@ -10,6 +10,7 @@ exclude:
   - Gemfile
   - Gemfile.lock
   - Rakefile
+  - _posts/2020-06-10-filtrer-sql-app-service.pptx
 asciidoc: {}
 asciidoctor:
   base_dir: :docdir

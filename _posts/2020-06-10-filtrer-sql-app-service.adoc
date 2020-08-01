@@ -1,0 +1,148 @@
+= Configurer automatiquement le firewall SQL/MySQL/PostgreSQL pour un App Service
+:page-navtitle: Configurer automatiquement le firewall SQL/MySQL/PostgreSQL pour un App Service
+:page-excerpt: App Service et Azure SQL sont deux composants PaaS publiques. Il ne s'agit pas ici de se focaliser uniquement sur le firewall comme moyen unique de protection. Mais autant le configurer correctement pour agir comme première barrière.
+:page-tags: [arm,azure,app-service,sql]
+
+== Introduction
+
+App Service et Azure SQL sont deux composants PaaS publiques. Cela veut dire qu'ils disposent d'adresses IP publiques.
+
+https://docs.microsoft.com/fr-fr/azure/azure-sql/database/firewall-configure[Azure SQL] ou https://docs.microsoft.com/fr-fr/azure/mysql/concepts-firewall-rules[Azure Database pour MySQL] ou https://docs.microsoft.com/en-us/azure/postgresql/concepts-firewall-rules[Azure Database pour PostgreSQL] dispose d'un mécanisme de firewall qui permet de filtrer les connexions entrantes.
+
+Ce firewall dispose d'une case à cocher permettant d'autoriser ou non le trafic Azure. 
+Malheureusement, ce trafic Azure ne se limite pas au trafic de sa souscription.
+Ainsi n'importe quelle VM ou App service sera autorisée.
+
+Pour autant, App Service dispose d'une liste d'IP de sortie que l'on pourra utiliser pour restreindre l'accès à la base sans aller vers de l'App Service Environment.
+
+Autant il est possible de manuellement récupérer cette liste d'IP dans le portail Azure et ajouter ces IP au firewall de la base, autant on va essayer  d'automatiser au mieux la solution par l'utilisation d'ARM template.
+
+Il ne s'agit pas ici de se focaliser uniquement sur le firewall comme moyen unique de protection. Mais autant le configurer correctement pour agir comme première barrière.
+
+== Organisation de l'ARM template
+
+Nous allons ici utiliser le mécanisme de modèle imbriqué ou _nested templates_.
+Ainsi, la création et la configuration des ressources vont se passer en 3 étapes comme montré sur la figure ci-dessous&nbsp;
+
+image::/assets/img/2020-06-11-arm-template.png[Organisation de l'ARM template, align=center]
+
+
+== Les adresses IP d'un App Service
+
+Il est possible de récupérer les adresses IP d'un App Service et de les rendre disponible dans l'`output` de l'_ARM Template_ comme suit&nbsp;:
+
+[source,json]
+----
+"outputs": {
+    "possibleOutboundIps": {
+        "type": "array",
+        "value": "[split(reference(parameters('siteName'), variables('apiVersion')).possibleOutboundIpAddresses, ',')]"
+    }
+}
+----
+
+Grâce à la fonction `split`, on récupère directement un tableau des adresses IP.
+
+On peut aussi noter l'utilisation `possibleOutboundIpAddresses`, ce qui donne une liste assez large mais qui va empêcher des arrêts de service si l'App Service doit changer d'infrastructure pour une raison ou pour une autre.
+
+== Formatage des règles
+
+La liste des IP peut être récupérer à partir du _template_ parent grâce à la syntaxe suivante, avec `appserviceNestedDeployment` le nom du déploiement du _nested template_ pour l'App Service&nbsp;:
+
+[source,json]
+----
+[reference('appserviceNestedDeployment').outputs.possibleOutboundIps.value]
+----
+
+L'objectif de l'étape de formatage va être créer un nouveau tableau d'objet prêt à l'emploi pour la dernière étape. On va donc parcourir le tableau d'IP grâce à une boucle et créer un tableau d'objet avec le nom de la règle (sur la base d'un incrément) et une des IP (`startIpAddress` et `endIpAddress` sont égaux).
+
+[source,json]
+----
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "inputArray": {
+            "type": "array",
+            "metadata": {
+                "description": "string array of ip addresses"
+            }
+        },
+        "ruleNamePrefix": {
+            "type": "string",
+            "maxLength": 26,
+            "metadata": {
+                "description": "prefix to use in the name of the rule"
+            }
+        }
+    },
+    "variables": {
+        "outputArray": {
+            "copy": [
+                {
+                    "name": "items",
+                    "count": "[length(parameters('inputArray'))]",
+                    "input": {
+                        "startIpAddress": "[parameters('inputArray')[copyIndex('items')]]",
+                        "endIpAddress": "[parameters('inputArray')[copyIndex('items')]]",
+                        "name": "[concat(parameters('ruleNamePrefix'), copyIndex('items'))]"
+                    }
+                }
+            ]
+        }
+    },
+    "resources": [],
+    "outputs": {
+        "firewallRules": {
+            "value": "[variables('outputArray').items]",
+            "type": "array"
+        }
+    }
+}
+----
+
+Le tableau ainsi généré est placé dans l'_output_ pour être récupérer dans l'étape finale.
+
+== Configuration du firewall
+
+Dans le cas de MySQL (le cas est similaire pour Azure SQL), on va donc parcourir le tableau d'objet précédemment créé pour créer la règle de firewall.
+
+[source,json]
+----
+{
+    "name": "[concat(parameters('mysqlServerName'),'/',parameters('firewallrules')[copyIndex()].name)]",
+    "type": "Microsoft.DBforMySQL/servers/firewallRules",
+    "apiVersion": "2017-12-01",
+    "location": "[parameters('location')]",
+    "dependsOn": [
+        "[concat('Microsoft.DBforMySQL/servers/', parameters('mysqlServerName'))]"
+    ],
+    "copy": {
+        "name": "firewallRulesCopy",
+        "count": "[length(parameters('firewallrules'))]"
+    },
+    "properties": {
+        "StartIpAddress": "[parameters('firewallrules')[copyIndex()].startIpAddress]",
+        "EndIpAddress": "[parameters('firewallrules')[copyIndex()].endIpAddress]"
+    }
+}
+----
+
+== _ARM templates_
+
+Cette mécanique a été utilisée pour les _templates_ de https://github.com/r3dlin3/phpOIDC[phpOIDC].
+On peut donc retrouver un exemple complet sur https://github.com/r3dlin3/phpOIDC/tree/master/infra/azure-win[GitHub].
+
+Il existe certainement plein de façons d'arriver au même résultat.
+L'utilisation des _nested templates_ permet d'assurer une certaine flexibilité.
+Ainsi, la liste des IP aurait pu être concaténée avec une autre liste, grâce à la fonction https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/template-functions-array#union[`union`].
+Également, cette méthode peut être conservée pour https://docs.microsoft.com/fr-fr/azure/azure-sql/database/firewall-configure[Azure SQL] ou https://docs.microsoft.com/fr-fr/azure/mysql/concepts-firewall-rules[Azure Database pour MySQL] ou https://docs.microsoft.com/en-us/azure/postgresql/concepts-firewall-rules[Azure Database pour PostgreSQL].
+
+Je recommande l'utilisation du script https://github.com/r3dlin3/ARMTemplateGenerator/blob/master/deploy.ps1[`deploy.ps1`] qui facilite grandement l'utilisation des modèles imbriqués.
+Il permet de&nbsp;:
+
+1. Créer un compte de stockage s'il n'existe pas
+2. Copier les _ARM templates_.
+3. Générer un token SAS
+4. Déployer l'ARM
+
