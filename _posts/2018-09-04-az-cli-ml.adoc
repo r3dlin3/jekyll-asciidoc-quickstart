@@ -38,7 +38,7 @@ NOTE: A noter la syntaxe de la commande `az login` pour ML Server, qui est un pe
 Azure CLI s'appuie sur python. Malgré mes tentatives pour ajouter les variables classiques (`CA_BUNDLE`, `CURL_CA_BUNDLE`, `REQUESTS_CA_BUNDLE`, `SSL_CERT_FILE`) mais rien n'y fait : la vérification de certificat échoue lamentablement.
 
 Un peu de recherche pointe vers le projet http://python-requests.org[Requests].
-Il s'appuie sur le projet sur https://certifiio.readthedocs.io/en/latest/[Certifi].
+Il s'appuie sur le projet sur https://pypi.org/project/certifi/[Certifi].
 
 Pour s'en convaincre, il suffit de lancer python et les quelques lignes suivantes :
 

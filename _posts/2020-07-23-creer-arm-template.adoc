@@ -38,11 +38,11 @@ Cette fonctionnalité est présente au niveau d'un groupe de ressources ou au ni
 
 Dans le portail&nbsp;:
 
-image::/assets/img/2020-07-23-creer-arm-template/export-modele-1.png[Exporter le modèle dans le portail Azure]
+image::/assets/img/2020-07-23-creer-arm-template/export-modele-1.png[Exporter le modèle dans le portail Azure, align=center]
 
 Puis, le contenu généré&nbsp;:
 
-image::/assets/img/2020-07-23-creer-arm-template/export-modele-2.png[ARM template généré dans le portail]
+image::/assets/img/2020-07-23-creer-arm-template/export-modele-2.png[ARM template généré dans le portail, align=center]
 
 *Avantages&nbsp;:*
 
@@ -125,9 +125,9 @@ Par exemple, le paramètre `type` de la https://docs.microsoft.com/fr-fr/azure/t
 
 Microsoft met à disposition une interface Web qui permet de parcourir les ressources de sa souscription en ARM&nbsp;: https://resources.azure.com.
 
-image::/assets/img/2020-07-23-creer-arm-template/resource-explorer[Azure Resource Explorer]
+image::/assets/img/2020-07-23-creer-arm-template/resource-explorer.png[Azure Resource Explorer, align=center]
 
-Cet outil est _très_ utile pour justement récupérer les valeurs que la <<_la_référence,référence>> n'aura pu nous donner.
+Cet outil est _très_ utile pour justement récupérer les valeurs que la <<la_référence,référence>> n'aura pu nous donner.
 
 Cela étant, comme il n'affiche pas un _ARM template_, il y a un travail certain pour convertir l'information dans un _ARM template_. 
 A utiliser en dernier recours donc&nbsp;!
@@ -153,11 +153,11 @@ Mais il est possible de récupérer l'_ARM template_ utilisé lors de l'export.
 
 Dans le portail, il suffit d'aller dans le menu &laquo;&nbsp;Déploiement&nbsp;&raquo;&nbsp;:
 
-image::/assets/img/2020-07-23-creer-arm-template/deploiement-1.png[Menu déploiement dans le portail Azure]
+image::/assets/img/2020-07-23-creer-arm-template/deploiement-1.png[Menu déploiement dans le portail Azure, align=center]
 
 Il est alors possible d'accéder aux paramètres d'entrée, au _template_ utilisé&nbsp;:
 
-image::/assets/img/2020-07-23-creer-arm-template/deploiement-2.png[Template d'un déploiement]
+image::/assets/img/2020-07-23-creer-arm-template/deploiement-2.png[Template d'un déploiement, align=center]
 
 NOTE: Le _template_ affiché ici est différent de l'export proposé à la création.
 
@@ -178,7 +178,7 @@ Pour autant, ici cela peut être un avantage.
 
 Je me suis servi de cette technique pour automatiser la création d'alerte. Il est facile de créer ou modifier une alerte ou un groupe d'actions dans le portail mais il n'existe pas les moyens de l'exporter.
 
-Les alertes sont aussi absentes d'<<_exploration_des_ressources, Azure Resource Explorer>>.
+Les alertes sont aussi absentes d'<<exploration_des_ressources, Azure Resource Explorer>>.
 
 J'ai donc travaillé avec la cmdlet `Get-AzMetricAlertRuleV2` qui m'a permis d'aller dans le détail des paramètres
 
@@ -193,11 +193,11 @@ $alerte.Actions[0].ActionGroupId
 
 *Avantages&nbsp;:*
 
-* Permet parfois d'accéder à des valeurs qui sont inaccessibles de l'<<_exploration_des_ressources, explorateur de ressources>>.
+* Permet parfois d'accéder à des valeurs qui sont inaccessibles de l'<<exploration_des_ressources, explorateur de ressources>>.
 
 *Inconvénients&nbsp;:*
 
-* Comme pour l'<<_exploration_des_ressources, explorateur de ressources>>, cette méthode ne permet pas d'obtenir un _ARM template_ directement exploitable.
+* Comme pour l'<<exploration_des_ressources, explorateur de ressources>>, cette méthode ne permet pas d'obtenir un _ARM template_ directement exploitable.
 * Cette méthode ne va pas fonctionner sur toutes les ressources car cela dépend à quel point la cmdlet est proche de l'implémentation ARM
 
 == Bonus&nbsp;: ARMTemplateGenerator
