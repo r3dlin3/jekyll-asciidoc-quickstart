@@ -1,0 +1,233 @@
+= Trucs et astuces pour la création d'ARM template
+:page-navtitle: Trucs et astuces pour la création d'ARM template
+:page-excerpt: L'ARM template est l'arme de choix dans l'arsenal d'Infrastructure as Code pour Azure. Pour autant, il n'est pas toujours simple d'arriver à ses fins. Voici quelques trucs et astuces. 
+:page-tags: [arm,azure,trucs]
+:toc: macro
+:toc-title: Table des matières
+
+== Introduction
+
+L'_ARM template_ est l'arme de choix dans l'arsenal d'_Infrastructure as Code_ pour Azure. 
+
+
+
+[TIP]
+====
+De manière générale, il ne faut pas négliger le temps nécessaire pour la création des scripts, des fichiers de configuration pour l'_Infrastructure as Code_.
+
+Pour autant, grâce à la répétabilité, vous gagnerez du temps pour
+la création des environnements (passage en prod à l'arrache&nbsp;?),
+en documentation, en qualité et en confiance (chaque mise à jour ne générera pas un stress car le résultat est connu d'avance)
+====
+
+Comme on va le voir, il existe plusieurs façons de créer des _ARM templates_. Chacune a ses avantages et inconvénients.
+
+Il sera donc parfois nécessaire de les combiner pour arriver à vos fins.
+
+toc::[]
+
+== Automatisation dans le portail
+
+Les gens me posent souvent la question&nbsp;: &laquo;&nbsp;Une fois que l'on a créé les ressources dans le portail, il n'est pas possible de faire un copié/collé pour créer un nouvel environnement&nbsp;?&nbsp;&raquo;
+
+Oui et non.
+
+En effet, le portail a une fonction proche&nbsp;:
+&laquo;&nbsp;Exporter le modèle&nbsp;&raquo;.
+Cette fonctionnalité est présente au niveau d'un groupe de ressources ou au niveau de la plupart des ressources.
+
+Dans le portail&nbsp;:
+
+image::/assets/img/2020-07-23-creer-arm-template/export-modele-1.png[Exporter le modèle dans le portail Azure]
+
+Puis, le contenu généré&nbsp;:
+
+image::/assets/img/2020-07-23-creer-arm-template/export-modele-2.png[ARM template généré dans le portail]
+
+*Avantages&nbsp;:*
+
+- Solution simple.
+- La qualité des _ARM templates_ s'améliorent.
+- Le portail génère également le fichier de paramètres.
+
+*Inconvénients&nbsp;:*
+
+* Comme on peut le voir sur la copie d'écran ci-dessus, toutes les ressources ne sont pas exportables.
+* Il n'est pas rare que des paramètres soient omis.
+* En réalité, les _ARM templates_ ainsi produits sont de qualité assez médiocre&nbsp;:
+
+** Le nom des paramètres utilise le nom des ressources. Comme l'objectif est souvent de pouvoir créer plusieurs environnements, il est préférable de généraliser le nom des paramètres. Par exemple, pour un compte de stockage, le paramètre va être `storageAccounts_nomducomptedestockage_name`. Il est recommandé de le renommer `storageAccountName` par exemple pour le généraliser et conserver une convention de nommage en _camelCase_.
+** Il n'y a pas d'intelligence dans ces templates. Il peut être intéressant de prévoir des boucles ou d'autres logiques.
+
+== Création dans le portail
+
+Lors de la création d'une ressource, il est possible, juste avant la création
+d'exporter un _ARM template_.
+
+image::/assets/img/2020-07-23-creer-arm-template/export-modele-3.png[ARM template généré lors de la création]
+
+*Avantages&nbsp;:*
+
+- Solution simple.
+- _ARM template_ plus propre que lors de l'export.
+- Le portail génère également le fichier de paramètres.
+
+*Inconvénients&nbsp;:*
+
+- Les _ARM templates_ ainsi générés peuvent plus complexe que nécessaire et inclure un paramétrage non nécessaire.
+Ainsi, lors de la création d'une base, l'_ARM template_ généré intègre la création d'un serveur SQL alors qu'il s'agissait de la création d'une base uniquement. Sans parler de toute la configuration réseau ou de sécurité avancée...
+- Les _ARM templates_ ainsi générés sont parfois si complexe qu'ils ne sont pas valides (j'ai déjà eu le cas&nbsp;!).
+
+== _Quickstart templates_
+
+Microsoft met à disposition des exemples pour la création de nombreuses ressources sur https://github.com/Azure/azure-quickstart-templates[GitHub].
+On peut y retrouver des exemples de base (préfixés en 101) jusqu'à des architectures complexes (ferme RDS, infrastructure SAP, etc.).
+
+*Avantages&nbsp;:*
+
+* Bon point de départ pour des cas de la vie réelle comme le chiffrement de disque de VM ou sa sauvegarde, des applications Web, etc.
+* Pas mal d'astuces à reprendre pour l'écriture d'_ARM templates_ sur les conditions, les boucles, le jeu des _nested templates_, etc.
+* De nombreux _template_ sur des composants non-Microsoft (Chef, SAP, Jenkins, Drupal, etc.).
+
+*Inconvénients&nbsp;:*
+
+* Certains _template_ ne sont pas mis à jour alors que le service évolue.
+Ainsi, certains _templates_ utilisent des vieilles versions d'API.
+Je pense notamment aux App Services dont la gestion des piles technologies a évoluée et pour laquelle je n'ai pas trouvé d'exemple viable
+* Cela manque de cohérence&nbsp;:
+** Sur le nommage des paramètres. Un réseau virtuel peut s'appeler `vnet` ou `virtualNetworkName`, ce qui nécessite un travail pour mettre en cohérence.
+** La gestion de la localisation de la ressource: dans le cas général, comme https://github.com/Azure/azure-quickstart-templates/blob/master/201-vm-copy-index-loops/azuredeploy.json[ici], la localisation est traitée comme un paramètre qui a une valeur par défaut à celle du groupe de ressource, https://github.com/Azure/azure-quickstart-templates/blob/master/301-drupal8-vmss-glusterfs-mysql/azuredeploy.json[ici] c'est une variable.
+
+== La référence
+
+Microsoft publie https://docs.microsoft.com/en-us/azure/templates/[la documentation] des ressources disponibles, pour les différentes versions d'API.
+
+Malheureusement, ces pages ne sont pas irréprochables.
+Ainsi, le nommage est proche de l'implémentation et l'on va avoir quelques bizarreries comme par exemple pour les App Services&nbsp;: pour avoir la référence, inutile de chercher &laquo;&nbsp;App Service&nbsp;&raquo;. Il faut aller sur &laquo;&nbsp;Web&nbsp;&raquo; car le _provider_ est `Microsoft.Web`.
+Ne cherchez pas non plus &laquo;&nbsp;App Insights&nbsp;&raquo;, etc.
+Vous voilà prévenu&nbsp;!
+
+Mais le principal reproche est que les valeurs sont rarement documentées.
+Par exemple, le paramètre `type` de la https://docs.microsoft.com/fr-fr/azure/templates/microsoft.datafactory/factories[configuration git d'un DataFactory] n'a pas de valeur décrite
+
+*Avantages&nbsp;:*
+
+* Liste en théorie tous les paramètres disponibles
+
+*Inconvénients&nbsp;:*
+
+* Il n'est pas rare qu'il manque des paramètres
+* Les valeurs des enums sont souvent manquantes
+* Le parcours du site n'est pas toujours aisé du fait d'une recherche médiocre
+
+
+== Exploration des ressources
+
+Microsoft met à disposition une interface Web qui permet de parcourir les ressources de sa souscription en ARM&nbsp;: https://resources.azure.com.
+
+image::/assets/img/2020-07-23-creer-arm-template/resource-explorer[Azure Resource Explorer]
+
+Cet outil est _très_ utile pour justement récupérer les valeurs que la <<_la_référence,référence>> n'aura pu nous donner.
+
+Cela étant, comme il n'affiche pas un _ARM template_, il y a un travail certain pour convertir l'information dans un _ARM template_. 
+A utiliser en dernier recours donc&nbsp;!
+
+NOTE: Cet outil permet de parcourir les différentes souscriptions rattachées à différents tenants Azure AD.
+
+*Avantages&nbsp;:*
+
+* Permet d'afficher les valeurs. Cela est intéressant quand on joue dans le portail pour voir les effets en ARM.
+
+*Inconvénients&nbsp;:*
+
+* Ne fournit pas un _ARM template_ à proprement parler.
+* Il est nécessaire de faire le tri en les paramètres que l'on peut fixer et ceux qui sont des attributs systèmes, accessibles en lecture seule par exemple.
+* Toutes les ressources ne sont pas affichages par ce biais.
+* Tous les paramètres ne sont pas affichés, notamment les secrets.
+
+== Déploiement
+
+Chaque déploiement dans un groupe de ressources est tracé.
+C'est un bon moyen parfois pour avoir des détails sur les erreurs.
+Mais il est possible de récupérer l'_ARM template_ utilisé lors de l'export.
+
+Dans le portail, il suffit d'aller dans le menu &laquo;&nbsp;Déploiement&nbsp;&raquo;&nbsp;:
+
+image::/assets/img/2020-07-23-creer-arm-template/deploiement-1.png[Menu déploiement dans le portail Azure]
+
+Il est alors possible d'accéder aux paramètres d'entrée, au _template_ utilisé&nbsp;:
+
+image::/assets/img/2020-07-23-creer-arm-template/deploiement-2.png[Template d'un déploiement]
+
+NOTE: Le _template_ affiché ici est différent de l'export proposé à la création.
+
+*Avantages&nbsp;:*
+
+* Récupération d'_ARM template_ fonctionnel (dès lors que le déploiement est en succès).
+* Très bonne méthode pour faire du _reverse engineering_ si les _templates_ ont été perdu.
+
+*Inconvénients&nbsp;:*
+
+* Comme pour les autres méthodes à partir du portail Azure, la qualité du _template_ n'est pas toujours excellente.
+
+== PowerShell
+
+C'est une critique que l'on peut faire aux cmdlets PowerShell d'Azure&nbsp;: je trouve qu'on est souvent trop proche de l'implémentation ARM. Essayez de créer une VM en PowerShell&nbsp;! En Az cli, cela peut se faire en une ligne, pas en PowerShell.
+
+Pour autant, ici cela peut être un avantage.
+
+Je me suis servi de cette technique pour automatiser la création d'alerte. Il est facile de créer ou modifier une alerte ou un groupe d'actions dans le portail mais il n'existe pas les moyens de l'exporter.
+
+Les alertes sont aussi absentes d'<<_exploration_des_ressources, Azure Resource Explorer>>.
+
+J'ai donc travaillé avec la cmdlet `Get-AzMetricAlertRuleV2` qui m'a permis d'aller dans le détail des paramètres
+
+Exemple pour avoir l'identifiant du groupe d'action&nbsp;:
+
+[source,powershell]
+----
+$alertes = Get-AzMetricAlertRuleV2
+$alerte = $alertes[0]
+$alerte.Actions[0].ActionGroupId
+----
+
+*Avantages&nbsp;:*
+
+* Permet parfois d'accéder à des valeurs qui sont inaccessibles de l'<<_exploration_des_ressources, explorateur de ressources>>.
+
+*Inconvénients&nbsp;:*
+
+* Comme pour l'<<_exploration_des_ressources, explorateur de ressources>>, cette méthode ne permet pas d'obtenir un _ARM template_ directement exploitable.
+* Cette méthode ne va pas fonctionner sur toutes les ressources car cela dépend à quel point la cmdlet est proche de l'implémentation ARM
+
+== Bonus&nbsp;: ARMTemplateGenerator
+
+Afin de pallier les défauts rencontrés dans la création d'_ARM templates_, j'ai créé un outil permettant la création d'_ARM templates_ &laquo;&nbsp;propre&nbsp;&raquo;&nbsp;: https://github.com/r3dlin3/ARMTemplateGenerator.
+
+Cet outil permet de&nbsp;:
+
+* Assurer une cohérence dans le nommage des paramètres
+* Générer un _template_ en fonction de son besoin&nbsp;: ainsi, lors de la création d'une base, le _template_ généré contiendra la création d'un serveur que si cela est nécessaire.
+
+N'hésitez pas à contribuer pour ajouter des ressources ou des nouveaux paramètres, mettre à jour les API, etc.
+
+
+*Avantages&nbsp;:*
+
+* Cohérence dans le nommage des paramètres
+* _Template_ adapté à son besoin
+
+*Inconvénients&nbsp;:*
+
+* Peu de ressources disponibles
+
+== Conclusion
+
+L'écriture d'_ARM templates_ n'est pas toujours compliqué heureusement.
+
+Parfois, cependant, pour arriver à ses fins, il peut être nécessairement d'ouvrir le truc au pied de biche, mais cela vaut souvent le coup.
+Chacune des techniques citées plus haut vous permettra d'arriver à vos fins, si tant est que soit possible.
+On se souvient par exemple qu'à l'époque, il n'était pas possible de créer un container sur un compte de stockage.
+Aujourd'hui, c'est possible de le faire en _ARM template_.
+
+
