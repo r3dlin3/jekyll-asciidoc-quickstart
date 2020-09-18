@@ -1,0 +1,140 @@
+= Fun avec PowerShell et Azure Form Recognizer
+:page-navtitle: Fun avec PowerShell et Azure Form Recognizer
+:page-excerpt: Utiliser PowerShell pour interroger les API de Form Recognizer. 
+:page-tags: [powershell,azure]
+:toc: macro
+:toc-title: Table des matières
+
+== Introduction
+
+https://docs.microsoft.com/fr-fr/azure/cognitive-services/form-recognizer/[Azure Form Recognizer] est un service cognitif permettant d'extraire du texte d'images.
+C'est un service assez jeune d'Azure et ne dispose pas d'interface comme un https://www.customvision.ai/[Custom Vision] hormis un https://docs.microsoft.com/fr-fr/azure/cognitive-services/form-recognizer/deploy-label-tool?tabs=v2-0[client qu'on peut déployer soi-même].
+
+Azure Form Recognizer propose aujourd'hui des SDK pour .NET, Python, Java et JavaScript ainsi qu'une https://westus2.dev.cognitive.microsoft.com/docs/services/form-recognizer-api-v2/operations/AnalyzeLayoutAsync[API REST].
+
+Pour le fun, j'ai donc utilisé PowerShell pour faire des appels à l'API REST.
+
+== Paramètres d'accès
+
+Dans le portail Azure, il est possible de récupérer les informations dont on a besoin pour accéder au service dans la section «&nbsp;Clés et point de terminaison&nbsp;» de l'instance Form Recognizer&nbsp;:
+
+- 2 clés d'accès
+- L'URL d'accès
+
+image::/assets/img/2020-09-18-form-recognizer-powershell/portal_fr.png[Clés et point de terminaison pour Form Recognizer, align=center]
+
+Une fois, ces valeurs récupérées, on peut initialiser les variables&nbsp;:
+
+[source,powershell]
+----
+# One of the key as defined in the "Keys and Endpoint" blade of Form Recognizer
+$key="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+# Endpoint as defined in the "Keys and Endpoint" blade of Form Recognizer
+# Must start with https:// and must end with a trailing "/"
+$endpoint = "https://<Instance Form Recognizer>.cognitiveservices.azure.com/"
+----
+
+== Lister les modèles
+
+Chaque entrainement de Form Recognizer va créer un nouveau modèle.
+Comment retrouver le modèle&nbsp;?
+
+Voici comment lister les modèles disponibles&nbsp;:
+[source,powershell]
+----
+$url = "{0}formrecognizer/v2.0/custom/models" -f $endpoint
+
+$headers = @{
+    "Content-Type" = "application/json"
+    "Ocp-Apim-Subscription-Key" = $key
+} <1>
+
+$res = Invoke-RestMethod -Method Get -Uri $url -Headers $headers <2>
+
+Write-Host "Number of models:", $res.modelList.Count
+$res.modelList | sort lastUpdatedDateTime <3>
+----
+<1> On prépare les entêtes à passer dans un simple tableau associatif (_hashtable_) pour passer en outre la clé. Les utilisateurs d'Azure API Management auront reconnu l'entête `Ocp-Apim-Subscription-Key`.
+<2> Pas de subtilité ici&nbsp;: on utilise la méthode `Invoke-RestMethod` qui se chargera de désérialisé le contenu retourné en JSON en un objet PowerShell.
+<3> Il est alors possible d'afficher la liste des modèles, ranger par date de dernière mise à jour par exemple.
+
+Exemple de sortie&nbsp;:
+
+----
+Number of models: 23
+
+modelId                              status createdDateTime      lastUpdatedDateTime 
+-------                              ------ ---------------      ------------------- 
+7147e795-7780-4dc6-85b6-e9da78cf0134 ready  2020-09-08T11:28:47Z 2020-09-08T11:28:49Z
+18f5dde0-f7bf-42fb-abb7-daed423d374e ready  2020-09-08T11:40:07Z 2020-09-08T11:40:07Z
+bbdce3a1-3768-4f27-8bca-a2ec15b85331 ready  2020-09-08T11:41:47Z 2020-09-08T11:41:47Z
+8124abd3-93b0-413f-b6d6-af1695ed9571 ready  2020-09-08T12:09:08Z 2020-09-08T12:09:10Z
+becc3c6c-d161-4121-b79d-177c6359529c ready  2020-09-08T12:14:10Z 2020-09-08T12:14:12Z
+...
+----
+
+== Faire une analyse d'un modèle personnalisé
+
+Il existe des modèles intégrés au service pour les https://docs.microsoft.com/fr-fr/azure/cognitive-services/form-recognizer/concept-business-cards[cartes de visite] ou des https://docs.microsoft.com/fr-fr/azure/cognitive-services/form-recognizer/concept-receipts[tickets de caisse]. 
+
+Il est cependant possible d'entrainer son propre modèle. Pour l'évaluation du modèle, nous aurons besoin de l'identifiant du modèle que l'on aura pu récupérer à l'étape précédente.
+
+Nous allons voir ici comment faire l'analyse d'une image.
+L'image peut être disponible sur Internet, typiquement sur un compte de stockage. Dans l'exemple ci-dessous, nous allons directement transférer l'image présente sur le disque. L'image peut être un JPEG, un PNG, un TIFF ou un PDF. 
+Dans l'exemple, il s'agira d'une image JPEG (cf. le Content-Type à `image/jpeg`).
+
+L'analyse d'une image se fait en 2 temps&nbsp;:
+
+1. On soumet l'image.
+2. On récupère l'analyse de l'image.
+
+[source,powershell]
+----
+# Id of the model (GUID)
+$modelId = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+$url = "{0}formrecognizer/v2.0/custom/models/{1}/analyze" -f $endpoint, $modelId
+
+$imagePath = "...\XXX.jpeg"
+
+$webRequest = [System.Net.HttpWebRequest]::Create($url) <1>
+$webRequest.Method = "POST"
+$webRequest.ContentType = "image/jpeg"
+$webrequest.Headers.Add("Ocp-Apim-Subscription-Key", $key)
+
+$requestStream = $webRequest.GetRequestStream()
+$buffer = [System.IO.File]::ReadAllBytes($imagePath)  <2>
+$requestStream = $webRequest.GetRequestStream()
+$requestStream.Write($buffer, 0, $buffer.Length)
+$requestStream.Flush()
+$requestStream.Close()
+
+[System.Net.HttpWebResponse] $webResponse = $webRequest.GetResponse()
+
+$nextUrl = $webResponse.Headers["Operation-Location"] <3>
+Start-Sleep -s 4 <4>
+$res = Invoke-RestMethod -Method Get -Headers @{"Ocp-Apim-Subscription-Key" = $key} -Uri $nextUrl <5>
+
+$res.analyzeResult.documentResults[0].fields
+----
+<1> Afin de récupérer les entêtes de la réponse, nous allons utiliser un objet .NET de type WebRequest. La cmdlet https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/invoke-restmethod?view=powershell-7#parameters[`Invoke-RestMethod`] dispose d'un paramètre `ResponseHeadersVariable` mais qui n'est disponible qu'à partir de PowerShell 6 qui n'est pas la version disponible par défaut.
+<2> Ici, on ne fait pas dans la dentelle. On lit toute l'image et on pousse dans la requête. Pas d'optimisation de la mémoire car l'image est assez petite.
+<3> On soumet la requête pour récupérer un objet réponse. C'est l'entête `Operation-Location` qui contient le lien pour récupérer le résultat de l'analyse.
+<4> L'analyse prend plus de 3 secondes. On attend 4s.
+<5> La méthode `Invoke-RestMethod` est parfaite pour récupérer le résultat de l'analyse.
+
+Exemple de sortie&nbsp;:
+
+----
+MonChamps                                                                                                                                          
+------------                                                                                                                                          
+@{type=string; valueString=XXX; text=XXX; page=1; boundingBox=System.Object[]; confidence=1,0; elements=System.Object[]}
+----
+
+== Conclusion
+
+PowerShell est disponible sur tous les postes Windows 10.
+En utilisant PowerShell, il est possible de facilement interroger les services d'Azure Form Recognizer sans dépendance à Python ou développement de programme en .NET ou même installer le client fourni par MS.
+
+Ultimement, on peut envisager le développement d'une Azure Function en PowerShell, s'il est nécessaire de surfacer l'API d'Azure Form Recognizer avec sa propre API (pour des raisons de sécurité, de découplage ou autre).
+Cet exercice est laissé à la discrétion du lecteur 😉.
