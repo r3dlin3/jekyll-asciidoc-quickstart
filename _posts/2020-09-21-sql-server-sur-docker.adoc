@@ -1,0 +1,134 @@
+= SQL Server sur docker et création de base
+:page-navtitle: SQL Server sur docker et création de base
+:page-excerpt: Depuis SQL Server 2017, il est possible de faire tourner un SQL Server sur Docker. Malheureusement l'image de base ne permet la création automatique d'une base de données. Je vais présenter comment rapidement répondre à ce besoin.
+:page-tags: [docker,sql-server,kubernetes,acr]
+:toc: macro
+:toc-title: Table des matières
+
+== Introduction
+
+Il est possible d'exécuter des https://docs.microsoft.com/fr-fr/sql/linux/quickstart-install-connect-docker[images de conteneur SQL Server avec Docker].
+Malheureusement, cette image ne permet pas créer de base de données par défaut.
+Au contraire, https://hub.docker.com/_/mysql/[MySQL], par le truchement de la variable `MYSQL_DATABASE`, permet de créer une base de données au démarrage.
+C'est un point qui a été relevé assez puisque ce point est tracé dans le https://github.com/Microsoft/mssql-docker/issues/2[ticket n°2] du projet GitHub.
+
+La seule solution possible est donc de passer par la personnalisation de l'image. Les scripts ont été pris du ticket GitHub.
+
+
+== Le Dockerfile
+
+Le Dockerfile va se charger de modifier la commande de démarrage afin de pouvoir initialiser la base de données.
+
+.Dockerfile
+[source,Dockerfile]
+----
+# Choose exact tag (not 'latest'), to be sure that new version will not break creating image
+FROM mcr.microsoft.com/mssql/server:2019-latest
+
+# Copy initialization scripts
+COPY *.sh ./ 
+USER root <1>
+RUN chmod +x *.sh
+USER mssql
+
+# Set environment variables, not to have to write them with docker run command
+ENV ACCEPT_EULA Y
+ENV MSSQL_PID Developer
+
+# Run Microsoft SQl Server and initialization script (at the same time)
+# Note: If you want to start MsSQL only (without initialization script) you can comment bellow line out, CMD entry from base image will be taken
+CMD /bin/bash ./entrypoint.sh
+----
+<1> Par défaut, l'image s'exécute avec un utilisateur non root. De fait, dans la construction de l'image, je bascule temporairement en tant que root. A noter que `sudo` n'est pas disponible dans l'image de base.
+
+Le script `entrypoint.sh` lance `init-db.sh` en tâche de fond (d'où le `&`) et démarre le serveur.
+
+.entrypoint.sh
+[source,bash]
+----
+# Run Microsoft SQl Server and initialization script (at the same time)
+./init-db.sh & /opt/mssql/bin/sqlservr
+----
+
+Le script `init-db.sh` va attendre le démarrage du serveur en scrutant les logs.
+
+.init-db.sh
+[source,bash]
+----
+#!/bin/bash
+# (see https://github.com/microsoft/mssql-docker/issues/2 )
+echo "Container initialization: waiting for the server to come up"
+while [ ! -f /var/opt/mssql/log/errorlog ]
+do
+  sleep 1
+done
+FOUND=0
+i=0
+while [[ $FOUND -ne 1 ]] && [[ $i -lt 60 ]]; do
+  i=$i+1
+  FOUND=$(grep -cim1 "Service Broker manager has started" /var/opt/mssql/log/errorlog)
+  if [[ $FOUND -ne 1 ]]; then
+    sleep 1
+  fi
+done
+if [[ $FOUND -ne 1 ]]; then
+  echo "Container initialization: Error: waited for more than 60 seconds for the server to start. Trying to create the database now..."
+fi
+sleep 10
+echo "Container initialization: creating the database if needed"
+/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P $SA_PASSWORD -Q "CREATE DATABASE $DB_NAME"
+echo "Container initialization: done"
+----
+
+== Test
+
+Pas de surprise sur la construction de l'image&nbsp;:
+
+[source,bash]
+----
+docker build -t mssql:latest .
+----
+
+Il est ensuite possible de lancer l'image
+
+[source,bash]
+----
+docker run --rm -e SA_PASSWORD=yourStrong(!)Password -e DB_NAME=mydb -p 1444:1433 mssql:latest
+----
+
+WARNING: J'utilise ici un prompt Windows. Les variables d'environnement ne doivent pas être encadrées d'apostrophe comme décrit dans les exemples de la https://hub.docker.com/_/microsoft-mssql-server[page DockerHub de SQL Server]. Egalement, le prompt Windows accepte sans broncher les points d'exclamation&nbsp;!
+
+
+Puisque l'option `-d` n'a pas été utilisée, les logs apparaissent dans la console.
+On peut alors voir à la fin le message suivant, indiquant la création de la base&nbsp;:
+
+----
+2020-09-21 16:44:53.70 spid51      Starting up database 'mydb'.
+2020-09-21 16:44:53.94 spid51      Parallel redo is started for database 'mydb' with worker pool size [4].
+2020-09-21 16:44:53.98 spid51      Parallel redo is shutdown for database 'mydb' with worker pool size [4].
+Container initialization: done
+----
+
+Grâce au mapping de port, il est alors possible d'utiliser son outil préféré pour se connecter à la base.
+
+Par exemple, avec Azure Data Studio, il est possible de préciser les paramètres suivants&nbsp;:
+
+- Connection Type: `Microsoft SQL Server`
+- Server Name: `localhost, 1444` (dans ma commande docker, j'ai utilisé un mapping du port 1444 vers le port 1433 du serveur)
+- Authentication Type: `SQL Login`
+- User name: `sa`
+- Password: `yourStrong(!)Password`
+
+image::{{ "/assets/img/2020-09-21-sql-server-sur-docker/azuredatastudio-connectiondetails.png" | absolute_url }}[Création d'une connexion dans Azure Data Studio,align="center"]
+
+On peut alors vérifier la version de SQL Server ou vérifier que la base a bien été créée en listant les bases de données&nbsp;:
+
+image:{{ "/assets/img/2020-09-21-sql-server-sur-docker/azuredatastudio-version.png" | absolute_url }}[Version SQL Server]
+image:{{ "/assets/img/2020-09-21-sql-server-sur-docker/azuredatastudio-databases.png" | absolute_url }}[Liste des bases de données]
+
+== Conclusion
+
+Même si l'on peut regretter que l'image Docker de SQL Server ne crée pas automatiquement une base de données au démarrage, force est de constater qu'il est très facile de créer une base, que le support de SQL Server est excellent. 
+Cela ouvre donc la porte à des scénarios intéressants de développement avec une forte réduction des contraintes sur le poste du développeur car même la base peut être «&nbsp;dockerisée&nbsp;».
+
+Finalement, on notera que Microsoft documente même un déploiement sur https://docs.microsoft.com/en-us/sql/linux/tutorial-sql-server-containers-kubernetes?view=sql-server-ver15[Kubernetes].
