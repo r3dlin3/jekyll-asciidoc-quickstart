@@ -1,0 +1,98 @@
+= Transformer des commandes Bash Azure CLI pour PowerShell
+:page-navtitle: Transformer des commandes Bash Azure CLI pour PowerShell
+:page-excerpt: La plupart des exemples pour Azure CLI sont données pour Bash. Voyons comment transformer les commandes Bash pour être exécutées sous PowerShell.
+:page-tags: [azure,az-cli,powershell]
+:toc: macro
+:toc-title: Table des matières
+
+== Introduction
+
+La plupart des exemples pour Azure CLI sont données pour Bash.
+Pour autant, on peut être sous Windows, sans https://docs.microsoft.com/fr-fr/windows/wsl/[sous-système Linux].
+On aura cependant toujours PowerShell&nbsp;!
+
+Voyons comment transformer les commandes Bash pour être exécutées sous PowerShell.
+
+== Les variables
+
+Les variables s'utilisent de la même façon grâce au symbole `$`.
+Ainsi la commande suivante s'exécute sous Bash ou PowerShell&nbsp;:
+
+[source,bash]
+----
+echo $mavariable
+----
+
+NOTE: `echo` est un alias pour `Write-Output` en PowerShell.
+
+Par contre, la déclaration est bien différente&nbsp;:
+
+[cols="2", options="header"]
+|===
+|Bash
+|PowerShell
+
+|`mavariable=toto`
+|`$mavariable="toto"`
+|===
+
+
+== Passage à la ligne
+
+Pour des raisons lisibilités évidentes, les longues commandes Bash sont le plus souvent découpées pour passer à la ligne.
+Le caractère `\` suivi d'une nouvelle ligne est compris comme https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_02_01[une continuation de ligne].
+
+[cols="2", options="header"]
+|===
+|Bash
+|PowerShell
+
+a|----
+az storage account create \
+        --name $sa \
+        -g $rg \
+        --access-tier Hot \
+        --sku Standard_LRS
+----
+a|----
+az storage account create `
+        --name $sa `
+        -g $rg `
+        --access-tier Hot `
+        --sku Standard_LRS
+----
+|===
+
+== Récupération de la sortie d'une commande
+
+En mettant simplement entre  ```, il est possible de récupérer le résultat d'une commande pour la mettre dans une variable.
+Finalement, ce n'est pas si compliqué en PowerShell.
+
+[cols="2", options="header"]
+|===
+|Bash
+|PowerShell
+
+a|----
+streaming_endpoint_hostname=`az ams streaming-endpoint show -g $rg -a $ams -n default`
+----
+a|----
+$streaming_endpoint_hostname = az ams streaming-endpoint show -g $rg -a $ams -n default
+----
+|===
+
+
+== Conclusion
+
+Voici quelques exemples pour adapter les commandes sur PowerShell.
+Il resterait beaucoup à dire&nbsp;:
+
+- Gestion des erreurs
+- Transformation en objet PowerShell (ex: `az aks list | ConvertFrom-Json`)
+- Conversion de fonction plus avancées comme&nbsp;:
+  ** Les boucles
+  ** Les pipes
+  ** L'utilisation de fonction spécifiques non présentes par défaut comme `jq`
+- Etc.
+
+Je mettrai à jour cette page en fonction des cas que je rencontre.
