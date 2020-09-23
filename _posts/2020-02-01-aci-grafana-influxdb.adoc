@@ -1,7 +1,7 @@
 = Grafana et InfluxDB sur Azure Container Instances
 :page-navtitle: Grafana et InfluxDB sur Azure Container Instances
 :page-excerpt: Azure Container Instances permet d'exécuter des containers. Voici un petit exemple de groupe de containers avec Grafana et InfluxDB.
-:page-tags: [docker,aci,azure,influxdb,grafana]
+:page-tags: [docker,aci,azure,influxdb,grafana,arm]
 
 Azure Container Instances (ACI) fait partie des nombreuses façons d'exécuter des containers sur Azure.
 Un des avantages d'ACI par rapport à App Service (présenté dans un link:{{ site.baseurl }}{% post_url 2020-01-01-sonarqube-app-service %}[précédent article]) est la 

@@ -15,7 +15,7 @@
         {
             "label": "Serve with drafts",
             "type": "shell",
-            "command": "bundle exec jekyll s -w -D"
+            "command": "bundle exec jekyll s -w -D --future"
         }
     ]
 }

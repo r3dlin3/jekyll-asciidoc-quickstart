@@ -1,7 +1,7 @@
 = Certificat Let's Encrypt sur Azure Container Instances et NGINX
 :page-navtitle: Certificat Let's Encrypt sur Azure Container Instances et NGINX
 :page-excerpt: Azure Container Instances permet d'exécuter des containers. Voici un petit exemple pour délivrer un certificat émis par Let's Encrypt, donc reconnu par les navigateurs.
-:page-tags: [docker,aci,azure,nginx,letsencrypt]
+:page-tags: [docker,aci,azure,nginx,letsencrypt,arm]
 
 Azure Container Instances fait partie des nombreuses façons d'exécuter des containers sur Azure.
 

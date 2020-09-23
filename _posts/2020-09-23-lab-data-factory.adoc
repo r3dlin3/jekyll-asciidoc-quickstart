@@ -1,0 +1,105 @@
+= Préparer rapidement un lab Data Factory en Azure CLI
+:page-navtitle: Préparer rapidement un lab Data Factory en Azure CLI
+:page-excerpt: Afin de faire des tests avec Data Factory, il peut être intéressant de monter un lab rapide avec Data Factory, un compte de stockage et une base de données. Voici quelques lignes de commande pour créer tout ça en un clin d'oeil.
+:page-tags: [azure,az-cli,data-factory]
+:toc: macro
+:toc-title: Table des matières
+
+== Introduction
+
+Le https://docs.microsoft.com/fr-fr/azure/data-factory/tutorial-copy-data-portal[tutorial] de copie de données d'un compte de 
+stockage vers Azure SQL nécessite quelques prérequis.
+
+Récemment, j'ai voulu également tester les points de terminaison privés (_Private Endpoint_) avec _Data Factory_ avec le https://docs.microsoft.com/fr-fr/azure/data-factory/tutorial-copy-data-portal-private[tutorial de Microsoft]  qui a les mêmes prérequis que le précédent tutorial.
+
+J'ai donc écrit les quelques lignes nécessaires en Azure CLI (pour varier les plaisirs avec les link:{{ site.baseurl }}/tags#arm[gabarits ARM]).
+
+NOTE: Il n'est pas nécessaire d'installer Azure CLI sur son poste pour exécuter les commandes. On peut utiliser https://shell.azure.com/bash[le Bash d'Azure Cloud Shell].
+
+WARNING: Les commandes sont données pour du Bash. Elles sont à adapter si vous utilisez PowerShell.
+
+== Les variables
+
+Les commandes suivantes s'appuient sur des variables pour contextualiser la création des ressources.
+Certains noms de ressource doivent être global unique -- c'est-à-dire unique sur l'ensemble des clients Microsoft -- comme le nom du compte de stockage et le nom du serveur SQL.
+D'autres, comme le nom de la base sont plus flexibles.
+
+[source,bash]
+----
+# Nom du groupe de ressources
+rg="rg-dfy"
+# Localisation du groupe de ressources et des ressources associées
+location="francecentral"
+# Compte de stockage
+sa="monstorage"
+# Data Factory
+dfy="mondfy"
+# Nom du serveur SQL
+sqlserver="monserveur"
+# Mot de passe du serveur SQL
+sqlpwd="MonMotdePasseComplexe!"
+# Nom de la base de données
+sqldb="mydb"
+----
+
+== Et tout commença... par un groupe de ressources
+
+[source,bash]
+----
+az group create -n $rg -l francecentral
+----
+
+== Création des ressources
+
+=== Serveur SQL
+
+NOTE: On crée ici une base en «&nbsp;Basic&nbsp;». Il faudra adapter en fonction de la taille souhaitée.
+
+[source,bash]
+----
+az sql server create -l $location -g $rg -n $sqlserver -u myadminuser -p $sqlpwd
+az sql db create -g $rg -s $sqlserver -n mydb --service-objective Basic
+----
+
+=== Compte de stockage et conteneurs
+
+Les commandes ci-dessous permettent de créer le compte de stockage et le conteneur.
+
+[source,bash]
+----
+az storage account create --name $sa \
+                          -g $rg \
+                          --access-tier Hot \
+                          --sku Standard_LRS
+
+cn=`az storage account show-connection-string -g $rg -n $sa -o tsv`
+
+az storage container create \
+    --account-name $sa \
+    --name data \
+    --public-access off \
+    --connection-string $cn 
+----
+
+=== Data Factory
+
+[source,bash]
+----
+az extension add --name datafactory
+
+az datafactory factory create --name $dfy \
+                              --resource-group $rg
+----
+
+== Conclusion
+
+Une fois les variables définies, il est possible de contruire le lab en moins de 2min30.
+On voit à quel point Azure CLI est performant dans la création d'un environnement, bien plus que
+PowerShell dont les cmdlets sont puissantes mais très proches de l'implémentation ARM et donc assez complexe.
+A ma connaissance, il n'est pas possible de créer une VM en une ligne avec PowerShell alors que c'est possible en Azure CLI.
+
+Personnellement, pour des petits projets, je vais favoriser Azure CLI à ARM, qui malgré tout, reste assez coûteux à écrire et tester.
+
+
+
+
