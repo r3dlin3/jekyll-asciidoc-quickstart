@@ -1,0 +1,97 @@
+= PHP sur Azure App Service : Windows ou Linux ?
+:page-navtitle: PHP sur Azure App Service : Windows ou Linux ?
+:page-excerpt: PHP est supporté sur App Service. Mais je me suis toujours demandé s'il était préférable d'utiliser un App Service sous Windows ou sous Linux. Voici les résultats de ma comparaison.
+:page-tags: [azure,php,app-service]
+:toc: macro
+:toc-title: Table des matières
+
+== Introduction
+
+PHP est supporté sur App Service. Bien avant l'avènement des App Services sous Linux, il était possible de faire tourner un Wordpress sur un App Service Windows.
+
+App Service sur Linux permet de faire tourner son application parmi les piles d'application supportées ou faire tourner son propre container.
+
+Pour mes tests, j'ai utilisé https://github.com/r3dlin3/phpOIDC/[phpOIDC] comme base de référence et https://locust.io/[Locust] comme injecteur.
+
+Le scénario de test comprend&nbsp;:
+
+- L'interrogation de l'URL de métadonnées
+- L'interrogation de l'URL de webfinger
+- L'authentification et la récupération d'un token
+- La récupération des informations de l'utilisateur (_userinfo_)
+- La validation du jeton
+
+== Windows
+
+Les graphiques suivants présentent les résultats pour un App Service plan B1 sous Windows.
+
+image::{{ "assets/img/2020-12-21-php-app-service/win/B1/number_of_users_1597081204.png" | absolute_url }}[Nombre d'utilisateurs,align="center"]
+image::{{ "assets/img/2020-12-21-php-app-service/win/B1/response_times_1597081204.png" | absolute_url }}[temps de réponse,align="center"]
+image::{{ "assets/img/2020-12-21-php-app-service/win/B1/total_requests_per_second_1597081204.png" | absolute_url }}[Nombre de requêtes par seconde,align="center"]
+
+Le nombre de requêtes est relativement erratique -- entre 2 et 6 requêtes/s -- avec une moyenne d'environ 3 requêtes/s.
+
+== Linux
+
+=== Plan B1
+
+Les graphiques suivants présentent les résultats pour un App Service plan B1 sous Linux.
+
+image::{{ "assets/img/2020-12-21-php-app-service/lin/B1/number_of_users_1597086026.png" | absolute_url }}[Nombre d'utilisateurs,align="center"]
+image::{{ "assets/img/2020-12-21-php-app-service/lin/B1/response_times_1597086026.png" | absolute_url }}[temps de réponse,align="center"]
+image::{{ "assets/img/2020-12-21-php-app-service/lin/B1/total_requests_per_second_1597086026.png" | absolute_url }}[Nombre de requêtes par seconde,align="center"]
+
+Le nombre de requêtes est relativement plus stable que pour Windows avec une moyenne d'environ 3 requêtes/s.
+
+=== Plan B3.
+
+Au moment de la rédaction de cet article, les plans Linux sont beaucoup moins cher que Windows.
+Ainsi en décembre 2020 pour France Central&nbsp;:
+
+[options="header"]
+|===
+|OS|Taille|Cores|Mémoire|Prix
+|Windows|B1|1| 	1,75 GB | ~€57.868/mois 
+|Linux|B1|1| 	1,75 GB | ~€11.081/mois 
+|Linux|B3|4| 	7 GB | ~€43.093/mois 
+|===
+
+On voit ainsi que l'on peut avoir beaucoup plus de ressources avec un plan Linux B3 qu'un plan Windows B1.
+
+Comparons ce qui est comparable et voyons les résultats pour un plan Linux B3&nbsp;:
+
+image::{{ "assets/img/2020-12-21-php-app-service/lin/B3/number_of_users_1597086533.png" | absolute_url }}[Nombre d'utilisateurs,align="center"]
+image::{{ "assets/img/2020-12-21-php-app-service/lin/B3/response_times_1597086533.png" | absolute_url }}[temps de réponse,align="center"]
+image::{{ "assets/img/2020-12-21-php-app-service/lin/B3/total_requests_per_second_1597086533.png" | absolute_url }}[Nombre de requêtes par seconde,align="center"]
+
+Cette fois-ci, avec un peu de stress, on arrive à 12 requêtes par secondes.
+
+== OPcache à la rescousse
+
+OPcache améliore les performances de PHP en stockant le bytecode des
+scripts précompilés en mémoire partagée, faisant ainsi qu'il n'est
+plus nécessaire à PHP de charger et d'analyser les scripts à chaque
+demande. 
+Il est inclus par défaut depuis PHP 5.5.
+
+Les graphiques suivants présentent les résultats pour un App Service plan B1 sous Linux avec OPcache activé dans l'image Docker&nbsp;:
+
+image::{{ "assets/img/2020-12-21-php-app-service/lin-opcache/B1/number_of_users_1602237945.png" | absolute_url }}[Nombre d'utilisateurs,align="center"]
+image::{{ "assets/img/2020-12-21-php-app-service/lin-opcache/B1/response_times_1602237945.png" | absolute_url }}[temps de réponse,align="center"]
+image::{{ "assets/img/2020-12-21-php-app-service/lin-opcache/B1/total_requests_per_second_1602237945.png" | absolute_url }}[Nombre de requêtes par seconde,align="center"]
+
+Le nombre de requêtes est relativement erratique -- entre 6 et 10 requêtes/s -- avec une moyenne d'environ 8 requêtes/s.
+
+== Conclusion
+
+Les tests de performance de https://github.com/r3dlin3/phpOIDC/[phpOIDC] n'ont pas du tout été impressionnant (sic.).
+
+Je n'ai pas joué avec le cache local sur https://docs.microsoft.com/fr-fr/azure/app-service/overview-local-cache[App Service sur Windows].
+C'est une option intéressante en termes de performance.
+
+Cela étant, on a pu voir qu'à prix équivalent, il est préférable d'utiliser un plan Linux.
+L'utilisation d'OPcache permet également de grandement améliorer les performances. Seule une image personnalisée permet d'avoir OPcache activé, donc un plan Linux.
+
+Il n'existe pas de réponse absolue quand on parle de tests de performance&nbsp;: Cela dépend fortement de l'application, des accès en lecture/écriture, etc.
+On peut voir que l'utilisation de plan sur Linux permet d'être plus efficace et devrait être favorisé.
+
