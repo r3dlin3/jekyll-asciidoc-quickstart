@@ -1,0 +1,77 @@
+= Logic App, API Azure et Media Services
+:page-navtitle: Logic App, API Azure et Media Services
+:page-excerpt: Logic App dispose d'ores-et-déjà de nombreux connecteurs pour piloter des ressources Azure. Si le connecteur n'existe pas, l'utilisation du connecteur REST et des identités managés permettent de rapidement arriver à ses fins.
+:page-tags: [azure,logic-app]
+:toc: macro
+:toc-title: Table des matières
+
+== Introduction
+
+Logic App dispose d'ores-et-déjà de nombreux connecteurs pour piloter des ressources Azure&nbsp;:
+
+- https://docs.microsoft.com/fr-fr/connectors/azureappservice/[L'arrêt/relance d'instance App Service]
+- https://docs.microsoft.com/fr-fr/connectors/keyvault/[La gestion des clés ou des secrets dans Azure Key Vault]
+
+Si le connecteur n'existe pas, l'utilisation du connecteur REST et des identités managés permettent de rapidement arriver à ses fins.
+
+Ainsi, dans mon cas, je voulais pouvoir arrêter un _Streaming Endpoint_ sur un Azure Media Services. 
+En effet, un _Streaming Endpoint_ est facturé mais peut être arrêté. Et dans mon environnement de bac à sable, je n'en ai pas besoin en permanence.
+
+== Création de la Logic App
+
+La création d'une Logic App se fait assez simplement dans le portail.
+
+=== Identité managée
+
+Une fois créée, il faut activer l'identité managée, qui est désactivée par défaut.
+Pour ce faire, il faut simplement aller dans la _blade Identity_&nbsp;:
+
+image::{{ "assets/img/2021-01-05-logic-app-azure-media-services/logic-app-identity.png" | absolute_url }}[Identité managée d'une Logic App,align="center"]
+
+Le bouton "Attributions de rôle Azure" permet d'attribuer des droits sur le Media Services.
+Malheureusement, par ce biais, il n'est possible, pour le moment, que d'attribuer des droits au niveau d'une souscription ou d'un groupe de ressources ou des ressources comme SQL, compte de stockage ou Key Vault, mais pas sur un media services.
+
+Il n'existe pas de rôle spécifique à Media Services.
+Nous allons devoir recourir au rôle "Contributeur" si l'on ne veut pas avoir de rôle personnalisé, ce qui est mon cas, car je veux garder les choses simples.
+
+Pour autant, pour éviter d'attribuer trop de droits, je préconise d'attribuer le rôle "Contributeur" directement sur l'instance Media Services.
+
+=== API REST et connecteur Logic App
+
+Azure Media Services dispose d'une API REST et donc d'une https://docs.microsoft.com/fr-fr/rest/api/media/streamingendpoints/stop[méthode] spécifique pour arrêter un _Streaming Endpoint_.
+
+Il s'agit d'une simple requête POST sur L'URL `\https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Media/mediaservices/{accountName}/streamingEndpoints/{streamingEndpointName}/stop?api-version=2020-05-01`
+
+Une fois les valeurs remplacées dans l'URL ci-dessus, on peut utiliser simplement un connecteur HTTP en *activant l'authentification par identité managée*&nbsp;:
+
+image::{{ "assets/img/2021-01-05-logic-app-azure-media-services/http-connector.png" | absolute_url }}[Connecteur HTTP avec authentification par identité managée,align="center"]
+
+
+== Le déploiement automatisé par ARM template
+
+J'ai préparé un ARM template qui va&nbsp;:
+
+- Déployer la Logic App et configurer l'URL
+- Attribuer le droit "Contributeur" sur Media Services
+
+NOTE: Je fais l'hypothèse que la Logic App est déployée dans le même groupe de ressources que l'Azure Media Services.
+
+pass:[<script src="https://gist.github.com/r3dlin3/71a2d05222c848615c2d5caac0155f0f.js?file=template.json"></script>]
+
+pass:[<script src="https://gist.github.com/r3dlin3/71a2d05222c848615c2d5caac0155f0f.js?file=parameters.json"></script>]
+
+Comme d'habitude, il existe plusieurs façon de le déployer, comme par exemple&nbsp;:
+
+- En 1 clic&nbsp;: 
+image:https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.svg?sanitize=true[Deploy To Azure, link="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fgist.githubusercontent.com%2Fr3dlin3%2F71a2d05222c848615c2d5caac0155f0f%2Fraw%2Ff0e12fd6373c6ee7d087854b0b84a80ca8d59917%2Ftemplate.json"]
+
+- En PowerShell
+[source,powershell]
+----
+New-AzResourceGroupDeployment -ResourceGroupName "mon-rg" -TemplateParameterFile .\parameters.json -TemplateFile .\template.json -Verbose
+----
+
+== Conclusion
+
+En quelques clics, il est possible d'automatiser des tâches dans Azure avec Logic App, même si le connecteur n'est pas disponible.
+L'économie peut être substantielle alors que le coût de mise en œuvre est ridicule.
