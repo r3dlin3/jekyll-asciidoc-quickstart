@@ -1,0 +1,69 @@
+= Requêtes dynamiques avec Postman
+:page-navtitle: Requêtes dynamiques avec Postman
+:page-excerpt: Postman est un excellent outil pour tester des API REST. Voyons comment générer du contenu à la volée.
+:page-tags: [rest]
+:toc: macro
+:toc-title: Table des matières
+
+== Introduction
+
+https://www.postman.com/[Postman] est un excellent outil pour tester des API REST.
+
+L'utilisation des https://learning.postman.com/docs/sending-requests/managing-environments/[environnements] permet déjà d'apporter une certaine dynamicité en regroupant certaines variables propres un environnement justement&nbsp;: URL, login et mot de passe, etc.
+En utilisant les https://learning.postman.com/docs/sending-requests/variables/[variables] entre double accolade (ex&nbsp;: `{\{base_url\}}`), il est alors possible de réutiliser ces variables dans l'URL, dans le contenu de la requête ou autre.
+
+Postman permet de faire des prétraitements en JavaScript.
+C'est ce que nous allons exploiter.
+
+== Les scripts de prérequêtes
+
+Il est possible d'ajouter du JavaScript à 2 moments&nbsp;:
+
+- Avant d'envoyer la requête&nbsp;: le contenu du script est dans l'onglet "Pre-request Script"
+- Après avoir reçu la réponse&nbsp;: le contenu du script est dans l'onglet "Tests"
+
+Il est à noter qu'on peut positionner des scripts à plusieurs niveaux&nbsp;:
+
+- Au niveau de la collection
+- Au niveau du répertoire
+- Au niveau de la requête
+
+== Un premier script
+
+L'exemple ci-dessous permet de créer 2 variables&nbsp;: `startTime` et `endTime`.
+
+[source,javascript]
+----
+var now = new Date().getTime();
+console.log(now);<1>
+var startTime = new Date(now + 60*1000);
+var endTime = new Date(now + 5*60*1000);
+console.log(startTime);
+
+
+pm.environment.set('startTime', startTime.toISOString()); <2>
+pm.environment.set('endTime', endTime.toISOString());
+----
+<1> Il est possible de logguer, ce qui est très appréciable.
+<2> Les variables sont rendues disponibles grâce à cette commande.
+
+NOTE: La console développeur avec les logs est disponible dans le menu "View > Show Postman Console"
+
+== Utilisation des variables
+
+L'exemple montre l'utilisation des variables dans le corps du message.
+// cf. https://asciidoctor.org/docs/asciidoc-writers-guide/#inline-pass-macro-and-explicit-substitutions
+// Requiert subs=+macros pour utiliser la macro dans le source
+// Trick utilisé sinon {{endTime}} était remplacé par une chaîne vide
+[source,javascript,subs=+macros]
+----
+{
+    "startTime": "{pass:quotes[{startTime}]}",
+    "endTime": "{pass:quotes[{endTime}]}"
+}
+----
+
+== Conclusion
+
+Il n'est pas rare que l'on veuille tester avec des valeurs aléatoires ou dépendantes du temps.
+L'utilisation de script permet de rendre plus dynamique les requêtes.
