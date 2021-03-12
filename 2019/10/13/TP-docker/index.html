@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html class="no-js">
+  <head>
+	<meta charset="utf-8">
+	<title>Petit TP Docker | A bit of everything</title>
+	<meta name="description" content="Petit retour sur la Dockerisation d'une application Python 2.7 simple">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="/assets/css/main.css">
+
+	<!--Favicon-->
+	<link rel="shortcut icon" href="/assets/favicon.ico" type="image/x-icon">
+
+	<!-- Canonical -->
+	<link rel="canonical" href="/2019/10/13/TP-docker/">
+
+	<!-- RSS -->
+	<link type="application/atom+xml" rel="alternate" href="https://r3dlin3.github.io/feed.xml" title="A bit of everything" />
+	<!-- SEO -->
+	<!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Petit TP Docker | A bit of everything</title>
+<meta name="generator" content="Jekyll v3.8.7" />
+<meta property="og:title" content="Petit TP Docker" />
+<meta name="author" content="r3dLiN3" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Petit retour sur la Dockerisation d’une application Python 2.7 simple" />
+<meta property="og:description" content="Petit retour sur la Dockerisation d’une application Python 2.7 simple" />
+<link rel="canonical" href="https://r3dlin3.github.io/2019/10/13/TP-docker/" />
+<meta property="og:url" content="https://r3dlin3.github.io/2019/10/13/TP-docker/" />
+<meta property="og:site_name" content="A bit of everything" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2019-10-13T00:00:00+00:00" />
+<script type="application/ld+json">
+{"author":{"@type":"Person","name":"r3dLiN3"},"headline":"Petit TP Docker","dateModified":"2019-10-13T00:00:00+00:00","datePublished":"2019-10-13T00:00:00+00:00","description":"Petit retour sur la Dockerisation d’une application Python 2.7 simple","mainEntityOfPage":{"@type":"WebPage","@id":"https://r3dlin3.github.io/2019/10/13/TP-docker/"},"@type":"BlogPosting","url":"https://r3dlin3.github.io/2019/10/13/TP-docker/","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+	<!-- Google Fonts -->
+	
+	<link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,700italic,400italic" rel="stylesheet" type="text/css">
+	
+
+	<!-- KaTeX -->
+	
+
+	<!-- Google Analytics -->
+	
+</head>
+
+  <body>
+    <header class="site-header">
+	<div class="branding">
+		
+		<a href="/">
+			<img class="avatar" src="/assets/img/avatar.png" alt="avatar"/>
+		</a>
+		
+		<h1 class="site-title">
+			<a href="/">A bit of everything</a>
+		</h1>
+	</div>
+	<nav class="site-nav">
+		<ul>
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/about/">
+					A propos
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/tags/">
+					tags
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<!-- Social icons from Font Awesome, if enabled  -->
+			
+			
+            
+            <!-- Search bar -->
+            
+		</ul>
+	</nav>
+    
+</header>
+
+    <div class="content">
+      <article >
+  <header style="background-image: url('/')">
+    <h1 class="title">Petit TP Docker</h1>
+    
+    <p class="meta">
+      
+
+
+
+13
+
+octobre
+  
+2019
+      
+    </p>
+  </header>
+  <section class="post-content"><div class="sect1">
+<h2 id="intro"><a class="anchor" href="#intro"></a><a class="link" href="#intro">Intro</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="https://code.ffdn.org/ffdn/cavote">cavote</a> est une application de vote en ligne open source développée par la <a href="https://www.ffdn.org/fr">fédération FDN</a>.</p>
+</div>
+<div class="paragraph">
+<p>L&#8217;installation paraissait simple (<code>pip install -r requirements.txt</code>, etc.) mais je me suis rapidement rendu compte que la petite mention "testé avec python 2.7" allait rapidement me bloquer avec mon python 3.6 et 3.7 si je ne voulais pas réécrire l&#8217;application.</p>
+</div>
+<div class="paragraph">
+<p>C&#8217;est là que rentre Docker en jeu avec ses capacités à supporter des systèmes hétérogènes, voire ancien comme dans mon cas. En effet, je ne tenais pas à installer un 2.7 sur mon Windows 10 dernier cri.</p>
+</div>
+<div class="paragraph">
+<p>Même si le fichier Docker ne fait qu&#8217;une dizaine de ligne, c&#8217;est l&#8217;occasion de rappeler quelques pratiques.</p>
+</div>
+<div class="paragraph">
+<p>Le fichier complet est disponible à la <a href="#prod.Dockerfile">fin</a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="image"><a class="anchor" href="#image"></a><a class="link" href="#image">Image</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>L&#8217;image de départ est extrêmement importante. L&#8217;objectif est d&#8217;avoir une image de départ&nbsp;:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Qui soit fiable, d&#8217;un point de vue sécurité&nbsp;: pour ce faire préférer les <a href="https://docs.docker.com/docker-hub/official_images/">images officielles</a></p>
+</li>
+<li>
+<p>Qui soit la plus petite possible&nbsp;: pour ce faire, préférer les versions à base d&#8217;alpine plutôt qu&#8217;à base d&#8217;Ubuntu ou Debian</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="dockerfile"><span class="k">FROM</span><span class="s"> python:2.7-alpine</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Comme on peut le voir ci-dessous, l&#8217;image <code>python:2.7-alpine</code> ne fait que 61,68MB.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="shell"><span class="o">&gt;</span> docker system <span class="nb">df</span> <span class="nt">-v</span>
+Images space usage:
+REPOSITORY            TAG                 IMAGE ID            CREATED             SIZE                SHARED SIZE         UNIQUE SIZE         CONTAINERS
+...
+python                2.7-alpine          df73112425b5        6 weeks ago         61.68MB             61.68MB             0B                  0
+...</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="installation_des_dépendances"><a class="anchor" href="#installation_des_dépendances"></a><a class="link" href="#installation_des_dépendances">Installation des dépendances</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Afin de pouvoir générer le plus rapidement possible une image, tout en profitant du mécanisme de couche, il est recommandé de&nbsp;:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Copier en premier le fichier de dépendance pip <code>requirements.txt</code> et exécuter la commande <code>pip install</code></p>
+</li>
+<li>
+<p>Copier les fichiers python de l&#8217;application à la fin</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Ainsi, tant que le fichier de dépendance n&#8217;est pas mis à jour, la construction de l&#8217;image pourra se faire en repartant de l&#8217;ancienne image.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="flask_dans_docker"><a class="anchor" href="#flask_dans_docker"></a><a class="link" href="#flask_dans_docker">Flask dans Docker</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="https://palletsprojects.com/p/flask/">Flask</a> est un framework Web python répandu.</p>
+</div>
+<div class="paragraph">
+<p>Par défaut, Flask écoute sur l&#8217;interface 127.0.0.1. Le port n&#8217;est donc pas accessible quand publie le port avec Docker.</p>
+</div>
+<div class="paragraph">
+<p>Il faut donc modifier la ligne suivante</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python">    <span class="n">app</span><span class="p">.</span><span class="n">run</span><span class="p">()</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>par</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="python">    <span class="n">app</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="n">host</span><span class="o">=</span> <span class="s">'0.0.0.0'</span><span class="p">)</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="ignorer_des_fichiers"><a class="anchor" href="#ignorer_des_fichiers"></a><a class="link" href="#ignorer_des_fichiers">Ignorer des fichiers</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Il est possible d&#8217;ignorer des fichiers&#8201;&#8212;&#8201;à la manière de git avec <code>.gitignore</code>&#8201;&#8212;&#8201;avec le fichier <code>.dockerignore</code>.</p>
+</div>
+<div class="paragraph">
+<p>J&#8217;ai donc ignoré le répertoire git et la configuration d&#8217;exemple avec le fichier suivant&nbsp;:</p>
+</div>
+<div class="paragraph">
+<p><script src="https://gist.github.com/486da0a410c1bd71bc183b3ac74490e1.js?file=.dockerignore"></script></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="dockerfile_de_développement"><a class="anchor" href="#dockerfile_de_développement"></a><a class="link" href="#dockerfile_de_développement">Dockerfile de développement</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Le fichier Docker pour la version "développement" complète est disponible ci-dessous&nbsp;:</p>
+</div>
+<div class="paragraph">
+<p><script src="https://gist.github.com/486da0a410c1bd71bc183b3ac74490e1.js?file=Dockerfile"></script></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="construction_dune_image"><a class="anchor" href="#construction_dune_image"></a><a class="link" href="#construction_dune_image">Construction d&#8217;une image</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Lors de la construction d&#8217;une image, il est très fortement recommandé de la tagué&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sh">docker build <span class="nb">.</span> <span class="nt">-t</span> cavote:latest</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="et_cest_parti"><a class="anchor" href="#et_cest_parti"></a><a class="link" href="#et_cest_parti">Et c&#8217;est parti!</a></h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sh">docker run <span class="nt">-d</span> <span class="nt">--rm</span> <span class="nt">-p</span> 5000:5000 cavote:latest</code></pre>
+</div>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>-d</code></dt>
+<dd>
+<p>va automatiquement rendre la main et transformer le docker en démon</p>
+</dd>
+<dt class="hdlist1"><code>--rm</code></dt>
+<dd>
+<p>supprimera le container à la fin</p>
+</dd>
+<dt class="hdlist1"><code>-p</code></dt>
+<dd>
+<p>va mapper le port 5000 du container sur le port 5000 de l&#8217;hôte (donc en local)</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>La commande suivante va donner la liste des containers en cours d&#8217;exécution&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sh"><span class="o">&gt;</span> docker ps
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                    NAMES
+b08233412e9b        cavote:latest       <span class="s2">"gunicorn -w 4 --bin…"</span>   11 minutes ago      Up 11 minutes       0.0.0.0:5000-&gt;5000/tcp   elastic_keller</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>La commande suivante va l&#8217;arrêter (et le supprimer si l&#8217;option <code>--rm</code> avait été précisé initialement)&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sh">docker stop b08233412e9b</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="mise_en_production_avec_gunicorn"><a class="anchor" href="#mise_en_production_avec_gunicorn"></a><a class="link" href="#mise_en_production_avec_gunicorn">Mise en production avec gunicorn</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>La documentation précise que, pour une installation en production, on peut utiliser un serveur comme gunicorn.</p>
+</div>
+<div class="paragraph">
+<p>Pour ce faire, j&#8217;ai donc ajouté <code>gunicorn</code> dans les dépendances&nbsp;:
+<script src="https://gist.github.com/486da0a410c1bd71bc183b3ac74490e1.js?file=requirements.txt"></script></p>
+</div>
+<div class="paragraph">
+<p>La commande à exécuter dans docker est modifiée pour démarrer <code>gunicorn</code>&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="dockerfile"><span class="k">CMD</span><span class="s"> ["gunicorn", "-w", "4", "--bind", "0.0.0.0:5000","main:app"]</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Ce qui donne&nbsp;:</p>
+</div>
+<div id="prod.Dockerfile" class="paragraph">
+<p><script src="https://gist.github.com/486da0a410c1bd71bc183b3ac74490e1.js?file=prod.Dockerfile"></script></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="conclusion"><a class="anchor" href="#conclusion"></a><a class="link" href="#conclusion">Conclusion</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Il s&#8217;agissait d&#8217;une petite application et d&#8217;un fichier Docker pour la tester mais il convient de respecter certaines bonnes pratiques pour accélérer la construction des images, leurs tests et leurs déploiements.</p>
+</div>
+<div class="paragraph">
+<p>Ainsi, dans mon exemple, la configuration est chargée directement dans l&#8217;image.
+Il s&#8217;agit évidemment d&#8217;une mauvaise pratique.
+Il faudra donc s&#8217;intéresser aux volumes pour s&#8217;assurer que les fichiers de configuration ne fassent pas partie de l&#8217;image.</p>
+</div>
+<div class="paragraph">
+<p>Egalement, gunicorn est "exposé" directement.
+L&#8217;application est accessible en HTTP, ce qui est bien suffisant pour un test local.
+Pour une mise en production, on pourrait s&#8217;appuyer sur un <em>reverse-proxy</em> comme NGINX qui assurerait la terminaison SSL.
+On pourrait donc imaginer embarquer NGINX et cavote ensemble grâce à <a href="https://docs.docker.com/compose/">Docker Compose</a>.</p>
+</div>
+</div>
+</div></section>
+  
+<footer>
+  <div class="tags">
+    
+    <a class="tag" href="/tags#docker">#docker</a>
+    
+    <a class="tag" href="/tags#python">#python</a>
+    
+  </div>
+</footer>
+
+
+</article>
+
+<!-- Disqus -->
+
+
+<!-- Post navigation -->
+
+  <div id="post-nav">
+  
+  <div id="previous-post" class="post-nav-post">
+      <p>Article précédent</p>
+      <a href="/2019/07/04/dotnet-core-datalakestorage/">
+        Charger des fichiers sur un Data Lake Storage Gen 2 en .Net Core
+      </a>
+  </div>
+  
+  
+  <div id="next-post" class="post-nav-post">
+      <p>Article suivant</p>
+      <a href="/2019/12/30/sonarqube-docker-windows/">
+        SonarQube sur Windows avec Docker
+      </a>
+  </div>
+  
+</div>
+
+
+
+    </div>
+    
+
+
+<footer class="site-footer">
+	<nav class="site-nav">
+		<ul>
+			
+<li>
+	<a href="/feed.xml" title="Suivre sur RSS">
+		<i class="fa fa-fw fa-rss"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+	<a href="https://github.com/r3dlin3" title="Follow on GitHub">
+		<i class="fa fa-fw fa-github"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		</ul>
+	</nav>
+	<p class="text">Powered by <a href="https://jekyllrb.com/">Jekyll</a> with <i class="fa fa-heart" aria-hidden="true" style="color:Tomato"></i>
+</p>
+</footer>
+
+  </body>
+</html>

@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html class="no-js">
+  <head>
+	<meta charset="utf-8">
+	<title>SQL Server sur docker et création de base | A bit of everything</title>
+	<meta name="description" content="Depuis SQL Server 2017, il est possible de faire tourner un SQL Server sur Docker. Malheureusement l'image de base ne permet la création automatique d'une ba...">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="/assets/css/main.css">
+
+	<!--Favicon-->
+	<link rel="shortcut icon" href="/assets/favicon.ico" type="image/x-icon">
+
+	<!-- Canonical -->
+	<link rel="canonical" href="/2020/09/21/sql-server-sur-docker/">
+
+	<!-- RSS -->
+	<link type="application/atom+xml" rel="alternate" href="https://r3dlin3.github.io/feed.xml" title="A bit of everything" />
+	<!-- SEO -->
+	<!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>SQL Server sur docker et création de base | A bit of everything</title>
+<meta name="generator" content="Jekyll v3.8.7" />
+<meta property="og:title" content="SQL Server sur docker et création de base" />
+<meta name="author" content="r3dLiN3" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Depuis SQL Server 2017, il est possible de faire tourner un SQL Server sur Docker. Malheureusement l’image de base ne permet la création automatique d’une base de données. Je vais présenter comment rapidement répondre à ce besoin." />
+<meta property="og:description" content="Depuis SQL Server 2017, il est possible de faire tourner un SQL Server sur Docker. Malheureusement l’image de base ne permet la création automatique d’une base de données. Je vais présenter comment rapidement répondre à ce besoin." />
+<link rel="canonical" href="https://r3dlin3.github.io/2020/09/21/sql-server-sur-docker/" />
+<meta property="og:url" content="https://r3dlin3.github.io/2020/09/21/sql-server-sur-docker/" />
+<meta property="og:site_name" content="A bit of everything" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-09-21T00:00:00+00:00" />
+<script type="application/ld+json">
+{"author":{"@type":"Person","name":"r3dLiN3"},"headline":"SQL Server sur docker et création de base","dateModified":"2020-09-21T00:00:00+00:00","datePublished":"2020-09-21T00:00:00+00:00","description":"Depuis SQL Server 2017, il est possible de faire tourner un SQL Server sur Docker. Malheureusement l’image de base ne permet la création automatique d’une base de données. Je vais présenter comment rapidement répondre à ce besoin.","mainEntityOfPage":{"@type":"WebPage","@id":"https://r3dlin3.github.io/2020/09/21/sql-server-sur-docker/"},"@type":"BlogPosting","url":"https://r3dlin3.github.io/2020/09/21/sql-server-sur-docker/","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+	<!-- Google Fonts -->
+	
+	<link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,700italic,400italic" rel="stylesheet" type="text/css">
+	
+
+	<!-- KaTeX -->
+	
+
+	<!-- Google Analytics -->
+	
+</head>
+
+  <body>
+    <header class="site-header">
+	<div class="branding">
+		
+		<a href="/">
+			<img class="avatar" src="/assets/img/avatar.png" alt="avatar"/>
+		</a>
+		
+		<h1 class="site-title">
+			<a href="/">A bit of everything</a>
+		</h1>
+	</div>
+	<nav class="site-nav">
+		<ul>
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/about/">
+					A propos
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/tags/">
+					tags
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<!-- Social icons from Font Awesome, if enabled  -->
+			
+			
+            
+            <!-- Search bar -->
+            
+		</ul>
+	</nav>
+    
+</header>
+
+    <div class="content">
+      <article >
+  <header style="background-image: url('/')">
+    <h1 class="title">SQL Server sur docker et création de base</h1>
+    
+    <p class="meta">
+      
+
+
+
+21
+
+septembre
+  
+2020
+      
+    </p>
+  </header>
+  <section class="post-content"><div class="sect1">
+<h2 id="introduction"><a class="anchor" href="#introduction"></a><a class="link" href="#introduction">Introduction</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Il est possible d&#8217;exécuter des <a href="https://docs.microsoft.com/fr-fr/sql/linux/quickstart-install-connect-docker">images de conteneur SQL Server avec Docker</a>.
+Malheureusement, cette image ne permet pas créer de base de données par défaut.
+Au contraire, <a href="https://hub.docker.com/_/mysql/">MySQL</a>, par le truchement de la variable <code>MYSQL_DATABASE</code>, permet de créer une base de données au démarrage.
+C&#8217;est un point qui a été relevé assez puisque ce point est tracé dans le <a href="https://github.com/Microsoft/mssql-docker/issues/2">ticket n°2</a> du projet GitHub.</p>
+</div>
+<div class="paragraph">
+<p>La seule solution possible est donc de passer par la personnalisation de l&#8217;image. Les scripts ont été pris du ticket GitHub.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="le_dockerfile"><a class="anchor" href="#le_dockerfile"></a><a class="link" href="#le_dockerfile">Le Dockerfile</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Le Dockerfile va se charger de modifier la commande de démarrage afin de pouvoir initialiser la base de données.</p>
+</div>
+<div class="listingblock">
+<div class="title">Dockerfile</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="Dockerfile"><span class="c"># Choose exact tag (not 'latest'), to be sure that new version will not break creating image</span>
+<span class="k">FROM</span><span class="s"> mcr.microsoft.com/mssql/server:2019-latest</span>
+
+<span class="c"># Copy initialization scripts</span>
+<span class="k">COPY</span><span class="s"> *.sh ./</span>
+<span class="k">USER</span><span class="s"> root </span><i class="conum" data-value="1"></i><b>(1)</b>
+<span class="k">RUN </span><span class="nb">chmod</span> +x <span class="k">*</span>.sh
+<span class="k">USER</span><span class="s"> mssql</span>
+
+<span class="c"># Set environment variables, not to have to write them with docker run command</span>
+<span class="k">ENV</span><span class="s"> ACCEPT_EULA Y</span>
+<span class="k">ENV</span><span class="s"> MSSQL_PID Developer</span>
+
+<span class="c"># Run Microsoft SQl Server and initialization script (at the same time)</span>
+<span class="c"># Note: If you want to start MsSQL only (without initialization script) you can comment bellow line out, CMD entry from base image will be taken</span>
+<span class="k">CMD</span><span class="s"> /bin/bash ./entrypoint.sh</span></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Par défaut, l&#8217;image s&#8217;exécute avec un utilisateur non root. De fait, dans la construction de l&#8217;image, je bascule temporairement en tant que root. A noter que <code>sudo</code> n&#8217;est pas disponible dans l&#8217;image de base.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Le script <code>entrypoint.sh</code> lance <code>init-db.sh</code> en tâche de fond (d&#8217;où le <code>&amp;</code>) et démarre le serveur.</p>
+</div>
+<div class="listingblock">
+<div class="title">entrypoint.sh</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="bash"><span class="c"># Run Microsoft SQl Server and initialization script (at the same time)</span>
+./init-db.sh &amp; /opt/mssql/bin/sqlservr</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Le script <code>init-db.sh</code> va attendre le démarrage du serveur en scrutant les logs.</p>
+</div>
+<div class="listingblock">
+<div class="title">init-db.sh</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="bash"><span class="c">#!/bin/bash</span>
+<span class="c"># (see https://github.com/microsoft/mssql-docker/issues/2 )</span>
+<span class="nb">echo</span> <span class="s2">"Container initialization: waiting for the server to come up"</span>
+<span class="k">while</span> <span class="o">[</span> <span class="o">!</span> <span class="nt">-f</span> /var/opt/mssql/log/errorlog <span class="o">]</span>
+<span class="k">do
+  </span><span class="nb">sleep </span>1
+<span class="k">done
+</span><span class="nv">FOUND</span><span class="o">=</span>0
+<span class="nv">i</span><span class="o">=</span>0
+<span class="k">while</span> <span class="o">[[</span> <span class="nv">$FOUND</span> <span class="nt">-ne</span> 1 <span class="o">]]</span> <span class="o">&amp;&amp;</span> <span class="o">[[</span> <span class="nv">$i</span> <span class="nt">-lt</span> 60 <span class="o">]]</span><span class="p">;</span> <span class="k">do
+  </span><span class="nv">i</span><span class="o">=</span><span class="nv">$i</span>+1
+  <span class="nv">FOUND</span><span class="o">=</span><span class="si">$(</span><span class="nb">grep</span> <span class="nt">-cim1</span> <span class="s2">"Service Broker manager has started"</span> /var/opt/mssql/log/errorlog<span class="si">)</span>
+  <span class="k">if</span> <span class="o">[[</span> <span class="nv">$FOUND</span> <span class="nt">-ne</span> 1 <span class="o">]]</span><span class="p">;</span> <span class="k">then
+    </span><span class="nb">sleep </span>1
+  <span class="k">fi
+done
+if</span> <span class="o">[[</span> <span class="nv">$FOUND</span> <span class="nt">-ne</span> 1 <span class="o">]]</span><span class="p">;</span> <span class="k">then
+  </span><span class="nb">echo</span> <span class="s2">"Container initialization: Error: waited for more than 60 seconds for the server to start. Trying to create the database now..."</span>
+<span class="k">fi
+</span><span class="nb">sleep </span>10
+<span class="nb">echo</span> <span class="s2">"Container initialization: creating the database if needed"</span>
+/opt/mssql-tools/bin/sqlcmd <span class="nt">-S</span> localhost <span class="nt">-U</span> sa <span class="nt">-P</span> <span class="nv">$SA_PASSWORD</span> <span class="nt">-Q</span> <span class="s2">"CREATE DATABASE </span><span class="nv">$DB_NAME</span><span class="s2">"</span>
+<span class="nb">echo</span> <span class="s2">"Container initialization: done"</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="test"><a class="anchor" href="#test"></a><a class="link" href="#test">Test</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Pas de surprise sur la construction de l&#8217;image&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="bash">docker build <span class="nt">-t</span> mssql:latest .</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Il est ensuite possible de lancer l&#8217;image</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="bash">docker run <span class="nt">--rm</span> <span class="nt">-e</span> <span class="nv">SA_PASSWORD</span><span class="o">=</span>yourStrong<span class="o">(!)</span>Password <span class="nt">-e</span> <span class="nv">DB_NAME</span><span class="o">=</span>mydb <span class="nt">-p</span> 1444:1433 mssql:latest</code></pre>
+</div>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+J&#8217;utilise ici un prompt Windows. Les variables d&#8217;environnement ne doivent pas être encadrées d&#8217;apostrophe comme décrit dans les exemples de la <a href="https://hub.docker.com/_/microsoft-mssql-server">page DockerHub de SQL Server</a>. Egalement, le prompt Windows accepte sans broncher les points d&#8217;exclamation&nbsp;!
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Puisque l&#8217;option <code>-d</code> n&#8217;a pas été utilisée, les logs apparaissent dans la console.
+On peut alors voir à la fin le message suivant, indiquant la création de la base&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>2020-09-21 16:44:53.70 spid51      Starting up database 'mydb'.
+2020-09-21 16:44:53.94 spid51      Parallel redo is started for database 'mydb' with worker pool size [4].
+2020-09-21 16:44:53.98 spid51      Parallel redo is shutdown for database 'mydb' with worker pool size [4].
+Container initialization: done</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Grâce au mapping de port, il est alors possible d&#8217;utiliser son outil préféré pour se connecter à la base.</p>
+</div>
+<div class="paragraph">
+<p>Par exemple, avec Azure Data Studio, il est possible de préciser les paramètres suivants&nbsp;:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Connection Type: <code>Microsoft SQL Server</code></p>
+</li>
+<li>
+<p>Server Name: <code>localhost, 1444</code> (dans ma commande docker, j&#8217;ai utilisé un mapping du port 1444 vers le port 1433 du serveur)</p>
+</li>
+<li>
+<p>Authentication Type: <code>SQL Login</code></p>
+</li>
+<li>
+<p>User name: <code>sa</code></p>
+</li>
+<li>
+<p>Password: <code>yourStrong(!)Password</code></p>
+</li>
+</ul>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="https://r3dlin3.github.io/assets/img/2020-09-21-sql-server-sur-docker/azuredatastudio-connectiondetails.png" alt="Création d&#8217;une connexion dans Azure Data Studio">
+</div>
+</div>
+<div class="paragraph">
+<p>On peut alors vérifier la version de SQL Server ou vérifier que la base a bien été créée en listant les bases de données&nbsp;:</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="https://r3dlin3.github.io/assets/img/2020-09-21-sql-server-sur-docker/azuredatastudio-version.png" alt="Version SQL Server"></span>
+<span class="image"><img src="https://r3dlin3.github.io/assets/img/2020-09-21-sql-server-sur-docker/azuredatastudio-databases.png" alt="Liste des bases de données"></span></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="conclusion"><a class="anchor" href="#conclusion"></a><a class="link" href="#conclusion">Conclusion</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Même si l&#8217;on peut regretter que l&#8217;image Docker de SQL Server ne crée pas automatiquement une base de données au démarrage, force est de constater qu&#8217;il est très facile de créer une base, que le support de SQL Server est excellent.
+Cela ouvre donc la porte à des scénarios intéressants de développement avec une forte réduction des contraintes sur le poste du développeur car même la base peut être «&nbsp;dockerisée&nbsp;».</p>
+</div>
+<div class="paragraph">
+<p>Finalement, on notera que Microsoft documente même un déploiement sur <a href="https://docs.microsoft.com/en-us/sql/linux/tutorial-sql-server-containers-kubernetes?view=sql-server-ver15">Kubernetes</a>.</p>
+</div>
+</div>
+</div></section>
+  
+<footer>
+  <div class="tags">
+    
+    <a class="tag" href="/tags#docker">#docker</a>
+    
+    <a class="tag" href="/tags#sql-server">#sql-server</a>
+    
+    <a class="tag" href="/tags#kubernetes">#kubernetes</a>
+    
+    <a class="tag" href="/tags#acr">#acr</a>
+    
+  </div>
+</footer>
+
+
+</article>
+
+<!-- Disqus -->
+
+
+<!-- Post navigation -->
+
+  <div id="post-nav">
+  
+  <div id="previous-post" class="post-nav-post">
+      <p>Article précédent</p>
+      <a href="/2020/09/18/form-recognizer-powershell/">
+        Fun avec PowerShell et Azure Form Recognizer
+      </a>
+  </div>
+  
+  
+  <div id="next-post" class="post-nav-post">
+      <p>Article suivant</p>
+      <a href="/2020/09/23/lab-data-factory/">
+        Préparer rapidement un lab Data Factory en Azure CLI
+      </a>
+  </div>
+  
+</div>
+
+
+
+    </div>
+    
+
+
+<footer class="site-footer">
+	<nav class="site-nav">
+		<ul>
+			
+<li>
+	<a href="/feed.xml" title="Suivre sur RSS">
+		<i class="fa fa-fw fa-rss"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+	<a href="https://github.com/r3dlin3" title="Follow on GitHub">
+		<i class="fa fa-fw fa-github"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		</ul>
+	</nav>
+	<p class="text">Powered by <a href="https://jekyllrb.com/">Jekyll</a> with <i class="fa fa-heart" aria-hidden="true" style="color:Tomato"></i>
+</p>
+</footer>
+
+  </body>
+</html>

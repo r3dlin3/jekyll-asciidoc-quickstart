@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html class="no-js">
+  <head>
+	<meta charset="utf-8">
+	<title>Quelques trucs et astuces PowerShell | A bit of everything</title>
+	<meta name="description" content="PowerShell est aujourd'hui un langage largement utilisé et mature. J'ai cependant voulu écrire cet article pour partager mes (bonnes ?) pratiques et astuces.">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="/assets/css/main.css">
+
+	<!--Favicon-->
+	<link rel="shortcut icon" href="/assets/favicon.ico" type="image/x-icon">
+
+	<!-- Canonical -->
+	<link rel="canonical" href="/2018/11/27/trucs-powershell/">
+
+	<!-- RSS -->
+	<link type="application/atom+xml" rel="alternate" href="https://r3dlin3.github.io/feed.xml" title="A bit of everything" />
+	<!-- SEO -->
+	<!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Quelques trucs et astuces PowerShell | A bit of everything</title>
+<meta name="generator" content="Jekyll v3.8.7" />
+<meta property="og:title" content="Quelques trucs et astuces PowerShell" />
+<meta name="author" content="r3dLiN3" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="PowerShell est aujourd’hui un langage largement utilisé et mature. J’ai cependant voulu écrire cet article pour partager mes (bonnes ?) pratiques et astuces." />
+<meta property="og:description" content="PowerShell est aujourd’hui un langage largement utilisé et mature. J’ai cependant voulu écrire cet article pour partager mes (bonnes ?) pratiques et astuces." />
+<link rel="canonical" href="https://r3dlin3.github.io/2018/11/27/trucs-powershell/" />
+<meta property="og:url" content="https://r3dlin3.github.io/2018/11/27/trucs-powershell/" />
+<meta property="og:site_name" content="A bit of everything" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2018-11-27T00:00:00+00:00" />
+<script type="application/ld+json">
+{"author":{"@type":"Person","name":"r3dLiN3"},"headline":"Quelques trucs et astuces PowerShell","dateModified":"2018-11-27T00:00:00+00:00","datePublished":"2018-11-27T00:00:00+00:00","description":"PowerShell est aujourd’hui un langage largement utilisé et mature. J’ai cependant voulu écrire cet article pour partager mes (bonnes ?) pratiques et astuces.","mainEntityOfPage":{"@type":"WebPage","@id":"https://r3dlin3.github.io/2018/11/27/trucs-powershell/"},"@type":"BlogPosting","url":"https://r3dlin3.github.io/2018/11/27/trucs-powershell/","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+	<!-- Google Fonts -->
+	
+	<link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,700italic,400italic" rel="stylesheet" type="text/css">
+	
+
+	<!-- KaTeX -->
+	
+
+	<!-- Google Analytics -->
+	
+</head>
+
+  <body>
+    <header class="site-header">
+	<div class="branding">
+		
+		<a href="/">
+			<img class="avatar" src="/assets/img/avatar.png" alt="avatar"/>
+		</a>
+		
+		<h1 class="site-title">
+			<a href="/">A bit of everything</a>
+		</h1>
+	</div>
+	<nav class="site-nav">
+		<ul>
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/about/">
+					A propos
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/tags/">
+					tags
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<!-- Social icons from Font Awesome, if enabled  -->
+			
+			
+            
+            <!-- Search bar -->
+            
+		</ul>
+	</nav>
+    
+</header>
+
+    <div class="content">
+      <article >
+  <header style="background-image: url('/')">
+    <h1 class="title">Quelques trucs et astuces PowerShell</h1>
+    
+    <p class="meta">
+      
+
+
+
+27
+
+novembre
+  
+2018
+      
+    </p>
+  </header>
+  <section class="post-content"><div class="sect1">
+<h2 id="intro"><a class="anchor" href="#intro"></a><a class="link" href="#intro">Intro</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>PowerShell est aujourd&#8217;hui un langage largement utilisé et mature : la version 5.1 est embarquée dans Windows Server 2016 et Windows 10 tandis que PowerShell Core 6.0 est disponible depuis janvier 2018 en GA.</p>
+</div>
+<div class="paragraph">
+<p>Il existe une littérature dithyrambique sur le sujet. J&#8217;ai cependant voulu écrire cet article pour partager mes (bonnes ?) pratiques.</p>
+</div>
+<div id="toc" class="toc">
+<div id="toctitle" class="title">Table des matières</div>
+<ul class="sectlevel1">
+<li><a href="#intro">Intro</a></li>
+<li><a href="#utiliser_des_paramètres">Utiliser des paramètres</a></li>
+<li><a href="#afficher_les_infos_dun_objet_complexe">Afficher les infos d&#8217;un objet complexe</a></li>
+<li><a href="#erroractionpreference">$ErrorActionPreference</a></li>
+<li><a href="#validation_de_paramètre">Validation de paramètre</a></li>
+<li><a href="#parametersetname">ParameterSetName</a></li>
+<li><a href="#argument_splatting">Argument splatting</a></li>
+<li><a href="#write_output_vs_write_host_vs_write_verbose_etc">Write-Output vs. Write-Host vs. Write-Verbose etc.</a></li>
+<li><a href="#switch_case">Switch case</a></li>
+<li><a href="#strict">Strict</a></li>
+<li><a href="#requires">#Requires</a></li>
+<li><a href="#cmdletbinding">CmdletBinding</a></li>
+<li><a href="#commentaires">Commentaires</a></li>
+<li><a href="#convention_de_nommage">Convention de nommage</a></li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="utiliser_des_paramètres"><a class="anchor" href="#utiliser_des_paramètres"></a><a class="link" href="#utiliser_des_paramètres">Utiliser des paramètres</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>On démarre sur les chapeaux de roue avec celle-là !</p>
+</div>
+<div class="paragraph">
+<p>Il est très facile d&#8217;utiliser des paramètres. Pas de raison de s&#8217;en priver !</p>
+</div>
+<div class="paragraph">
+<p>Donc pas de chaîne de caractère en dur (genre le nom d&#8217;un Storage Account) : on le passe en paramètre avec une valeur par défaut et ça pourra toujours resservir.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="afficher_les_infos_dun_objet_complexe"><a class="anchor" href="#afficher_les_infos_dun_objet_complexe"></a><a class="link" href="#afficher_les_infos_dun_objet_complexe">Afficher les infos d&#8217;un objet complexe</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Il est possible de mettre une variable dans une string pour en obtenir la valeur</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="nv">$name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Read-Host</span><span class="w"> </span><span class="s2">"Quel est ton nom ?"</span><span class="w">
+</span><span class="n">Write-Host</span><span class="w"> </span><span class="s2">"Hello </span><span class="nv">$name</span><span class="s2">"</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Ainsi, après avoir répondu à la question (disons "World"), on obtiendra bien le fameux "Hello World".</p>
+</div>
+<div class="paragraph">
+<p>Mais quid d&#8217;objet plus complexe ? Admettons que je veuille afficher les infos d&#8217;un process.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="nv">$a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Get-Process</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">select</span><span class="w"> </span><span class="nt">-First</span><span class="w"> </span><span class="nx">1</span><span class="w">
+</span><span class="n">Write-Host</span><span class="w"> </span><span class="s2">"Le nom du process est </span><span class="nv">$a</span><span class="s2">.ProcessName"</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Le résultat peut paraître surprenant :</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>Le nom du process est System.Diagnostics.Process (ApplicationFrameHost).ProcessName</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Pour obtenir la valeur de la propriété ProcessName, il faut "échapper" avec <code>$()</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="n">Write-Host</span><span class="w"> </span><span class="s2">"Le nom du process est </span><span class="si">$(</span><span class="nv">$a</span><span class="o">.</span><span class="nf">ProcessName</span><span class="si">)</span><span class="s2">"</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Et voilà!</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>Le nom du process est ApplicationFrameHost AppVShNotif</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="erroractionpreference"><a class="anchor" href="#erroractionpreference"></a><a class="link" href="#erroractionpreference">$ErrorActionPreference</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>$ErrorActionPreference</code> fait partie des ces <a href="https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_preference_variables">variables</a> qui permettent de modifier le comportement de PowerShell. <a href="https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_preference_variables#erroractionpreference"><code>$ErrorActionPreference</code></a> détermine le comportement en cas d&#8217;erreur.</p>
+</div>
+<div class="paragraph">
+<p>Par défaut, la valeur est <code>continue</code>, c&#8217;est-à-dire que PowerShell affiche l&#8217;erreur et continue.</p>
+</div>
+<div class="paragraph">
+<p>Personnellement, je ne comprends pas ce comportement par défaut. Quand une cmdlet plante, je n&#8217;ai pas envie que mon script continue&#8230;&#8203; C&#8217;est pourquoi, dans tous mes scripts j&#8217;ajoute la ligne suivante :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="bp">$Error</span><span class="n">ActionPreference</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"stop"</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="validation_de_paramètre"><a class="anchor" href="#validation_de_paramètre"></a><a class="link" href="#validation_de_paramètre">Validation de paramètre</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>La validation de paramètre est un mécanisme simple qui permet de gagner du temps en évitant :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>L&#8217;écriture de code pour tester</p>
+</li>
+<li>
+<p>L&#8217;affichage de message d&#8217;erreur</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Ainsi, au lieu de :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="kr">param</span><span class="p">(</span><span class="w">
+    </span><span class="nv">$ComputerName</span><span class="w">
+</span><span class="p">)</span><span class="w">
+
+</span><span class="kr">if</span><span class="w"> </span><span class="p">(</span><span class="o">-not</span><span class="w"> </span><span class="nv">$ComputerName</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="n">Write-Error</span><span class="w"> </span><span class="s2">"ComputerName is mandatory"</span><span class="w">
+    </span><span class="kr">Exit</span><span class="w"> </span><span class="mi">1</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span><span class="p">(</span><span class="o">...</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Il est possible déclarer :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="kr">param</span><span class="p">(</span><span class="w">
+    </span><span class="p">[</span><span class="n">Parameter</span><span class="p">(</span><span class="n">Mandatory</span><span class="p">)]</span><span class="w">
+    </span><span class="nv">$ComputerName</span><span class="w">
+</span><span class="p">)</span><span class="w">
+</span><span class="p">(</span><span class="o">...</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Le résultat est différent :</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="https://r3dlin3.github.io/assets/img/powershell_mandatory.png" alt="Exemple PowerShell Mandatory"></span></p>
+</div>
+<div class="paragraph">
+<p>D&#8217;un point de vue "Expérience Utilisateur", la valeur est demandée interactivement : c&#8217;est pas plus mal.</p>
+</div>
+<div class="paragraph">
+<p>D&#8217;un point de vue code, les contrôles sont déclaratifs. Rien à faire de particulier et en plus Visual Studio Code gère parfaitement la complétion.</p>
+</div>
+<div class="paragraph">
+<p>Ceci n&#8217;est qu&#8217;un exemple et d&#8217;autres contrôles peuvent être utiliser :</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>[ValidateLength(1,15)]</code></dt>
+<dd>
+<p>S&#8217;assure que la chaîne a entre 1 et 15 caractères</p>
+</dd>
+<dt class="hdlist1"><code>[ValidatePattern("[a-z]{6}\d{4}")]</code></dt>
+<dd>
+<p>Permet de valider une chaîne de caractère par rapport à une expression régulière</p>
+</dd>
+<dt class="hdlist1"><code>[ValidateCount(1,3)]</code></dt>
+<dd>
+<p>Permet de garantir la taille du tableau</p>
+</dd>
+<dt class="hdlist1"><code>[ValidateRange(1,12)]</code></dt>
+<dd>
+<p>Permet de donner un intervalle pour des entiers</p>
+</dd>
+<dt class="hdlist1"><code>[ValidateSet[("Start","Stop")]</code></dt>
+<dd>
+<p>Permet de définir un ensemble de valeurs possibles. L&#8217;avantage est que PowerShell peut faire de la complétion !</p>
+</dd>
+<dt class="hdlist1"><code>[ValidateScript({Test-Path -Path $_ -PathType Leaf})]</code></dt>
+<dd>
+<p>Il est possible de coder son propre test. Intéressant pour tester l&#8217;existence d&#8217;un fichier ou au contraire, s&#8217;assurer que le fichier n&#8217;existe pas</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="parametersetname"><a class="anchor" href="#parametersetname"></a><a class="link" href="#parametersetname">ParameterSetName</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Une classique des bonnes pratiques : le ParameterSetName !</p>
+</div>
+<div class="paragraph">
+<p>Pour rentre les cmdlets plus flexibles, il est intéressant de définir des jeux de paramètres. Ainsi la cmdlet pourrait accueillir le nom d&#8217;une souscription ou l&#8217;identifiant d&#8217;une souscription. Inutile de faire 2 cmdlets pour autant, il suffit d&#8217;utiliser un ParameterSetName.</p>
+</div>
+<div class="paragraph">
+<p>Exemple :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="kr">param</span><span class="p">(</span><span class="w">
+    </span><span class="p">[</span><span class="n">Parameter</span><span class="p">(</span><span class="n">ParameterSetName</span><span class="o">=</span><span class="s2">"subname"</span><span class="p">,</span><span class="w"> </span><span class="n">Mandatory</span><span class="p">)]</span><span class="w">
+    </span><span class="p">[</span><span class="n">string</span><span class="p">]</span><span class="w">
+    </span><span class="nv">$subname</span><span class="p">,</span><span class="w">
+
+    </span><span class="p">[</span><span class="n">Parameter</span><span class="p">(</span><span class="n">ParameterSetName</span><span class="o">=</span><span class="s2">"subid"</span><span class="p">,</span><span class="w"> </span><span class="n">Mandatory</span><span class="p">)]</span><span class="w">
+    </span><span class="p">[</span><span class="n">string</span><span class="p">]</span><span class="w">
+    </span><span class="nv">$subid</span><span class="p">,</span><span class="w">
+
+
+    </span><span class="p">[</span><span class="n">Parameter</span><span class="p">(</span><span class="n">Mandatory</span><span class="p">)]</span><span class="w">
+    </span><span class="bp">$input</span><span class="n">File</span><span class="w">
+</span><span class="p">)</span><span class="w">
+</span><span class="kr">if</span><span class="w"> </span><span class="p">(</span><span class="nv">$PsCmdlet</span><span class="o">.</span><span class="nf">ParameterSetName</span><span class="w"> </span><span class="o">-eq</span><span class="w"> </span><span class="s2">"subname"</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="n">Write-Host</span><span class="w"> </span><span class="s2">"Nom de la souscription : </span><span class="nv">$subname</span><span class="s2">"</span><span class="w">
+</span><span class="p">}</span><span class="w"> </span><span class="kr">else</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="n">Write-Host</span><span class="w"> </span><span class="s2">"Identifiant de la souscription : </span><span class="nv">$subid</span><span class="s2">"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+
+</span><span class="n">Write-Host</span><span class="w"> </span><span class="bp">$input</span><span class="nx">File</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="argument_splatting"><a class="anchor" href="#argument_splatting"></a><a class="link" href="#argument_splatting">Argument splatting</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_splatting">Argument splatting</a> (Désolé, je n&#8217;ai pas de traduction pour ce terme) est une fonctionnalité souvent méconnue de PowerShell.</p>
+</div>
+<div class="paragraph">
+<p>Basiquement, il est possible de "construire" les arguments à passer à une cmdlet. Ainsi, on construit une hashtable avec les paramètres à passer ou non.</p>
+</div>
+<div class="paragraph">
+<p>C&#8217;est très intéressant avec les `ParameterSetName`s car on peut appeler la même cmdlet mais avec des arguments différents en fonction du ParameterSetName.</p>
+</div>
+<div class="paragraph">
+<p>Ci-dessous un exemple. Mon script prend un paramètre optionnel <code>SubscriptionName</code>. Si une valeur est renseignée, je récupère LA souscription souhaitée, sinon j&#8217;appelle ma cmdlet <code>Get-AzureRmSubscription</code> sans paramètre et récupère ainsi toutes les souscriptions.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="kr">param</span><span class="p">(</span><span class="w">
+    </span><span class="p">[</span><span class="n">string</span><span class="p">]</span><span class="nv">$SubscriptionName</span><span class="p">,</span><span class="w">
+    </span><span class="p">(</span><span class="o">...</span><span class="p">)</span><span class="w">
+</span><span class="p">)</span><span class="w">
+</span><span class="p">(</span><span class="o">...</span><span class="p">)</span><span class="w">
+</span><span class="nv">$subSplat</span><span class="o">=</span><span class="p">@{}</span><span class="w">
+</span><span class="kr">if</span><span class="w"> </span><span class="p">(</span><span class="o">-not</span><span class="w"> </span><span class="p">[</span><span class="n">string</span><span class="p">]::</span><span class="n">IsNullOrEmpty</span><span class="p">(</span><span class="nv">$SubscriptionName</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nv">$subSplat</span><span class="o">.</span><span class="nf">Add</span><span class="p">(</span><span class="s2">"SubscriptionName"</span><span class="p">,</span><span class="w"> </span><span class="nv">$SubscriptionName</span><span class="p">)</span><span class="w">
+</span><span class="p">}</span><span class="w">
+
+</span><span class="nv">$subs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Get-AzureRmSubscription</span><span class="w"> </span><span class="err">@</span><span class="nx">subSplat</span><span class="w">
+</span><span class="p">(</span><span class="o">...</span><span class="p">)</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="write_output_vs_write_host_vs_write_verbose_etc"><a class="anchor" href="#write_output_vs_write_host_vs_write_verbose_etc"></a><a class="link" href="#write_output_vs_write_host_vs_write_verbose_etc">Write-Output vs. Write-Host vs. Write-Verbose etc.</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Pour faire simple :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>Write-Host</code> à utiliser et à abuser pour affiche des infos sur l&#8217;état d&#8217;avancement du script</p>
+</li>
+<li>
+<p><code>Write-Output</code> à proscrire pour afficher des infos. L&#8217;objectif de <code>Write-Output</code> est d&#8217;ajouter un objet dans le pipeline. Utiliser <code>Write-Output</code> peut avoir des effets indésirables. Il a l&#8217;avantage de signifier que l&#8217;on veut mettre un objet dans le pipeline. Un peu comme un <code>return</code> : ça sert à rien mais c&#8217;est plus lisible</p>
+</li>
+<li>
+<p><code>Write-Verbose</code> à utiliser et à abuser! Pour afficher des infos de debug/plus verbeuses (cf. <a href="#cmdletbinding">CmdletBinding</a>)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Prenons l&#8217;exemple suivant :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="kr">param</span><span class="p">()</span><span class="w">
+
+</span><span class="kr">function</span><span class="w"> </span><span class="nf">Get-Output</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="p">[</span><span class="n">CmdletBinding</span><span class="p">()]</span><span class="w">
+    </span><span class="kr">param</span><span class="w"> </span><span class="p">(</span><span class="w">
+
+    </span><span class="p">)</span><span class="w">
+    </span><span class="n">Write-Host</span><span class="w"> </span><span class="s2">"Hello1"</span><span class="w">
+    </span><span class="s2">"Hello2"</span><span class="w">
+    </span><span class="n">Write-Output</span><span class="w"> </span><span class="s2">"Hello3"</span><span class="w">
+    </span><span class="kr">return</span><span class="w"> </span><span class="s2">"Hello4"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span><span class="nv">$a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Get-Output</span><span class="w">
+
+</span><span class="n">Write-Host</span><span class="w"> </span><span class="s2">"Contenu de </span><span class="se">`$</span><span class="s2">a :"</span><span class="w">
+</span><span class="nv">$a</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A votre avis, qu&#8217;est-ce qui sera affiché dans la console ? Avant et après "Contenu de `$a :" ? "Hello4"?</p>
+</div>
+<div class="paragraph">
+<p>Résultat</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Hello1
+Contenu de $a :
+Hello2
+Hello3
+Hello4</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>"Hello2", "Hello3" et "Hello4" ont été ajouté au pipeline et assigné à <code>$a</code>.</p>
+</div>
+<div class="paragraph">
+<p>Seul Hello1 est afficher "correctement dans la fonction.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="switch_case"><a class="anchor" href="#switch_case"></a><a class="link" href="#switch_case">Switch case</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>La directive <a href="https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_switch"><code>switch</code></a> a une syntaxe toute particulière en PowerShell. Ce qui est tout autant particulier (et méconnu) est l&#8217;existence de flag à cette directive comme <code>-regexp</code> ou <code>-wildcard</code>.</p>
+</div>
+<div class="paragraph">
+<p>Il existe un article exhaustif sur le sujet :</p>
+</div>
+<div class="paragraph">
+<p><a href="https://kevinmarquette.github.io/2018-01-12-Powershell-switch-statement/" class="bare">https://kevinmarquette.github.io/2018-01-12-Powershell-switch-statement/</a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="strict"><a class="anchor" href="#strict"></a><a class="link" href="#strict">Strict</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Une bonne pratique est d&#8217;utiliser un <a href="https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/set-strictmode">mode stricte</a> en ajoutant la ligne suivante :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="n">Set-StrictMode</span><span class="w"> </span><span class="nt">-Version</span><span class="w"> </span><span class="nx">latest</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Ceci va garantir que :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Les meilleures pratiques sont respectées</p>
+</li>
+<li>
+<p>Une variable qui n&#8217;existe pas ne sera pas utilisée</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Souvent dans des cas de refactoring du code, de mauvais copié/collé, des noms de variable qui n&#8217;auraient jamais dû être là sont utilisés malencontreusement. Avec le mode stricte, PowerShell va générer une erreur et sortir.</p>
+</div>
+<div class="paragraph">
+<p>Le principal inconvénient est pour le test de présence de certaines propriétés dans un objet.</p>
+</div>
+<div class="paragraph">
+<p>J&#8217;ai donc une petite fonction en stock qui permet d&#8217;éviter une erreur en mode stricte</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="kr">function</span><span class="w"> </span><span class="nf">Test-HasProperty</span><span class="p">(</span><span class="nv">$object</span><span class="p">,</span><span class="w"> </span><span class="nv">$propertyName</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="cm">&lt;#
+    </span><span class="cs">.SYNOPSIS</span><span class="cm">
+        Utility function to check if an object has a property. Useful in strict mode
+    #&gt;</span><span class="w">
+    </span><span class="nv">$propertyName</span><span class="w"> </span><span class="nt">-in</span><span class="w"> </span><span class="nv">$object</span><span class="o">.</span><span class="nf">PSobject</span><span class="o">.</span><span class="nf">Properties</span><span class="o">.</span><span class="nf">Name</span><span class="w">
+</span><span class="p">}</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="requires"><a class="anchor" href="#requires"></a><a class="link" href="#requires">#Requires</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Je ne vois quasiment jamais la directive <a href="https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_requires"><code>#Requires</code></a> utilisée, pourtant elle est très intéressante pour documenter:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>La version PowerShell</p>
+</li>
+<li>
+<p>Les modules nécessaires, notamment pour des dépendances particulières</p>
+</li>
+<li>
+<p>La nécessité d&#8217;exécuter le script en tant qu&#8217;administrateur (UAC a parfois des comportements et des messages bizarres. Si des droits administrateurs sont requis, autant le préciser</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="c">#Requires -Version 6.0</span><span class="w">
+</span><span class="c">#Requires -Modules ActiveDirectory</span><span class="w">
+</span><span class="c">#Requires -RunAsAdministrator</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="cmdletbinding"><a class="anchor" href="#cmdletbinding"></a><a class="link" href="#cmdletbinding">CmdletBinding</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_functions_advanced_methods">CmdletBinding</a> est un attribut de cmdlet très puissant.</p>
+</div>
+<div class="paragraph">
+<p>Personnellement, je l&#8217;utilise systématiquement pour pouvoir interpréter automatiquement le flag <code>-verbose</code>. Ainsi, dans l&#8217;exemple ci-dessous, <code>ex4.ps1</code> a l&#8217;attribut CmdletBinding et non <code>ex5.ps1</code>.</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="https://r3dlin3.github.io/assets/img/powershell_verbose.png" alt="Exemple PowerShell CmdletBinding"></span></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="commentaires"><a class="anchor" href="#commentaires"></a><a class="link" href="#commentaires">Commentaires</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Les commentaires sont extrêmement importants dans le code. PowerShell n&#8217;échappe pas à cette règle !</p>
+</div>
+<div class="paragraph">
+<p>Rappelons qu&#8217;il est possible de faire des commentaires de bloque grâce à <code>&lt;# &#8230;&#8203; #&gt;</code>.</p>
+</div>
+<div class="paragraph">
+<p>Sinon, inutile de réinventer la roue pour documenter ses cmdlets ou ses fonctions, PowerShell dispose déjà de ses propres mécanismes (cf. <a href="https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_comment_based_help">About Comment Based Help</a>)</p>
+</div>
+<div class="paragraph">
+<p>L&#8217;avantage est que le <code>Get-Help</code> du script fonctionnera et pourra ainsi les infos nécessaires, des exemples, etc.</p>
+</div>
+<div class="paragraph">
+<p>J&#8217;utilise principalement les mots-clés suivants :</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">.SYNOPSIS</dt>
+<dd>
+<p>Brève description de la fonction ou du script</p>
+</dd>
+<dt class="hdlist1">.DESCRIPTION</dt>
+<dd>
+<p>Description plus détaillée si nécessaire</p>
+</dd>
+<dt class="hdlist1">.PARAMETER &lt;Parameter-Name&gt;</dt>
+<dd>
+<p>Permet de documenter un paramètre</p>
+</dd>
+<dt class="hdlist1">.EXAMPLE</dt>
+<dd>
+<p>Permet de donner un exemple d&#8217;usage avec la sortie</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>A noter que pour une fonction, il est possible de mettre le bloc de commentaire avant la fonction, au début de la fonction (ou après).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="convention_de_nommage"><a class="anchor" href="#convention_de_nommage"></a><a class="link" href="#convention_de_nommage">Convention de nommage</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Il faut favoriser la convention VERB-NOUN en utilisant les verbes préconisés.</p>
+</div>
+</div>
+</div></section>
+  
+<footer>
+  <div class="tags">
+    
+    <a class="tag" href="/tags#powershell">#powershell</a>
+    
+    <a class="tag" href="/tags#trucs">#trucs</a>
+    
+  </div>
+</footer>
+
+
+</article>
+
+<!-- Disqus -->
+
+
+<!-- Post navigation -->
+
+  <div id="post-nav">
+  
+  <div id="previous-post" class="post-nav-post">
+      <p>Article précédent</p>
+      <a href="/2018/09/04/az-cli-ml/">
+        Gérer les certificats d&#8217;Azure CLI
+      </a>
+  </div>
+  
+  
+  <div id="next-post" class="post-nav-post">
+      <p>Article suivant</p>
+      <a href="/2019/07/02/comment-capturer-appels-rest-adls-gen2-storage-calls-avec-azure-using-azure-storage-explorer/">
+        Comment capturer les appels REST vers Azure Data Lake gen2 avec Storage Explorer
+      </a>
+  </div>
+  
+</div>
+
+
+
+    </div>
+    
+
+
+<footer class="site-footer">
+	<nav class="site-nav">
+		<ul>
+			
+<li>
+	<a href="/feed.xml" title="Suivre sur RSS">
+		<i class="fa fa-fw fa-rss"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+	<a href="https://github.com/r3dlin3" title="Follow on GitHub">
+		<i class="fa fa-fw fa-github"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		</ul>
+	</nav>
+	<p class="text">Powered by <a href="https://jekyllrb.com/">Jekyll</a> with <i class="fa fa-heart" aria-hidden="true" style="color:Tomato"></i>
+</p>
+</footer>
+
+  </body>
+</html>

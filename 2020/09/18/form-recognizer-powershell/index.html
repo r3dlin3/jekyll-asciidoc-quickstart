@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html class="no-js">
+  <head>
+	<meta charset="utf-8">
+	<title>Fun avec PowerShell et Azure Form Recognizer | A bit of everything</title>
+	<meta name="description" content="Utiliser PowerShell pour interroger les API de Form Recognizer.">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="/assets/css/main.css">
+
+	<!--Favicon-->
+	<link rel="shortcut icon" href="/assets/favicon.ico" type="image/x-icon">
+
+	<!-- Canonical -->
+	<link rel="canonical" href="/2020/09/18/form-recognizer-powershell/">
+
+	<!-- RSS -->
+	<link type="application/atom+xml" rel="alternate" href="https://r3dlin3.github.io/feed.xml" title="A bit of everything" />
+	<!-- SEO -->
+	<!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Fun avec PowerShell et Azure Form Recognizer | A bit of everything</title>
+<meta name="generator" content="Jekyll v3.8.7" />
+<meta property="og:title" content="Fun avec PowerShell et Azure Form Recognizer" />
+<meta name="author" content="r3dLiN3" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Utiliser PowerShell pour interroger les API de Form Recognizer." />
+<meta property="og:description" content="Utiliser PowerShell pour interroger les API de Form Recognizer." />
+<link rel="canonical" href="https://r3dlin3.github.io/2020/09/18/form-recognizer-powershell/" />
+<meta property="og:url" content="https://r3dlin3.github.io/2020/09/18/form-recognizer-powershell/" />
+<meta property="og:site_name" content="A bit of everything" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-09-18T00:00:00+00:00" />
+<script type="application/ld+json">
+{"author":{"@type":"Person","name":"r3dLiN3"},"headline":"Fun avec PowerShell et Azure Form Recognizer","dateModified":"2020-09-18T00:00:00+00:00","datePublished":"2020-09-18T00:00:00+00:00","description":"Utiliser PowerShell pour interroger les API de Form Recognizer.","mainEntityOfPage":{"@type":"WebPage","@id":"https://r3dlin3.github.io/2020/09/18/form-recognizer-powershell/"},"@type":"BlogPosting","url":"https://r3dlin3.github.io/2020/09/18/form-recognizer-powershell/","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+	<!-- Google Fonts -->
+	
+	<link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,700italic,400italic" rel="stylesheet" type="text/css">
+	
+
+	<!-- KaTeX -->
+	
+
+	<!-- Google Analytics -->
+	
+</head>
+
+  <body>
+    <header class="site-header">
+	<div class="branding">
+		
+		<a href="/">
+			<img class="avatar" src="/assets/img/avatar.png" alt="avatar"/>
+		</a>
+		
+		<h1 class="site-title">
+			<a href="/">A bit of everything</a>
+		</h1>
+	</div>
+	<nav class="site-nav">
+		<ul>
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/about/">
+					A propos
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/tags/">
+					tags
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<!-- Social icons from Font Awesome, if enabled  -->
+			
+			
+            
+            <!-- Search bar -->
+            
+		</ul>
+	</nav>
+    
+</header>
+
+    <div class="content">
+      <article >
+  <header style="background-image: url('/')">
+    <h1 class="title">Fun avec PowerShell et Azure Form Recognizer</h1>
+    
+    <p class="meta">
+      
+
+
+
+18
+
+septembre
+  
+2020
+      
+    </p>
+  </header>
+  <section class="post-content"><div class="sect1">
+<h2 id="introduction"><a class="anchor" href="#introduction"></a><a class="link" href="#introduction">Introduction</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="https://docs.microsoft.com/fr-fr/azure/cognitive-services/form-recognizer/">Azure Form Recognizer</a> est un service cognitif permettant d&#8217;extraire du texte d&#8217;images.
+C&#8217;est un service assez jeune d&#8217;Azure et ne dispose pas d&#8217;interface comme un <a href="https://www.customvision.ai/">Custom Vision</a> hormis un <a href="https://docs.microsoft.com/fr-fr/azure/cognitive-services/form-recognizer/deploy-label-tool?tabs=v2-0">client qu&#8217;on peut déployer soi-même</a>.</p>
+</div>
+<div class="paragraph">
+<p>Azure Form Recognizer propose aujourd&#8217;hui des SDK pour .NET, Python, Java et JavaScript ainsi qu&#8217;une <a href="https://westus2.dev.cognitive.microsoft.com/docs/services/form-recognizer-api-v2/operations/AnalyzeLayoutAsync">API REST</a>.</p>
+</div>
+<div class="paragraph">
+<p>Pour le fun, j&#8217;ai donc utilisé PowerShell pour faire des appels à l&#8217;API REST.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="paramètres_daccès"><a class="anchor" href="#paramètres_daccès"></a><a class="link" href="#paramètres_daccès">Paramètres d&#8217;accès</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Dans le portail Azure, il est possible de récupérer les informations dont on a besoin pour accéder au service dans la section «&nbsp;Clés et point de terminaison&nbsp;» de l&#8217;instance Form Recognizer&nbsp;:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>2 clés d&#8217;accès</p>
+</li>
+<li>
+<p>L&#8217;URL d&#8217;accès</p>
+</li>
+</ul>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="/assets/img/2020-09-18-form-recognizer-powershell/portal_fr.png" alt="Clés et point de terminaison pour Form Recognizer">
+</div>
+</div>
+<div class="paragraph">
+<p>Une fois, ces valeurs récupérées, on peut initialiser les variables&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="c"># One of the key as defined in the "Keys and Endpoint" blade of Form Recognizer</span><span class="w">
+</span><span class="nv">$key</span><span class="o">=</span><span class="s2">"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"</span><span class="w">
+</span><span class="c"># Endpoint as defined in the "Keys and Endpoint" blade of Form Recognizer</span><span class="w">
+</span><span class="c"># Must start with https:// and must end with a trailing "/"</span><span class="w">
+</span><span class="nv">$endpoint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"https://&lt;Instance Form Recognizer&gt;.cognitiveservices.azure.com/"</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="lister_les_modèles"><a class="anchor" href="#lister_les_modèles"></a><a class="link" href="#lister_les_modèles">Lister les modèles</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Chaque entrainement de Form Recognizer va créer un nouveau modèle.
+Comment retrouver le modèle&nbsp;?</p>
+</div>
+<div class="paragraph">
+<p>Voici comment lister les modèles disponibles&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="nv">$url</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"{0}formrecognizer/v2.0/custom/models"</span><span class="w"> </span><span class="nt">-f</span><span class="w"> </span><span class="nv">$endpoint</span><span class="w">
+
+</span><span class="nv">$headers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">@{</span><span class="w">
+    </span><span class="s2">"Content-Type"</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"application/json"</span><span class="w">
+    </span><span class="s2">"Ocp-Apim-Subscription-Key"</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">$key</span><span class="w">
+</span><span class="p">}</span><span class="w"> <i class="conum" data-value="1"></i><b>(1)</b>
+
+</span><span class="nv">$res</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Invoke-RestMethod</span><span class="w"> </span><span class="nt">-Method</span><span class="w"> </span><span class="nx">Get</span><span class="w"> </span><span class="nt">-Uri</span><span class="w"> </span><span class="nv">$url</span><span class="w"> </span><span class="nt">-Headers</span><span class="w"> </span><span class="nv">$headers</span><span class="w"> <i class="conum" data-value="2"></i><b>(2)</b>
+
+</span><span class="n">Write-Host</span><span class="w"> </span><span class="s2">"Number of models:"</span><span class="p">,</span><span class="w"> </span><span class="nv">$res</span><span class="o">.</span><span class="nf">modelList</span><span class="o">.</span><span class="nf">Count</span><span class="w">
+</span><span class="nv">$res</span><span class="o">.</span><span class="nf">modelList</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">sort</span><span class="w"> </span><span class="nx">lastUpdatedDateTime</span><span class="w"> <i class="conum" data-value="3"></i><b>(3)</b>
+</span></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>On prépare les entêtes à passer dans un simple tableau associatif (<em>hashtable</em>) pour passer en outre la clé. Les utilisateurs d&#8217;Azure API Management auront reconnu l&#8217;entête <code>Ocp-Apim-Subscription-Key</code>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Pas de subtilité ici&nbsp;: on utilise la méthode <code>Invoke-RestMethod</code> qui se chargera de désérialisé le contenu retourné en JSON en un objet PowerShell.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Il est alors possible d&#8217;afficher la liste des modèles, ranger par date de dernière mise à jour par exemple.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Exemple de sortie&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Number of models: 23
+
+modelId                              status createdDateTime      lastUpdatedDateTime
+-------                              ------ ---------------      -------------------
+7147e795-7780-4dc6-85b6-e9da78cf0134 ready  2020-09-08T11:28:47Z 2020-09-08T11:28:49Z
+18f5dde0-f7bf-42fb-abb7-daed423d374e ready  2020-09-08T11:40:07Z 2020-09-08T11:40:07Z
+bbdce3a1-3768-4f27-8bca-a2ec15b85331 ready  2020-09-08T11:41:47Z 2020-09-08T11:41:47Z
+8124abd3-93b0-413f-b6d6-af1695ed9571 ready  2020-09-08T12:09:08Z 2020-09-08T12:09:10Z
+becc3c6c-d161-4121-b79d-177c6359529c ready  2020-09-08T12:14:10Z 2020-09-08T12:14:12Z
+...</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="faire_une_analyse_dun_modèle_personnalisé"><a class="anchor" href="#faire_une_analyse_dun_modèle_personnalisé"></a><a class="link" href="#faire_une_analyse_dun_modèle_personnalisé">Faire une analyse d&#8217;un modèle personnalisé</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Il existe des modèles intégrés au service pour les <a href="https://docs.microsoft.com/fr-fr/azure/cognitive-services/form-recognizer/concept-business-cards">cartes de visite</a> ou des <a href="https://docs.microsoft.com/fr-fr/azure/cognitive-services/form-recognizer/concept-receipts">tickets de caisse</a>.</p>
+</div>
+<div class="paragraph">
+<p>Il est cependant possible d&#8217;entrainer son propre modèle. Pour l&#8217;évaluation du modèle, nous aurons besoin de l&#8217;identifiant du modèle que l&#8217;on aura pu récupérer à l&#8217;étape précédente.</p>
+</div>
+<div class="paragraph">
+<p>Nous allons voir ici comment faire l&#8217;analyse d&#8217;une image.
+L&#8217;image peut être disponible sur Internet, typiquement sur un compte de stockage. Dans l&#8217;exemple ci-dessous, nous allons directement transférer l&#8217;image présente sur le disque. L&#8217;image peut être un JPEG, un PNG, un TIFF ou un PDF.
+Dans l&#8217;exemple, il s&#8217;agira d&#8217;une image JPEG (cf. le Content-Type à <code>image/jpeg</code>).</p>
+</div>
+<div class="paragraph">
+<p>L&#8217;analyse d&#8217;une image se fait en 2 temps&nbsp;:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>On soumet l&#8217;image.</p>
+</li>
+<li>
+<p>On récupère l&#8217;analyse de l&#8217;image.</p>
+</li>
+</ol>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="c"># Id of the model (GUID)</span><span class="w">
+</span><span class="nv">$modelId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"</span><span class="w">
+
+</span><span class="nv">$url</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"{0}formrecognizer/v2.0/custom/models/{1}/analyze"</span><span class="w"> </span><span class="nt">-f</span><span class="w"> </span><span class="nv">$endpoint</span><span class="p">,</span><span class="w"> </span><span class="nv">$modelId</span><span class="w">
+
+</span><span class="nv">$imagePath</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"...\XXX.jpeg"</span><span class="w">
+
+</span><span class="nv">$webRequest</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="n">System.Net.HttpWebRequest</span><span class="p">]::</span><span class="n">Create</span><span class="p">(</span><span class="nv">$url</span><span class="p">)</span><span class="w"> <i class="conum" data-value="1"></i><b>(1)</b>
+</span><span class="nv">$webRequest</span><span class="o">.</span><span class="nf">Method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"POST"</span><span class="w">
+</span><span class="nv">$webRequest</span><span class="o">.</span><span class="nf">ContentType</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"image/jpeg"</span><span class="w">
+</span><span class="nv">$webrequest</span><span class="o">.</span><span class="nf">Headers</span><span class="o">.</span><span class="nf">Add</span><span class="p">(</span><span class="s2">"Ocp-Apim-Subscription-Key"</span><span class="p">,</span><span class="w"> </span><span class="nv">$key</span><span class="p">)</span><span class="w">
+
+</span><span class="nv">$requestStream</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">$webRequest</span><span class="o">.</span><span class="nf">GetRequestStream</span><span class="p">()</span><span class="w">
+</span><span class="nv">$buffer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="n">System.IO.File</span><span class="p">]::</span><span class="n">ReadAllBytes</span><span class="p">(</span><span class="nv">$imagePath</span><span class="p">)</span><span class="w">  <i class="conum" data-value="2"></i><b>(2)</b>
+</span><span class="nv">$requestStream</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">$webRequest</span><span class="o">.</span><span class="nf">GetRequestStream</span><span class="p">()</span><span class="w">
+</span><span class="nv">$requestStream</span><span class="o">.</span><span class="nf">Write</span><span class="p">(</span><span class="nv">$buffer</span><span class="p">,</span><span class="w"> </span><span class="nx">0</span><span class="p">,</span><span class="w"> </span><span class="nv">$buffer</span><span class="o">.</span><span class="nf">Length</span><span class="p">)</span><span class="w">
+</span><span class="nv">$requestStream</span><span class="o">.</span><span class="nf">Flush</span><span class="p">()</span><span class="w">
+</span><span class="nv">$requestStream</span><span class="o">.</span><span class="nf">Close</span><span class="p">()</span><span class="w">
+
+</span><span class="p">[</span><span class="n">System.Net.HttpWebResponse</span><span class="p">]</span><span class="w"> </span><span class="nv">$webResponse</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">$webRequest</span><span class="o">.</span><span class="nf">GetResponse</span><span class="p">()</span><span class="w">
+
+</span><span class="nv">$nextUrl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">$webResponse</span><span class="o">.</span><span class="n">Headers</span><span class="p">[</span><span class="s2">"Operation-Location"</span><span class="p">]</span><span class="w"> <i class="conum" data-value="3"></i><b>(3)</b>
+</span><span class="n">Start-Sleep</span><span class="w"> </span><span class="nt">-s</span><span class="w"> </span><span class="nx">4</span><span class="w"> <i class="conum" data-value="4"></i><b>(4)</b>
+</span><span class="nv">$res</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Invoke-RestMethod</span><span class="w"> </span><span class="nt">-Method</span><span class="w"> </span><span class="nx">Get</span><span class="w"> </span><span class="nt">-Headers</span><span class="w"> </span><span class="p">@{</span><span class="s2">"Ocp-Apim-Subscription-Key"</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">$key</span><span class="p">}</span><span class="w"> </span><span class="nt">-Uri</span><span class="w"> </span><span class="nv">$nextUrl</span><span class="w"> <i class="conum" data-value="5"></i><b>(5)</b>
+
+</span><span class="nv">$res</span><span class="o">.</span><span class="nf">analyzeResult</span><span class="o">.</span><span class="n">documentResults</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="nf">fields</span></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Afin de récupérer les entêtes de la réponse, nous allons utiliser un objet .NET de type WebRequest. La cmdlet <a href="https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/invoke-restmethod?view=powershell-7#parameters"><code>Invoke-RestMethod</code></a> dispose d&#8217;un paramètre <code>ResponseHeadersVariable</code> mais qui n&#8217;est disponible qu&#8217;à partir de PowerShell 6 qui n&#8217;est pas la version disponible par défaut.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Ici, on ne fait pas dans la dentelle. On lit toute l&#8217;image et on pousse dans la requête. Pas d&#8217;optimisation de la mémoire car l&#8217;image est assez petite.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>On soumet la requête pour récupérer un objet réponse. C&#8217;est l&#8217;entête <code>Operation-Location</code> qui contient le lien pour récupérer le résultat de l&#8217;analyse.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>L&#8217;analyse prend plus de 3 secondes. On attend 4s.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>La méthode <code>Invoke-RestMethod</code> est parfaite pour récupérer le résultat de l&#8217;analyse.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Exemple de sortie&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>MonChamps
+------------
+@{type=string; valueString=XXX; text=XXX; page=1; boundingBox=System.Object[]; confidence=1,0; elements=System.Object[]}</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="conclusion"><a class="anchor" href="#conclusion"></a><a class="link" href="#conclusion">Conclusion</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>PowerShell est disponible sur tous les postes Windows 10.
+En utilisant PowerShell, il est possible de facilement interroger les services d&#8217;Azure Form Recognizer sans dépendance à Python ou développement de programme en .NET ou même installer le client fourni par MS.</p>
+</div>
+<div class="paragraph">
+<p>Ultimement, on peut envisager le développement d&#8217;une Azure Function en PowerShell, s&#8217;il est nécessaire de surfacer l&#8217;API d&#8217;Azure Form Recognizer avec sa propre API (pour des raisons de sécurité, de découplage ou autre).
+Cet exercice est laissé à la discrétion du lecteur 😉.</p>
+</div>
+</div>
+</div></section>
+  
+<footer>
+  <div class="tags">
+    
+    <a class="tag" href="/tags#powershell">#powershell</a>
+    
+    <a class="tag" href="/tags#azure">#azure</a>
+    
+  </div>
+</footer>
+
+
+</article>
+
+<!-- Disqus -->
+
+
+<!-- Post navigation -->
+
+  <div id="post-nav">
+  
+  <div id="previous-post" class="post-nav-post">
+      <p>Article précédent</p>
+      <a href="/2020/07/23/creer-arm-template/">
+        Trucs et astuces pour la création d&#8217;ARM template
+      </a>
+  </div>
+  
+  
+  <div id="next-post" class="post-nav-post">
+      <p>Article suivant</p>
+      <a href="/2020/09/21/sql-server-sur-docker/">
+        SQL Server sur docker et création de base
+      </a>
+  </div>
+  
+</div>
+
+
+
+    </div>
+    
+
+
+<footer class="site-footer">
+	<nav class="site-nav">
+		<ul>
+			
+<li>
+	<a href="/feed.xml" title="Suivre sur RSS">
+		<i class="fa fa-fw fa-rss"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+	<a href="https://github.com/r3dlin3" title="Follow on GitHub">
+		<i class="fa fa-fw fa-github"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		</ul>
+	</nav>
+	<p class="text">Powered by <a href="https://jekyllrb.com/">Jekyll</a> with <i class="fa fa-heart" aria-hidden="true" style="color:Tomato"></i>
+</p>
+</footer>
+
+  </body>
+</html>

@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html class="no-js">
+  <head>
+	<meta charset="utf-8">
+	<title>Préparer rapidement un lab Data Factory en Azure CLI | A bit of everything</title>
+	<meta name="description" content="Afin de faire des tests avec Data Factory, il peut être intéressant de monter un lab rapide avec Data Factory, un compte de stockage et une base de données. ...">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="/assets/css/main.css">
+
+	<!--Favicon-->
+	<link rel="shortcut icon" href="/assets/favicon.ico" type="image/x-icon">
+
+	<!-- Canonical -->
+	<link rel="canonical" href="/2020/09/23/lab-data-factory/">
+
+	<!-- RSS -->
+	<link type="application/atom+xml" rel="alternate" href="https://r3dlin3.github.io/feed.xml" title="A bit of everything" />
+	<!-- SEO -->
+	<!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Préparer rapidement un lab Data Factory en Azure CLI | A bit of everything</title>
+<meta name="generator" content="Jekyll v3.8.7" />
+<meta property="og:title" content="Préparer rapidement un lab Data Factory en Azure CLI" />
+<meta name="author" content="r3dLiN3" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Afin de faire des tests avec Data Factory, il peut être intéressant de monter un lab rapide avec Data Factory, un compte de stockage et une base de données. Voici quelques lignes de commande pour créer tout ça en un clin d’oeil." />
+<meta property="og:description" content="Afin de faire des tests avec Data Factory, il peut être intéressant de monter un lab rapide avec Data Factory, un compte de stockage et une base de données. Voici quelques lignes de commande pour créer tout ça en un clin d’oeil." />
+<link rel="canonical" href="https://r3dlin3.github.io/2020/09/23/lab-data-factory/" />
+<meta property="og:url" content="https://r3dlin3.github.io/2020/09/23/lab-data-factory/" />
+<meta property="og:site_name" content="A bit of everything" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-09-23T00:00:00+00:00" />
+<script type="application/ld+json">
+{"author":{"@type":"Person","name":"r3dLiN3"},"headline":"Préparer rapidement un lab Data Factory en Azure CLI","dateModified":"2020-09-23T00:00:00+00:00","datePublished":"2020-09-23T00:00:00+00:00","description":"Afin de faire des tests avec Data Factory, il peut être intéressant de monter un lab rapide avec Data Factory, un compte de stockage et une base de données. Voici quelques lignes de commande pour créer tout ça en un clin d’oeil.","mainEntityOfPage":{"@type":"WebPage","@id":"https://r3dlin3.github.io/2020/09/23/lab-data-factory/"},"@type":"BlogPosting","url":"https://r3dlin3.github.io/2020/09/23/lab-data-factory/","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+	<!-- Google Fonts -->
+	
+	<link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,700italic,400italic" rel="stylesheet" type="text/css">
+	
+
+	<!-- KaTeX -->
+	
+
+	<!-- Google Analytics -->
+	
+</head>
+
+  <body>
+    <header class="site-header">
+	<div class="branding">
+		
+		<a href="/">
+			<img class="avatar" src="/assets/img/avatar.png" alt="avatar"/>
+		</a>
+		
+		<h1 class="site-title">
+			<a href="/">A bit of everything</a>
+		</h1>
+	</div>
+	<nav class="site-nav">
+		<ul>
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/about/">
+					A propos
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/tags/">
+					tags
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<!-- Social icons from Font Awesome, if enabled  -->
+			
+			
+            
+            <!-- Search bar -->
+            
+		</ul>
+	</nav>
+    
+</header>
+
+    <div class="content">
+      <article >
+  <header style="background-image: url('/')">
+    <h1 class="title">Préparer rapidement un lab Data Factory en Azure CLI</h1>
+    
+    <p class="meta">
+      
+
+
+
+23
+
+septembre
+  
+2020
+      
+    </p>
+  </header>
+  <section class="post-content"><div class="sect1">
+<h2 id="introduction"><a class="anchor" href="#introduction"></a><a class="link" href="#introduction">Introduction</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Le <a href="https://docs.microsoft.com/fr-fr/azure/data-factory/tutorial-copy-data-portal">tutorial</a> de copie de données d&#8217;un compte de
+stockage vers Azure SQL nécessite quelques prérequis.</p>
+</div>
+<div class="paragraph">
+<p>Récemment, j&#8217;ai voulu également tester les points de terminaison privés (<em>Private Endpoint</em>) avec <em>Data Factory</em> avec le <a href="https://docs.microsoft.com/fr-fr/azure/data-factory/tutorial-copy-data-portal-private">tutorial de Microsoft</a>  qui a les mêmes prérequis que le précédent tutorial.</p>
+</div>
+<div class="paragraph">
+<p>J&#8217;ai donc écrit les quelques lignes nécessaires en Azure CLI (pour varier les plaisirs avec les <a href="/tags#arm">gabarits ARM</a>).</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Il n&#8217;est pas nécessaire d&#8217;installer Azure CLI sur son poste pour exécuter les commandes. On peut utiliser <a href="https://shell.azure.com/bash">le Bash d&#8217;Azure Cloud Shell</a>.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+Les commandes sont données pour du Bash. Elles sont à adapter si vous utilisez PowerShell.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="les_variables"><a class="anchor" href="#les_variables"></a><a class="link" href="#les_variables">Les variables</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Les commandes suivantes s&#8217;appuient sur des variables pour contextualiser la création des ressources.
+Certains noms de ressource doivent être global unique&#8201;&#8212;&#8201;c&#8217;est-à-dire unique sur l&#8217;ensemble des clients Microsoft&#8201;&#8212;&#8201;comme le nom du compte de stockage et le nom du serveur SQL.
+D&#8217;autres, comme le nom de la base sont plus flexibles.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="bash"><span class="c"># Nom du groupe de ressources</span>
+<span class="nv">rg</span><span class="o">=</span><span class="s2">"rg-dfy"</span>
+<span class="c"># Localisation du groupe de ressources et des ressources associées</span>
+<span class="nv">location</span><span class="o">=</span><span class="s2">"francecentral"</span>
+<span class="c"># Compte de stockage</span>
+<span class="nv">sa</span><span class="o">=</span><span class="s2">"monstorage"</span>
+<span class="c"># Data Factory</span>
+<span class="nv">dfy</span><span class="o">=</span><span class="s2">"mondfy"</span>
+<span class="c"># Nom du serveur SQL</span>
+<span class="nv">sqlserver</span><span class="o">=</span><span class="s2">"monserveur"</span>
+<span class="c"># Mot de passe du serveur SQL</span>
+<span class="nv">sqlpwd</span><span class="o">=</span><span class="s2">"MonMotdePasseComplexe!"</span>
+<span class="c"># Nom de la base de données</span>
+<span class="nv">sqldb</span><span class="o">=</span><span class="s2">"mydb"</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="et_tout_commença_par_un_groupe_de_ressources"><a class="anchor" href="#et_tout_commença_par_un_groupe_de_ressources"></a><a class="link" href="#et_tout_commença_par_un_groupe_de_ressources">Et tout commença&#8230;&#8203; par un groupe de ressources</a></h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="bash">az group create <span class="nt">-n</span> <span class="nv">$rg</span> <span class="nt">-l</span> francecentral</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="création_des_ressources"><a class="anchor" href="#création_des_ressources"></a><a class="link" href="#création_des_ressources">Création des ressources</a></h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="serveur_sql"><a class="anchor" href="#serveur_sql"></a><a class="link" href="#serveur_sql">Serveur SQL</a></h3>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+On crée ici une base en «&nbsp;Basic&nbsp;». Il faudra adapter en fonction de la taille souhaitée.
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="bash">az sql server create <span class="nt">-l</span> <span class="nv">$location</span> <span class="nt">-g</span> <span class="nv">$rg</span> <span class="nt">-n</span> <span class="nv">$sqlserver</span> <span class="nt">-u</span> myadminuser <span class="nt">-p</span> <span class="nv">$sqlpwd</span>
+az sql db create <span class="nt">-g</span> <span class="nv">$rg</span> <span class="nt">-s</span> <span class="nv">$sqlserver</span> <span class="nt">-n</span> mydb <span class="nt">--service-objective</span> Basic</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="compte_de_stockage_et_conteneurs"><a class="anchor" href="#compte_de_stockage_et_conteneurs"></a><a class="link" href="#compte_de_stockage_et_conteneurs">Compte de stockage et conteneurs</a></h3>
+<div class="paragraph">
+<p>Les commandes ci-dessous permettent de créer le compte de stockage et le conteneur.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="bash">az storage account create <span class="nt">--name</span> <span class="nv">$sa</span> <span class="se">\</span>
+                          <span class="nt">-g</span> <span class="nv">$rg</span> <span class="se">\</span>
+                          <span class="nt">--access-tier</span> Hot <span class="se">\</span>
+                          <span class="nt">--sku</span> Standard_LRS
+
+<span class="nv">cn</span><span class="o">=</span><span class="sb">`</span>az storage account show-connection-string <span class="nt">-g</span> <span class="nv">$rg</span> <span class="nt">-n</span> <span class="nv">$sa</span> <span class="nt">-o</span> tsv<span class="sb">`</span>
+
+az storage container create <span class="se">\</span>
+    <span class="nt">--account-name</span> <span class="nv">$sa</span> <span class="se">\</span>
+    <span class="nt">--name</span> data <span class="se">\</span>
+    <span class="nt">--public-access</span> off <span class="se">\</span>
+    <span class="nt">--connection-string</span> <span class="nv">$cn</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="data_factory"><a class="anchor" href="#data_factory"></a><a class="link" href="#data_factory">Data Factory</a></h3>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="bash">az extension add <span class="nt">--name</span> datafactory
+
+az datafactory factory create <span class="nt">--name</span> <span class="nv">$dfy</span> <span class="se">\</span>
+                              <span class="nt">--resource-group</span> <span class="nv">$rg</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="conclusion"><a class="anchor" href="#conclusion"></a><a class="link" href="#conclusion">Conclusion</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Une fois les variables définies, il est possible de contruire le lab en moins de 2min30.
+On voit à quel point Azure CLI est performant dans la création d&#8217;un environnement, bien plus que
+PowerShell dont les cmdlets sont puissantes mais très proches de l&#8217;implémentation ARM et donc assez complexe.
+A ma connaissance, il n&#8217;est pas possible de créer une VM en une ligne avec PowerShell alors que c&#8217;est possible en Azure CLI.</p>
+</div>
+<div class="paragraph">
+<p>Personnellement, pour des petits projets, je vais favoriser Azure CLI à ARM, qui malgré tout, reste assez coûteux à écrire et tester.</p>
+</div>
+</div>
+</div></section>
+  
+<footer>
+  <div class="tags">
+    
+    <a class="tag" href="/tags#azure">#azure</a>
+    
+    <a class="tag" href="/tags#az-cli">#az-cli</a>
+    
+    <a class="tag" href="/tags#data-factory">#data-factory</a>
+    
+  </div>
+</footer>
+
+
+</article>
+
+<!-- Disqus -->
+
+
+<!-- Post navigation -->
+
+  <div id="post-nav">
+  
+  <div id="previous-post" class="post-nav-post">
+      <p>Article précédent</p>
+      <a href="/2020/09/21/sql-server-sur-docker/">
+        SQL Server sur docker et création de base
+      </a>
+  </div>
+  
+  
+  <div id="next-post" class="post-nav-post">
+      <p>Article suivant</p>
+      <a href="/2020/09/24/azure-cli-powershell/">
+        Transformer des commandes Bash Azure CLI pour PowerShell
+      </a>
+  </div>
+  
+</div>
+
+
+
+    </div>
+    
+
+
+<footer class="site-footer">
+	<nav class="site-nav">
+		<ul>
+			
+<li>
+	<a href="/feed.xml" title="Suivre sur RSS">
+		<i class="fa fa-fw fa-rss"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+	<a href="https://github.com/r3dlin3" title="Follow on GitHub">
+		<i class="fa fa-fw fa-github"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		</ul>
+	</nav>
+	<p class="text">Powered by <a href="https://jekyllrb.com/">Jekyll</a> with <i class="fa fa-heart" aria-hidden="true" style="color:Tomato"></i>
+</p>
+</footer>
+
+  </body>
+</html>

@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html class="no-js">
+  <head>
+	<meta charset="utf-8">
+	<title>Trucs et astuces pour la création d&#8217;ARM template | A bit of everything</title>
+	<meta name="description" content="L'ARM template est l'arme de choix dans l'arsenal d'Infrastructure as Code pour Azure. Pour autant, il n'est pas toujours simple d'arriver à ses fins. Voici ...">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="/assets/css/main.css">
+
+	<!--Favicon-->
+	<link rel="shortcut icon" href="/assets/favicon.ico" type="image/x-icon">
+
+	<!-- Canonical -->
+	<link rel="canonical" href="/2020/07/23/creer-arm-template/">
+
+	<!-- RSS -->
+	<link type="application/atom+xml" rel="alternate" href="https://r3dlin3.github.io/feed.xml" title="A bit of everything" />
+	<!-- SEO -->
+	<!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Trucs et astuces pour la création d’ARM template | A bit of everything</title>
+<meta name="generator" content="Jekyll v3.8.7" />
+<meta property="og:title" content="Trucs et astuces pour la création d’ARM template" />
+<meta name="author" content="r3dLiN3" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="L’ARM template est l’arme de choix dans l’arsenal d’Infrastructure as Code pour Azure. Pour autant, il n’est pas toujours simple d’arriver à ses fins. Voici quelques trucs et astuces." />
+<meta property="og:description" content="L’ARM template est l’arme de choix dans l’arsenal d’Infrastructure as Code pour Azure. Pour autant, il n’est pas toujours simple d’arriver à ses fins. Voici quelques trucs et astuces." />
+<link rel="canonical" href="https://r3dlin3.github.io/2020/07/23/creer-arm-template/" />
+<meta property="og:url" content="https://r3dlin3.github.io/2020/07/23/creer-arm-template/" />
+<meta property="og:site_name" content="A bit of everything" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-07-23T00:00:00+00:00" />
+<script type="application/ld+json">
+{"author":{"@type":"Person","name":"r3dLiN3"},"headline":"Trucs et astuces pour la création d’ARM template","dateModified":"2020-07-23T00:00:00+00:00","datePublished":"2020-07-23T00:00:00+00:00","description":"L’ARM template est l’arme de choix dans l’arsenal d’Infrastructure as Code pour Azure. Pour autant, il n’est pas toujours simple d’arriver à ses fins. Voici quelques trucs et astuces.","mainEntityOfPage":{"@type":"WebPage","@id":"https://r3dlin3.github.io/2020/07/23/creer-arm-template/"},"@type":"BlogPosting","url":"https://r3dlin3.github.io/2020/07/23/creer-arm-template/","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+	<!-- Google Fonts -->
+	
+	<link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,700italic,400italic" rel="stylesheet" type="text/css">
+	
+
+	<!-- KaTeX -->
+	
+
+	<!-- Google Analytics -->
+	
+</head>
+
+  <body>
+    <header class="site-header">
+	<div class="branding">
+		
+		<a href="/">
+			<img class="avatar" src="/assets/img/avatar.png" alt="avatar"/>
+		</a>
+		
+		<h1 class="site-title">
+			<a href="/">A bit of everything</a>
+		</h1>
+	</div>
+	<nav class="site-nav">
+		<ul>
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/about/">
+					A propos
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/tags/">
+					tags
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<!-- Social icons from Font Awesome, if enabled  -->
+			
+			
+            
+            <!-- Search bar -->
+            
+		</ul>
+	</nav>
+    
+</header>
+
+    <div class="content">
+      <article >
+  <header style="background-image: url('/')">
+    <h1 class="title">Trucs et astuces pour la création d&#8217;ARM template</h1>
+    
+    <p class="meta">
+      
+
+
+
+23
+
+juillet
+  
+2020
+      
+    </p>
+  </header>
+  <section class="post-content"><div class="sect1">
+<h2 id="introduction"><a class="anchor" href="#introduction"></a><a class="link" href="#introduction">Introduction</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>L'<em>ARM template</em> est l&#8217;arme de choix dans l&#8217;arsenal d'<em>Infrastructure as Code</em> pour Azure.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>De manière générale, il ne faut pas négliger le temps nécessaire pour la création des scripts, des fichiers de configuration pour l'<em>Infrastructure as Code</em>.</p>
+</div>
+<div class="paragraph">
+<p>Pour autant, grâce à la répétabilité, vous gagnerez du temps pour
+la création des environnements (passage en prod à l&#8217;arrache&nbsp;?),
+en documentation, en qualité et en confiance (chaque mise à jour ne générera pas un stress car le résultat est connu d&#8217;avance)</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Comme on va le voir, il existe plusieurs façons de créer des <em>ARM templates</em>. Chacune a ses avantages et inconvénients.</p>
+</div>
+<div class="paragraph">
+<p>Il sera donc parfois nécessaire de les combiner pour arriver à vos fins.</p>
+</div>
+<div id="toc" class="toc">
+<div id="toctitle" class="title">Table des matières</div>
+<ul class="sectlevel1">
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#automatisation_dans_le_portail">Automatisation dans le portail</a></li>
+<li><a href="#création_dans_le_portail">Création dans le portail</a></li>
+<li><a href="#quickstart_templates"><em>Quickstart templates</em></a></li>
+<li><a href="#la_référence">La référence</a></li>
+<li><a href="#exploration_des_ressources">Exploration des ressources</a></li>
+<li><a href="#déploiement">Déploiement</a></li>
+<li><a href="#powershell">PowerShell</a></li>
+<li><a href="#bonus_armtemplategenerator">Bonus&nbsp;: ARMTemplateGenerator</a></li>
+<li><a href="#conclusion">Conclusion</a></li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="automatisation_dans_le_portail"><a class="anchor" href="#automatisation_dans_le_portail"></a><a class="link" href="#automatisation_dans_le_portail">Automatisation dans le portail</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Les gens me posent souvent la question&nbsp;: &laquo;&nbsp;Une fois que l&#8217;on a créé les ressources dans le portail, il n&#8217;est pas possible de faire un copié/collé pour créer un nouvel environnement&nbsp;?&nbsp;&raquo;</p>
+</div>
+<div class="paragraph">
+<p>Oui et non.</p>
+</div>
+<div class="paragraph">
+<p>En effet, le portail a une fonction proche&nbsp;:
+&laquo;&nbsp;Exporter le modèle&nbsp;&raquo;.
+Cette fonctionnalité est présente au niveau d&#8217;un groupe de ressources ou au niveau de la plupart des ressources.</p>
+</div>
+<div class="paragraph">
+<p>Dans le portail&nbsp;:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="/assets/img/2020-07-23-creer-arm-template/export-modele-1.png" alt="Exporter le modèle dans le portail Azure">
+</div>
+</div>
+<div class="paragraph">
+<p>Puis, le contenu généré&nbsp;:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="/assets/img/2020-07-23-creer-arm-template/export-modele-2.png" alt="ARM template généré dans le portail">
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Avantages&nbsp;:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Solution simple.</p>
+</li>
+<li>
+<p>La qualité des <em>ARM templates</em> s&#8217;améliorent.</p>
+</li>
+<li>
+<p>Le portail génère également le fichier de paramètres.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Inconvénients&nbsp;:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Comme on peut le voir sur la copie d&#8217;écran ci-dessus, toutes les ressources ne sont pas exportables.</p>
+</li>
+<li>
+<p>Il n&#8217;est pas rare que des paramètres soient omis.</p>
+</li>
+<li>
+<p>En réalité, les <em>ARM templates</em> ainsi produits sont de qualité assez médiocre&nbsp;:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Le nom des paramètres utilise le nom des ressources. Comme l&#8217;objectif est souvent de pouvoir créer plusieurs environnements, il est préférable de généraliser le nom des paramètres. Par exemple, pour un compte de stockage, le paramètre va être <code>storageAccounts_nomducomptedestockage_name</code>. Il est recommandé de le renommer <code>storageAccountName</code> par exemple pour le généraliser et conserver une convention de nommage en <em>camelCase</em>.</p>
+</li>
+<li>
+<p>Il n&#8217;y a pas d&#8217;intelligence dans ces templates. Il peut être intéressant de prévoir des boucles ou d&#8217;autres logiques.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="création_dans_le_portail"><a class="anchor" href="#création_dans_le_portail"></a><a class="link" href="#création_dans_le_portail">Création dans le portail</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Lors de la création d&#8217;une ressource, il est possible, juste avant la création
+d&#8217;exporter un <em>ARM template</em>.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="/assets/img/2020-07-23-creer-arm-template/export-modele-3.png" alt="ARM template généré lors de la création">
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Avantages&nbsp;:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Solution simple.</p>
+</li>
+<li>
+<p><em>ARM template</em> plus propre que lors de l&#8217;export.</p>
+</li>
+<li>
+<p>Le portail génère également le fichier de paramètres.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Inconvénients&nbsp;:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Les <em>ARM templates</em> ainsi générés peuvent plus complexe que nécessaire et inclure un paramétrage non nécessaire.
+Ainsi, lors de la création d&#8217;une base, l'<em>ARM template</em> généré intègre la création d&#8217;un serveur SQL alors qu&#8217;il s&#8217;agissait de la création d&#8217;une base uniquement. Sans parler de toute la configuration réseau ou de sécurité avancée&#8230;&#8203;</p>
+</li>
+<li>
+<p>Les <em>ARM templates</em> ainsi générés sont parfois si complexe qu&#8217;ils ne sont pas valides (j&#8217;ai déjà eu le cas&nbsp;!).</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="quickstart_templates"><a class="anchor" href="#quickstart_templates"></a><a class="link" href="#quickstart_templates"><em>Quickstart templates</em></a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Microsoft met à disposition des exemples pour la création de nombreuses ressources sur <a href="https://github.com/Azure/azure-quickstart-templates">GitHub</a>.
+On peut y retrouver des exemples de base (préfixés en 101) jusqu&#8217;à des architectures complexes (ferme RDS, infrastructure SAP, etc.).</p>
+</div>
+<div class="paragraph">
+<p><strong>Avantages&nbsp;:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Bon point de départ pour des cas de la vie réelle comme le chiffrement de disque de VM ou sa sauvegarde, des applications Web, etc.</p>
+</li>
+<li>
+<p>Pas mal d&#8217;astuces à reprendre pour l&#8217;écriture d'<em>ARM templates</em> sur les conditions, les boucles, le jeu des <em>nested templates</em>, etc.</p>
+</li>
+<li>
+<p>De nombreux <em>template</em> sur des composants non-Microsoft (Chef, SAP, Jenkins, Drupal, etc.).</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Inconvénients&nbsp;:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Certains <em>template</em> ne sont pas mis à jour alors que le service évolue.
+Ainsi, certains <em>templates</em> utilisent des vieilles versions d&#8217;API.
+Je pense notamment aux App Services dont la gestion des piles technologies a évoluée et pour laquelle je n&#8217;ai pas trouvé d&#8217;exemple viable</p>
+</li>
+<li>
+<p>Cela manque de cohérence&nbsp;:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Sur le nommage des paramètres. Un réseau virtuel peut s&#8217;appeler <code>vnet</code> ou <code>virtualNetworkName</code>, ce qui nécessite un travail pour mettre en cohérence.</p>
+</li>
+<li>
+<p>La gestion de la localisation de la ressource: dans le cas général, comme <a href="https://github.com/Azure/azure-quickstart-templates/blob/master/201-vm-copy-index-loops/azuredeploy.json">ici</a>, la localisation est traitée comme un paramètre qui a une valeur par défaut à celle du groupe de ressource, <a href="https://github.com/Azure/azure-quickstart-templates/blob/master/301-drupal8-vmss-glusterfs-mysql/azuredeploy.json">ici</a> c&#8217;est une variable.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="la_référence"><a class="anchor" href="#la_référence"></a><a class="link" href="#la_référence">La référence</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Microsoft publie <a href="https://docs.microsoft.com/en-us/azure/templates/">la documentation</a> des ressources disponibles, pour les différentes versions d&#8217;API.</p>
+</div>
+<div class="paragraph">
+<p>Malheureusement, ces pages ne sont pas irréprochables.
+Ainsi, le nommage est proche de l&#8217;implémentation et l&#8217;on va avoir quelques bizarreries comme par exemple pour les App Services&nbsp;: pour avoir la référence, inutile de chercher &laquo;&nbsp;App Service&nbsp;&raquo;. Il faut aller sur &laquo;&nbsp;Web&nbsp;&raquo; car le <em>provider</em> est <code>Microsoft.Web</code>.
+Ne cherchez pas non plus &laquo;&nbsp;App Insights&nbsp;&raquo;, etc.
+Vous voilà prévenu&nbsp;!</p>
+</div>
+<div class="paragraph">
+<p>Mais le principal reproche est que les valeurs sont rarement documentées.
+Par exemple, le paramètre <code>type</code> de la <a href="https://docs.microsoft.com/fr-fr/azure/templates/microsoft.datafactory/factories">configuration git d&#8217;un DataFactory</a> n&#8217;a pas de valeur décrite</p>
+</div>
+<div class="paragraph">
+<p><strong>Avantages&nbsp;:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Liste en théorie tous les paramètres disponibles</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Inconvénients&nbsp;:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Il n&#8217;est pas rare qu&#8217;il manque des paramètres</p>
+</li>
+<li>
+<p>Les valeurs des enums sont souvent manquantes</p>
+</li>
+<li>
+<p>Le parcours du site n&#8217;est pas toujours aisé du fait d&#8217;une recherche médiocre</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="exploration_des_ressources"><a class="anchor" href="#exploration_des_ressources"></a><a class="link" href="#exploration_des_ressources">Exploration des ressources</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Microsoft met à disposition une interface Web qui permet de parcourir les ressources de sa souscription en ARM&nbsp;: <a href="https://resources.azure.com" class="bare">https://resources.azure.com</a>.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="/assets/img/2020-07-23-creer-arm-template/resource-explorer.png" alt="Azure Resource Explorer">
+</div>
+</div>
+<div class="paragraph">
+<p>Cet outil est <em>très</em> utile pour justement récupérer les valeurs que la <a href="#la_référence">référence</a> n&#8217;aura pu nous donner.</p>
+</div>
+<div class="paragraph">
+<p>Cela étant, comme il n&#8217;affiche pas un <em>ARM template</em>, il y a un travail certain pour convertir l&#8217;information dans un <em>ARM template</em>.
+A utiliser en dernier recours donc&nbsp;!</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Cet outil permet de parcourir les différentes souscriptions rattachées à différents tenants Azure AD.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p><strong>Avantages&nbsp;:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Permet d&#8217;afficher les valeurs. Cela est intéressant quand on joue dans le portail pour voir les effets en ARM.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Inconvénients&nbsp;:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Ne fournit pas un <em>ARM template</em> à proprement parler.</p>
+</li>
+<li>
+<p>Il est nécessaire de faire le tri en les paramètres que l&#8217;on peut fixer et ceux qui sont des attributs systèmes, accessibles en lecture seule par exemple.</p>
+</li>
+<li>
+<p>Toutes les ressources ne sont pas affichages par ce biais.</p>
+</li>
+<li>
+<p>Tous les paramètres ne sont pas affichés, notamment les secrets.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="déploiement"><a class="anchor" href="#déploiement"></a><a class="link" href="#déploiement">Déploiement</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Chaque déploiement dans un groupe de ressources est tracé.
+C&#8217;est un bon moyen parfois pour avoir des détails sur les erreurs.
+Mais il est possible de récupérer l'<em>ARM template</em> utilisé lors de l&#8217;export.</p>
+</div>
+<div class="paragraph">
+<p>Dans le portail, il suffit d&#8217;aller dans le menu &laquo;&nbsp;Déploiement&nbsp;&raquo;&nbsp;:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="/assets/img/2020-07-23-creer-arm-template/deploiement-1.png" alt="Menu déploiement dans le portail Azure">
+</div>
+</div>
+<div class="paragraph">
+<p>Il est alors possible d&#8217;accéder aux paramètres d&#8217;entrée, au <em>template</em> utilisé&nbsp;:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="/assets/img/2020-07-23-creer-arm-template/deploiement-2.png" alt="Template d&#8217;un déploiement">
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Le <em>template</em> affiché ici est différent de l&#8217;export proposé à la création.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p><strong>Avantages&nbsp;:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Récupération d'<em>ARM template</em> fonctionnel (dès lors que le déploiement est en succès).</p>
+</li>
+<li>
+<p>Très bonne méthode pour faire du <em>reverse engineering</em> si les <em>templates</em> ont été perdu.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Inconvénients&nbsp;:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Comme pour les autres méthodes à partir du portail Azure, la qualité du <em>template</em> n&#8217;est pas toujours excellente.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="powershell"><a class="anchor" href="#powershell"></a><a class="link" href="#powershell">PowerShell</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>C&#8217;est une critique que l&#8217;on peut faire aux cmdlets PowerShell d&#8217;Azure&nbsp;: je trouve qu&#8217;on est souvent trop proche de l&#8217;implémentation ARM. Essayez de créer une VM en PowerShell&nbsp;! En Az cli, cela peut se faire en une ligne, pas en PowerShell.</p>
+</div>
+<div class="paragraph">
+<p>Pour autant, ici cela peut être un avantage.</p>
+</div>
+<div class="paragraph">
+<p>Je me suis servi de cette technique pour automatiser la création d&#8217;alerte. Il est facile de créer ou modifier une alerte ou un groupe d&#8217;actions dans le portail mais il n&#8217;existe pas les moyens de l&#8217;exporter.</p>
+</div>
+<div class="paragraph">
+<p>Les alertes sont aussi absentes d'<a href="#exploration_des_ressources">Azure Resource Explorer</a>.</p>
+</div>
+<div class="paragraph">
+<p>J&#8217;ai donc travaillé avec la cmdlet <code>Get-AzMetricAlertRuleV2</code> qui m&#8217;a permis d&#8217;aller dans le détail des paramètres</p>
+</div>
+<div class="paragraph">
+<p>Exemple pour avoir l&#8217;identifiant du groupe d&#8217;action&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="nv">$alertes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Get-AzMetricAlertRuleV2</span><span class="w">
+</span><span class="nv">$alerte</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">$alertes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w">
+</span><span class="nv">$alerte</span><span class="o">.</span><span class="n">Actions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="nf">ActionGroupId</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Avantages&nbsp;:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Permet parfois d&#8217;accéder à des valeurs qui sont inaccessibles de l'<a href="#exploration_des_ressources">explorateur de ressources</a>.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Inconvénients&nbsp;:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Comme pour l'<a href="#exploration_des_ressources">explorateur de ressources</a>, cette méthode ne permet pas d&#8217;obtenir un <em>ARM template</em> directement exploitable.</p>
+</li>
+<li>
+<p>Cette méthode ne va pas fonctionner sur toutes les ressources car cela dépend à quel point la cmdlet est proche de l&#8217;implémentation ARM</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="bonus_armtemplategenerator"><a class="anchor" href="#bonus_armtemplategenerator"></a><a class="link" href="#bonus_armtemplategenerator">Bonus&nbsp;: ARMTemplateGenerator</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Afin de pallier les défauts rencontrés dans la création d'<em>ARM templates</em>, j&#8217;ai créé un outil permettant la création d'<em>ARM templates</em> &laquo;&nbsp;propre&nbsp;&raquo;&nbsp;: <a href="https://github.com/r3dlin3/ARMTemplateGenerator" class="bare">https://github.com/r3dlin3/ARMTemplateGenerator</a>.</p>
+</div>
+<div class="paragraph">
+<p>Cet outil permet de&nbsp;:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Assurer une cohérence dans le nommage des paramètres</p>
+</li>
+<li>
+<p>Générer un <em>template</em> en fonction de son besoin&nbsp;: ainsi, lors de la création d&#8217;une base, le <em>template</em> généré contiendra la création d&#8217;un serveur que si cela est nécessaire.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>N&#8217;hésitez pas à contribuer pour ajouter des ressources ou des nouveaux paramètres, mettre à jour les API, etc.</p>
+</div>
+<div class="paragraph">
+<p><strong>Avantages&nbsp;:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Cohérence dans le nommage des paramètres</p>
+</li>
+<li>
+<p><em>Template</em> adapté à son besoin</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Inconvénients&nbsp;:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Peu de ressources disponibles</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="conclusion"><a class="anchor" href="#conclusion"></a><a class="link" href="#conclusion">Conclusion</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>L&#8217;écriture d'<em>ARM templates</em> n&#8217;est pas toujours compliqué heureusement.</p>
+</div>
+<div class="paragraph">
+<p>Parfois, cependant, pour arriver à ses fins, il peut être nécessairement d&#8217;ouvrir le truc au pied de biche, mais cela vaut souvent le coup.
+Chacune des techniques citées plus haut vous permettra d&#8217;arriver à vos fins, si tant est que soit possible.
+On se souvient par exemple qu&#8217;à l&#8217;époque, il n&#8217;était pas possible de créer un container sur un compte de stockage.
+Aujourd&#8217;hui, c&#8217;est possible de le faire en <em>ARM template</em>.</p>
+</div>
+</div>
+</div></section>
+  
+<footer>
+  <div class="tags">
+    
+    <a class="tag" href="/tags#arm">#arm</a>
+    
+    <a class="tag" href="/tags#azure">#azure</a>
+    
+    <a class="tag" href="/tags#trucs">#trucs</a>
+    
+  </div>
+</footer>
+
+
+</article>
+
+<!-- Disqus -->
+
+
+<!-- Post navigation -->
+
+  <div id="post-nav">
+  
+  <div id="previous-post" class="post-nav-post">
+      <p>Article précédent</p>
+      <a href="/2020/06/10/filtrer-sql-app-service/">
+        Configurer automatiquement le firewall SQL/MySQL/PostgreSQL pour un App Service
+      </a>
+  </div>
+  
+  
+  <div id="next-post" class="post-nav-post">
+      <p>Article suivant</p>
+      <a href="/2020/09/18/form-recognizer-powershell/">
+        Fun avec PowerShell et Azure Form Recognizer
+      </a>
+  </div>
+  
+</div>
+
+
+
+    </div>
+    
+
+
+<footer class="site-footer">
+	<nav class="site-nav">
+		<ul>
+			
+<li>
+	<a href="/feed.xml" title="Suivre sur RSS">
+		<i class="fa fa-fw fa-rss"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+	<a href="https://github.com/r3dlin3" title="Follow on GitHub">
+		<i class="fa fa-fw fa-github"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		</ul>
+	</nav>
+	<p class="text">Powered by <a href="https://jekyllrb.com/">Jekyll</a> with <i class="fa fa-heart" aria-hidden="true" style="color:Tomato"></i>
+</p>
+</footer>
+
+  </body>
+</html>

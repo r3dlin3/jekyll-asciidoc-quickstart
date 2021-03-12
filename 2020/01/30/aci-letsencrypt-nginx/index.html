@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html class="no-js">
+  <head>
+	<meta charset="utf-8">
+	<title>Certificat Let&#8217;s Encrypt sur Azure Container Instances et NGINX | A bit of everything</title>
+	<meta name="description" content="Azure Container Instances permet d'exécuter des containers. Voici un petit exemple pour délivrer un certificat émis par Let's Encrypt, donc reconnu par les n...">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="/assets/css/main.css">
+
+	<!--Favicon-->
+	<link rel="shortcut icon" href="/assets/favicon.ico" type="image/x-icon">
+
+	<!-- Canonical -->
+	<link rel="canonical" href="/2020/01/30/aci-letsencrypt-nginx/">
+
+	<!-- RSS -->
+	<link type="application/atom+xml" rel="alternate" href="https://r3dlin3.github.io/feed.xml" title="A bit of everything" />
+	<!-- SEO -->
+	<!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Certificat Let’s Encrypt sur Azure Container Instances et NGINX | A bit of everything</title>
+<meta name="generator" content="Jekyll v3.8.7" />
+<meta property="og:title" content="Certificat Let’s Encrypt sur Azure Container Instances et NGINX" />
+<meta name="author" content="r3dLiN3" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Azure Container Instances permet d’exécuter des containers. Voici un petit exemple pour délivrer un certificat émis par Let’s Encrypt, donc reconnu par les navigateurs." />
+<meta property="og:description" content="Azure Container Instances permet d’exécuter des containers. Voici un petit exemple pour délivrer un certificat émis par Let’s Encrypt, donc reconnu par les navigateurs." />
+<link rel="canonical" href="https://r3dlin3.github.io/2020/01/30/aci-letsencrypt-nginx/" />
+<meta property="og:url" content="https://r3dlin3.github.io/2020/01/30/aci-letsencrypt-nginx/" />
+<meta property="og:site_name" content="A bit of everything" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-01-30T00:00:00+00:00" />
+<script type="application/ld+json">
+{"author":{"@type":"Person","name":"r3dLiN3"},"headline":"Certificat Let’s Encrypt sur Azure Container Instances et NGINX","dateModified":"2020-01-30T00:00:00+00:00","datePublished":"2020-01-30T00:00:00+00:00","description":"Azure Container Instances permet d’exécuter des containers. Voici un petit exemple pour délivrer un certificat émis par Let’s Encrypt, donc reconnu par les navigateurs.","mainEntityOfPage":{"@type":"WebPage","@id":"https://r3dlin3.github.io/2020/01/30/aci-letsencrypt-nginx/"},"@type":"BlogPosting","url":"https://r3dlin3.github.io/2020/01/30/aci-letsencrypt-nginx/","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+	<!-- Google Fonts -->
+	
+	<link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,700italic,400italic" rel="stylesheet" type="text/css">
+	
+
+	<!-- KaTeX -->
+	
+
+	<!-- Google Analytics -->
+	
+</head>
+
+  <body>
+    <header class="site-header">
+	<div class="branding">
+		
+		<a href="/">
+			<img class="avatar" src="/assets/img/avatar.png" alt="avatar"/>
+		</a>
+		
+		<h1 class="site-title">
+			<a href="/">A bit of everything</a>
+		</h1>
+	</div>
+	<nav class="site-nav">
+		<ul>
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/about/">
+					A propos
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/tags/">
+					tags
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<!-- Social icons from Font Awesome, if enabled  -->
+			
+			
+            
+            <!-- Search bar -->
+            
+		</ul>
+	</nav>
+    
+</header>
+
+    <div class="content">
+      <article >
+  <header style="background-image: url('/')">
+    <h1 class="title">Certificat Let&#8217;s Encrypt sur Azure Container Instances et NGINX</h1>
+    
+    <p class="meta">
+      
+
+
+
+30
+
+janvier
+  
+2020
+      
+    </p>
+  </header>
+  <section class="post-content"><div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Azure Container Instances fait partie des nombreuses façons d&#8217;exécuter des containers sur Azure.</p>
+</div>
+<div class="paragraph">
+<p>J&#8217;ai déjà présenté dans un <a href="/2020/01/01/sonarqube-app-service/">précédent article</a> l&#8217;exécution de container sur App Service. Cette méthode expose automatiquement une URL en azurewebsites.net reconnue par les navigateurs. Malheureusement, on ne peut exposer qu&#8217;un port.</p>
+</div>
+<div class="paragraph">
+<p>Microsoft propose déjà une <a href="https://docs.microsoft.com/fr-fr/azure/container-instances/container-instances-container-group-ssl">méthode</a> à base de NGINX pour exposer un point de terminaison en SSL. Malheureusement, la méthode décrite se base sur des certificats générés au préalable, voire auto-signés si on suit la doc&nbsp;!</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="point_dattention_sur_azure_files_et_client_lets_encrypt"><a class="anchor" href="#point_dattention_sur_azure_files_et_client_lets_encrypt"></a><a class="link" href="#point_dattention_sur_azure_files_et_client_lets_encrypt">Point d&#8217;attention sur Azure Files et client Let&#8217;s Encrypt</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Azure Files est utilisé conjointant avec Azure Container Instances pour assurer la persistance des données. Les disques managés ne sont pas supportés.</p>
+</div>
+<div class="paragraph">
+<p>De fait, Azure Files souffre de <a href="https://docs.microsoft.com/fr-fr/rest/api/storageservices/features-not-supported-by-the-azure-file-service">quelques limitations</a> comme le non-support des liens symboliques, la gestion des droits POSIX, etc.</p>
+</div>
+<div class="paragraph">
+<p>Mon premier choix pour l&#8217;enrôlement de certificat s&#8217;était porté sur certbot - le client recommandé par Let&#8217;s Encrypt - et son <a href="https://hub.docker.com/u/certbot/">image Docker</a>.
+Malheureusement, il s&#8217;est avéré que certbot utilise des liens symboliques pour gérer les certificats.</p>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s Encrypt propose une longue <a href="https://letsencrypt.org/docs/client-options/">liste de client</a>.
+Je me suis donc tourné vers <a href="https://github.com/acmesh-official/acme.sh">acme.sh</a> qui propose également
+une <a href="https://hub.docker.com/r/neilpang/acme.sh">image Docker</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="les_étapes"><a class="anchor" href="#les_étapes"></a><a class="link" href="#les_étapes">Les étapes</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Le processus complet va se découper en 2 grandes étapes&nbsp;:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>L&#8217;émission du certificat</p>
+</li>
+<li>
+<p>L&#8217;utilisation du certificat</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="etape_1_émission_du_certificat"><a class="anchor" href="#etape_1_émission_du_certificat"></a><a class="link" href="#etape_1_émission_du_certificat">Etape 1&nbsp;: émission du certificat</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Cette étape va consister en&nbsp;:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>La création du compte de stockage (<em>Storage Account</em>) et des partages associés (<em>Files</em>). Au moins 2 partages doivent être créés pour&nbsp;:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>La config d&#8217;acme.sh</p>
+</li>
+<li>
+<p>Les certificats à utiliser avec NGINX ultérieurement</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>La création de 2 répertoires nécessaires à acme.sh</p>
+</li>
+<li>
+<p>La génération du certificat en utilisant le mode <a href="https://github.com/acmesh-official/acme.sh#4-use-standalone-server-to-issue-cert">autonome</a> d&#8217;acme.sh</p>
+</li>
+<li>
+<p>L&#8217;installation des certificats pour l&#8217;utilisation par NGINX</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Tout a été automatisé avec un ARM template.
+Ainsi, l&#8217;ARM template permet de&nbsp;:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Créer les ressources Azure</p>
+</li>
+<li>
+<p>Création d&#8217;un Azure Container Instance s&#8217;appuyant sur l&#8217;image <code>microsoft/azure-cli</code> pour créer les répertoires.
+Cela correspond à exécuter commande Az CLI <code>az storage directory create --name certs --share-name acme-cert</code></p>
+</li>
+<li>
+<p>Création d&#8217;un Azure Container Instance avec l&#8217;image <code>neilpang/acme.sh</code> pour l&#8217;émission du certificat.
+Cela revient à exécuter la commande <code>acme.sh --issue --standalone -d $FQDN</code></p>
+</li>
+<li>
+<p>Création d&#8217;un Azure Container Instance avec l&#8217;image <code>neilpang/acme.sh</code> pour l&#8217;installation du certificat.</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Le FQDN utilisable dans ce contexte est de la forme <code>&lt;dnsLabel&gt;.&lt;region&gt;.azurecontainer.io</code>, <code>dnsLabel</code> étant un paramètre que l&#8217;on peut définir.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Ci-dessous l&#8217;ARM template utilisé&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="title">certificate.json</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="json"><span class="p">{</span><span class="w">
+    </span><span class="nl">"$schema"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"contentVersion"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1.0.0.0"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"parameters"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"containerGroupName"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Container Group name."</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"dnsLabel"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"defaultValue"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"DNS label used to by the container group. The FQDN is &lt;dnsLabel&gt;.&lt;region&gt;.azurecontainer.io"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"storageAccountName"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Name of the Storage Account"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"storageAccountType"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"defaultValue"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Standard_LRS"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"allowedValues"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="s2">"Standard_LRS"</span><span class="p">,</span><span class="w">
+                </span><span class="s2">"Standard_GRS"</span><span class="p">,</span><span class="w">
+                </span><span class="s2">"Standard_ZRS"</span><span class="p">,</span><span class="w">
+                </span><span class="s2">"Premium_LRS"</span><span class="w">
+            </span><span class="p">],</span><span class="w">
+            </span><span class="nl">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Storage Account type"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"accessTier"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"defaultValue"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Hot"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"allowedValues"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="s2">"Hot"</span><span class="p">,</span><span class="w">
+                </span><span class="s2">"Cool"</span><span class="w">
+            </span><span class="p">],</span><span class="w">
+            </span><span class="nl">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"The access tier used for billing."</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"storageAccountKind"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"defaultValue"</span><span class="p">:</span><span class="w"> </span><span class="s2">"StorageV2"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"allowedValues"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="s2">"StorageV2"</span><span class="p">,</span><span class="w">
+                </span><span class="s2">"Storage"</span><span class="p">,</span><span class="w">
+                </span><span class="s2">"BlobStorage"</span><span class="p">,</span><span class="w">
+                </span><span class="s2">"FileStorage"</span><span class="p">,</span><span class="w">
+                </span><span class="s2">"BlockBlobStorage"</span><span class="w">
+            </span><span class="p">],</span><span class="w">
+            </span><span class="nl">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Storage Account type"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"advancedThreatProtectionEnabled"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"bool"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"defaultValue"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Enable or disable Advanced Threat Protection."</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"shares"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"array"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"List of the file share names."</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"defaultValue"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[resourceGroup().location]"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"The region to deploy the resources into"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"tagValues"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"object"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"defaultValue"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"variables"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"createFolderPrivateContainerGroupName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[concat(parameters('containerGroupName'),'-cli-private')]"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"createFolderCertsContainerGroupName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[concat(parameters('containerGroupName'),'-cli-certs')]"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"installContainerGroupName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[concat(parameters('containerGroupName'),'-install')]"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"dnsLabel"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[if(empty(parameters('dnsLabel')), parameters('containerGroupName'), parameters('dnsLabel'))]"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"fqdn"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[toLower(concat(variables('dnsLabel'),'.',replace(parameters('location'), ' ', ''),'.azurecontainer.io'))]"</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"resources"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Microsoft.Storage/storageAccounts"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('storageAccountName')]"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('location')]"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"apiVersion"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2018-07-01"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"sku"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('storageAccountType')]"</span><span class="w">
+            </span><span class="p">},</span><span class="w">
+            </span><span class="nl">"kind"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('storageAccountKind')]"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"accessTier"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('accessTier')]"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"encryption"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"keySource"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Microsoft.Storage"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"services"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"blob"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"enabled"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+                        </span><span class="p">},</span><span class="w">
+                        </span><span class="nl">"file"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"enabled"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">}</span><span class="w">
+                </span><span class="p">},</span><span class="w">
+                </span><span class="nl">"supportsHttpsTrafficOnly"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+            </span><span class="p">},</span><span class="w">
+            </span><span class="nl">"resources"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"condition"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('advancedThreatProtectionEnabled')]"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"providers/advancedThreatProtectionSettings"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Microsoft.Security/current"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"apiVersion"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2017-08-01-preview"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"dependsOn"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                        </span><span class="s2">"[resourceId('Microsoft.Storage/storageAccounts/', parameters('storageAccountName'))]"</span><span class="w">
+                    </span><span class="p">],</span><span class="w">
+                    </span><span class="nl">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"isEnabled"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+                    </span><span class="p">}</span><span class="w">
+                </span><span class="p">}</span><span class="w">
+            </span><span class="p">]</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Microsoft.Storage/storageAccounts/fileServices/shares"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"apiVersion"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2019-04-01"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[concat(parameters('storageAccountName'), '/default/', parameters('shares')[copyIndex()])]"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"copy"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"sharecopy"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"count"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[length(parameters('shares'))]"</span><span class="w">
+            </span><span class="p">},</span><span class="w">
+            </span><span class="nl">"dependsOn"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="s2">"[parameters('storageAccountName')]"</span><span class="w">
+            </span><span class="p">]</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[variables('createFolderCertsContainerGroupName')]"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Microsoft.ContainerInstance/containerGroups"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"apiVersion"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2018-10-01"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('location')]"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"dependsOn"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="s2">"sharecopy"</span><span class="w">
+            </span><span class="p">],</span><span class="w">
+            </span><span class="nl">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"containers"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                    </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"create-folder-private"</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"image"</span><span class="p">:</span><span class="w"> </span><span class="s2">"microsoft/azure-cli"</span><span class="p">,</span><span class="w">
+                            </span><span class="nl">"resources"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                                </span><span class="nl">"requests"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"cpu"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.1</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"memoryInGb"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.1</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">},</span><span class="w">
+                            </span><span class="nl">"command"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                </span><span class="s2">"az"</span><span class="p">,</span><span class="w">
+                                </span><span class="s2">"storage"</span><span class="p">,</span><span class="w">
+                                </span><span class="s2">"directory"</span><span class="p">,</span><span class="w">
+                                </span><span class="s2">"create"</span><span class="p">,</span><span class="w">
+                                </span><span class="s2">"--name"</span><span class="p">,</span><span class="w">
+                                </span><span class="s2">"certs"</span><span class="p">,</span><span class="w">
+                                </span><span class="s2">"--share-name"</span><span class="p">,</span><span class="w">
+                                </span><span class="s2">"acme-cert"</span><span class="w">
+                            </span><span class="p">],</span><span class="w">
+                            </span><span class="nl">"environmentVariables"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"AZURE_STORAGE_KEY"</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[listKeys(parameters('storageAccountName'),'2017-10-01').keys[0].value]"</span><span class="w">
+                                </span><span class="p">},</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"AZURE_STORAGE_ACCOUNT"</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('storageAccountName')]"</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">]</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">}</span><span class="w">
+                </span><span class="p">],</span><span class="w">
+                </span><span class="nl">"osType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Linux"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"restartPolicy"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Never"</span><span class="w">
+
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[variables('createFolderPrivateContainerGroupName')]"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Microsoft.ContainerInstance/containerGroups"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"apiVersion"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2018-10-01"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('location')]"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"dependsOn"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="s2">"sharecopy"</span><span class="w">
+            </span><span class="p">],</span><span class="w">
+            </span><span class="nl">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"containers"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                    </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"create-folder-private"</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"image"</span><span class="p">:</span><span class="w"> </span><span class="s2">"microsoft/azure-cli"</span><span class="p">,</span><span class="w">
+                            </span><span class="nl">"resources"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                                </span><span class="nl">"requests"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"cpu"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.1</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"memoryInGb"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.1</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">},</span><span class="w">
+                            </span><span class="nl">"command"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                </span><span class="s2">"az"</span><span class="p">,</span><span class="w">
+                                </span><span class="s2">"storage"</span><span class="p">,</span><span class="w">
+                                </span><span class="s2">"directory"</span><span class="p">,</span><span class="w">
+                                </span><span class="s2">"create"</span><span class="p">,</span><span class="w">
+                                </span><span class="s2">"--name"</span><span class="p">,</span><span class="w">
+                                </span><span class="s2">"private"</span><span class="p">,</span><span class="w">
+                                </span><span class="s2">"--share-name"</span><span class="p">,</span><span class="w">
+                                </span><span class="s2">"acme-cert"</span><span class="w">
+                            </span><span class="p">],</span><span class="w">
+                            </span><span class="nl">"environmentVariables"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"AZURE_STORAGE_KEY"</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[listKeys(parameters('storageAccountName'),'2017-10-01').keys[0].value]"</span><span class="w">
+                                </span><span class="p">},</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"AZURE_STORAGE_ACCOUNT"</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('storageAccountName')]"</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">]</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">}</span><span class="w">
+                </span><span class="p">],</span><span class="w">
+                </span><span class="nl">"osType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Linux"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"restartPolicy"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Never"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('containerGroupName')]"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Microsoft.ContainerInstance/containerGroups"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"apiVersion"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2018-10-01"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('location')]"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"dependsOn"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="s2">"[variables('createFolderPrivateContainerGroupName')]"</span><span class="p">,</span><span class="w">
+                </span><span class="s2">"[variables('createFolderCertsContainerGroupName')]"</span><span class="w">
+            </span><span class="p">],</span><span class="w">
+            </span><span class="nl">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"containers"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                    </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"acme-sh"</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"image"</span><span class="p">:</span><span class="w"> </span><span class="s2">"neilpang/acme.sh"</span><span class="p">,</span><span class="w">
+                            </span><span class="nl">"command"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                </span><span class="s2">"--issue"</span><span class="p">,</span><span class="w">
+                                </span><span class="s2">"--standalone"</span><span class="p">,</span><span class="w">
+                                </span><span class="s2">"-d"</span><span class="p">,</span><span class="w">
+                                </span><span class="s2">"[variables('fqdn')]"</span><span class="w">
+                            </span><span class="p">],</span><span class="w">
+                            </span><span class="nl">"resources"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                                </span><span class="nl">"requests"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"cpu"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.1</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"memoryInGb"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.1</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">},</span><span class="w">
+                            </span><span class="nl">"ports"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"port"</span><span class="p">:</span><span class="w"> </span><span class="mi">80</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">],</span><span class="w">
+                            </span><span class="nl">"volumeMounts"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"acme-config"</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"mountPath"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/acme.sh/"</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">]</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">}</span><span class="w">
+                </span><span class="p">],</span><span class="w">
+                </span><span class="nl">"osType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Linux"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"restartPolicy"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Never"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"ipAddress"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Public"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"ports"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                        </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"port"</span><span class="p">:</span><span class="w"> </span><span class="mi">80</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">],</span><span class="w">
+                    </span><span class="nl">"dnsNameLabel"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[variables('dnsLabel')]"</span><span class="w">
+                </span><span class="p">},</span><span class="w">
+                </span><span class="nl">"volumes"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                    </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"acme-config"</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"azureFile"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"shareName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"acme-config"</span><span class="p">,</span><span class="w">
+                            </span><span class="nl">"storageAccountName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('storageAccountName')]"</span><span class="p">,</span><span class="w">
+                            </span><span class="nl">"storageAccountKey"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[listKeys(parameters('storageAccountName'),'2017-10-01').keys[0].value]"</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">}</span><span class="w">
+                </span><span class="p">]</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[variables('installContainerGroupName')]"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Microsoft.ContainerInstance/containerGroups"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"apiVersion"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2018-10-01"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('location')]"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"dependsOn"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="s2">"[parameters('containerGroupName')]"</span><span class="w">
+            </span><span class="p">],</span><span class="w">
+            </span><span class="nl">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"containers"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                    </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"acme-sh"</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"image"</span><span class="p">:</span><span class="w"> </span><span class="s2">"neilpang/acme.sh"</span><span class="p">,</span><span class="w">
+                            </span><span class="nl">"command"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                </span><span class="s2">"--install-cert"</span><span class="p">,</span><span class="w">
+                                </span><span class="s2">"--key-file"</span><span class="p">,</span><span class="w">
+                                </span><span class="s2">"/etc/pki/tls/private/key.pem"</span><span class="p">,</span><span class="w">
+                                </span><span class="s2">"--fullchain-file"</span><span class="p">,</span><span class="w">
+                                </span><span class="s2">"/etc/pki/tls/certs/fullchain.pem"</span><span class="p">,</span><span class="w">
+                                </span><span class="s2">"-d"</span><span class="p">,</span><span class="w">
+                                </span><span class="s2">"[variables('fqdn')]"</span><span class="w">
+                            </span><span class="p">],</span><span class="w">
+                            </span><span class="nl">"resources"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                                </span><span class="nl">"requests"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"cpu"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.1</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"memoryInGb"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.1</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">},</span><span class="w">
+                            </span><span class="nl">"volumeMounts"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"acme-config"</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"mountPath"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/acme.sh/"</span><span class="w">
+                                </span><span class="p">},</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"acme-cert"</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"mountPath"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/etc/pki/tls/"</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">]</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">}</span><span class="w">
+                </span><span class="p">],</span><span class="w">
+                </span><span class="nl">"osType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Linux"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"restartPolicy"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Never"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"volumes"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                    </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"acme-cert"</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"azureFile"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"shareName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"acme-cert"</span><span class="p">,</span><span class="w">
+                            </span><span class="nl">"storageAccountName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('storageAccountName')]"</span><span class="p">,</span><span class="w">
+                            </span><span class="nl">"storageAccountKey"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[listKeys(parameters('storageAccountName'),'2017-10-01').keys[0].value]"</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">},</span><span class="w">
+                    </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"acme-config"</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"azureFile"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"shareName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"acme-config"</span><span class="p">,</span><span class="w">
+                            </span><span class="nl">"storageAccountName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('storageAccountName')]"</span><span class="p">,</span><span class="w">
+                            </span><span class="nl">"storageAccountKey"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[listKeys(parameters('storageAccountName'),'2017-10-01').keys[0].value]"</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">}</span><span class="w">
+                </span><span class="p">]</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+
+    </span><span class="p">],</span><span class="w">
+    </span><span class="nl">"outputs"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Et les paramètres associés&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="title">certificate.parameters.json</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="json"><span class="p">{</span><span class="w">
+    </span><span class="nl">"$schema"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"contentVersion"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1.0.0.0"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"parameters"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"containerGroupName"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"testacmenginx"</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"storageAccountName"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"stotestacmenginx"</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"storageAccountType"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Standard_LRS"</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"accessTier"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Hot"</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"storageAccountKind"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"StorageV2"</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"advancedThreatProtectionEnabled"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"shares"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="s2">"acme-config"</span><span class="p">,</span><span class="w">
+                </span><span class="s2">"acme-cert"</span><span class="w">
+            </span><span class="p">]</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"tagValues"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="p">{}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"West Europe"</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+Au moment de la rédaction de cet article, Azure Container Instances n&#8217;est pas disponible en France. J&#8217;ai donc forcé l&#8217;utilisation d&#8217;Europe de l&#8217;Ouest.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Il suffit alors de déployer cet ARM template et ses paramètres. Je recommande l&#8217;utilisation de la cmdlet PowerShell <code>New-AzResourceGroupDeployment</code>.</p>
+</div>
+<div class="paragraph">
+<p>Une fois le déploiement réalisé, il faut supprimer les ACI manuellement&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="shell"><span class="nv">rg</span><span class="o">=</span>XXX
+<span class="nv">cn</span><span class="o">=</span>testacmenginx
+az container delete <span class="nt">-g</span> <span class="nv">$rg</span> <span class="nt">-y</span> <span class="nt">-n</span> <span class="k">${</span><span class="nv">cn</span><span class="k">}</span>
+az container delete <span class="nt">-g</span> <span class="nv">$rg</span> <span class="nt">-y</span> <span class="nt">-n</span> <span class="k">${</span><span class="nv">cn</span><span class="k">}</span><span class="nt">-cli-private</span>
+az container delete <span class="nt">-g</span> <span class="nv">$rg</span> <span class="nt">-y</span> <span class="nt">-n</span> <span class="k">${</span><span class="nv">cn</span><span class="k">}</span><span class="nt">-cli-certs</span>
+az container delete <span class="nt">-g</span> <span class="nv">$rg</span> <span class="nt">-y</span> <span class="nt">-n</span> <span class="k">${</span><span class="nv">cn</span><span class="k">}</span><span class="nt">-install</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="etape_2_utilisation_des_certificats_par_nginx"><a class="anchor" href="#etape_2_utilisation_des_certificats_par_nginx"></a><a class="link" href="#etape_2_utilisation_des_certificats_par_nginx">Etape 2&nbsp;: utilisation des certificats par NGINX</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Dans cette étape, nous allons déployer un NGINX avec SSL.</p>
+</div>
+<div class="paragraph">
+<p>La configuration SSL a été renforcée afin de viser un A+ sur <a href="https://www.ssllabs.com/ssltest/">SSL Labs</a>.</p>
+</div>
+<div class="paragraph">
+<p>Voici ce que donne la configuration NGINX&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="title">site.template</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="nginx"><span class="k">server</span> <span class="p">{</span>
+    <span class="kn">listen</span> <span class="mi">80</span><span class="p">;</span>
+    <span class="kn">server_name</span> $<span class="p">{</span><span class="kn">NGINX_HOST</span><span class="err">}</span><span class="p">;</span>
+    <span class="kn">server_tokens</span> <span class="no">off</span><span class="p">;</span>
+
+    <span class="kn">location</span> <span class="n">/</span> <span class="p">{</span>
+        <span class="kn">return</span> <span class="mi">301</span> <span class="s">https://</span><span class="nv">$host$request_uri</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kn">server</span> <span class="p">{</span>
+    <span class="kn">listen</span> <span class="mi">443</span> <span class="s">ssl</span><span class="p">;</span>
+    <span class="kn">server_name</span> $<span class="p">{</span><span class="kn">NGINX_HOST</span><span class="err">}</span><span class="p">;</span>
+    <span class="kn">server_tokens</span> <span class="no">off</span><span class="p">;</span>
+
+    <span class="kn">ssl_certificate</span> <span class="n">/etc/pki/tls/certs/fullchain.pem</span><span class="p">;</span>
+    <span class="kn">ssl_certificate_key</span> <span class="n">/etc/pki/tls/private/key.pem</span><span class="p">;</span>
+
+    <span class="kn">ssl_session_cache</span> <span class="s">shared:le_nginx_SSL:1m</span><span class="p">;</span>
+    <span class="kn">ssl_session_timeout</span> <span class="s">1d</span><span class="p">;</span>
+    <span class="kn">ssl_session_tickets</span> <span class="no">off</span><span class="p">;</span>
+
+    <span class="kn">ssl_protocols</span> <span class="s">TLSv1.3</span> <span class="s">TLSv1.2</span><span class="p">;</span>
+    <span class="kn">ssl_prefer_server_ciphers</span> <span class="no">on</span><span class="p">;</span>
+    <span class="c1">#ssl_ciphers "EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH";</span>
+    <span class="kn">ssl_ciphers</span> <span class="s">EECDH+ECDSA+AESGCM:EECDH+aRSA+AESGCM:EECDH+ECDSA+SHA512:EECDH+ECDSA+SHA384:EECDH+ECDSA+SHA256:ECDH+AESGCM:ECDH+AES256:DH+AESGCM:DH+AES256:RSA+AESGCM:!aNULL:!eNULL:!LOW:!RC4:!3DES:!MD5:!EXP:!PSK:!SRP:!DSS</span><span class="p">;</span>
+    <span class="kn">ssl_ecdh_curve</span> <span class="s">secp384r1</span><span class="p">;</span>
+
+    <span class="kn">ssl_stapling</span> <span class="no">on</span><span class="p">;</span>
+    <span class="kn">ssl_stapling_verify</span> <span class="no">on</span><span class="p">;</span>
+
+    <span class="kn">add_header</span> <span class="s">Strict-Transport-Security</span> <span class="s">"max-age=15768000</span><span class="p">;</span> <span class="kn">includeSubdomains</span><span class="p">;</span> <span class="kn">preload</span><span class="p">;</span><span class="kn">"</span> <span class="p">;</span>
+    <span class="c1">#add_header Content-Security-Policy "default-src 'none'; frame-ancestors 'none'; script-src 'self'; img-src 'self'; style-src 'self'; base-uri 'self'; form-action 'self';";</span>
+    <span class="kn">add_header</span> <span class="s">Referrer-Policy</span> <span class="s">"no-referrer,</span> <span class="s">strict-origin-when-cross-origin"</span><span class="p">;</span>
+    <span class="kn">add_header</span> <span class="s">X-Frame-Options</span> <span class="s">SAMEORIGIN</span><span class="p">;</span>
+    <span class="kn">add_header</span> <span class="s">X-Content-Type-Options</span> <span class="s">nosniff</span><span class="p">;</span>
+    <span class="kn">add_header</span> <span class="s">X-XSS-Protection</span> <span class="s">"1</span><span class="p">;</span> <span class="kn">mode=block"</span><span class="p">;</span>
+
+    <span class="kn">location</span> <span class="n">/</span> <span class="p">{</span>
+        <span class="kn">proxy_pass</span>  <span class="s">http://localhost:3000</span><span class="p">;</span>
+        <span class="kn">proxy_set_header</span>    <span class="s">Host</span>                <span class="nv">$http_host</span><span class="p">;</span>
+        <span class="kn">proxy_set_header</span>    <span class="s">X-Real-IP</span>           <span class="nv">$remote_addr</span><span class="p">;</span>
+        <span class="kn">proxy_set_header</span>    <span class="s">X-Forwarded-For</span>     <span class="nv">$proxy_add_x_forwarded_for</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Cette configuration sera passée comme un secret au container NGINX. Pour pouvoir le passer en secret, il faut alors l&#8217;encoder en base64. J&#8217;ai utilisé mon Windows Subsystem for Linux (WSL) mais il existe d&#8217;autres façons d&#8217;encoder en base64. Sous linux, la commande est&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="shell"><span class="nb">base64</span> <span class="nt">-w</span> 0 mysite.template</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>J&#8217;ai introduit la variable <code>${NGINX_HOST}</code> qui sera remplacée au démarrage. Pour ce faire, j&#8217;utilise la commande <code>envsubst</code>, que je n&#8217;ai pas inventée car donnée par la documentation de l&#8217;image Docker de NGINX.</p>
+</div>
+<div class="paragraph">
+<p>2 petites choses à noter cependant&nbsp;:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Par défaut <code>envsubst</code> va substituer toutes les variables de la forme <code>$VAR</code> ou <code>${VAR}</code>.
+Du coup, dans ma configuration, <code>$http_host</code> était remplacée&#8230;&#8203; par une chaîne vide. J&#8217;ai donc restreint la substitution à la seule variable <code>${NGINX_HOST}</code></p>
+</li>
+<li>
+<p>En Docker, il est possible de passer des commandes en <em>Shell Form</em> ou <em>Exec Form</em>. Je recommande cet <a href="https://nickjanetakis.com/blog/docker-tip-63-difference-between-an-array-and-string-based-cmd">article</a> pour bien comprendre la différence.
+<strong>Azure Container Instances ne supporte que la forme Exec</strong>.
+Or, pour le démarrage de NGINX, j&#8217;avais besoin d&#8217;une séquence de programme pour réaliser la substitution et démarrer le démon.
+J&#8217;ai donc triché en utilisant la forme Exec et la commande <code>sh -c</code>&nbsp;:</p>
+</li>
+</ol>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="json"><span class="nl">"command"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="s2">"sh"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"-c"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"envsubst '$NGINX_HOST' &lt; /tmp/nginx/mysite.template &gt; /etc/nginx/conf.d/default.conf &amp;&amp; exec nginx -g 'daemon off;'"</span><span class="w">
+</span><span class="p">]</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Comme à l&#8217;étape 1, le déploiement se fait avec un ARM template.
+Derrière le NGINX, j&#8217;ai mis un grafana dont le mot de passe admin est fixé par paramètre.</p>
+</div>
+<div class="listingblock">
+<div class="title">nginx.parameters.json</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="json"><span class="p">{</span><span class="w">
+    </span><span class="nl">"$schema"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"contentVersion"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1.0.0.0"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"parameters"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"grafanaAdminPassword"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"securestring"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Password for Grafana admin."</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"containerGroupName"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Container Group name."</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"dnsLabel"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"defaultValue"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"DNS label used to by the container group. The FQDN is &lt;dnsLabel&gt;.&lt;region&gt;.azurecontainer.io"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"storageAccountName"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Name of the Storage Account"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"defaultValue"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[resourceGroup().location]"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"The region to deploy the resources into"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"tagValues"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"object"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"defaultValue"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"variables"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"dnsLabel"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[if(empty(parameters('dnsLabel')), parameters('containerGroupName'), parameters('dnsLabel'))]"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"fqdn"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[toLower(concat(variables('dnsLabel'),'.',replace(parameters('location'), ' ', ''),'.azurecontainer.io'))]"</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"resources"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('containerGroupName')]"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Microsoft.ContainerInstance/containerGroups"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"apiVersion"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2018-10-01"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('location')]"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"containers"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                    </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"nginx"</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"image"</span><span class="p">:</span><span class="w"> </span><span class="s2">"nginx:alpine"</span><span class="p">,</span><span class="w">
+                            </span><span class="nl">"command"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                </span><span class="s2">"sh"</span><span class="p">,</span><span class="w">
+                                </span><span class="s2">"-c"</span><span class="p">,</span><span class="w">
+                                </span><span class="s2">"envsubst '$NGINX_HOST' &lt; /tmp/nginx/mysite.template &gt; /etc/nginx/conf.d/default.conf &amp;&amp; exec nginx -g 'daemon off;'"</span><span class="w">
+                            </span><span class="p">],</span><span class="w">
+                            </span><span class="nl">"environmentVariables"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"NGINX_HOST"</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[variables('fqdn')]"</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">],</span><span class="w">
+                            </span><span class="nl">"resources"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                                </span><span class="nl">"requests"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"cpu"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"memoryInGb"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.5</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">},</span><span class="w">
+                            </span><span class="nl">"ports"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"port"</span><span class="p">:</span><span class="w"> </span><span class="mi">80</span><span class="w">
+                                </span><span class="p">},</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"port"</span><span class="p">:</span><span class="w"> </span><span class="mi">443</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">],</span><span class="w">
+                            </span><span class="nl">"volumeMounts"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"acme-cert"</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"mountPath"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/etc/pki/tls/"</span><span class="w">
+                                </span><span class="p">},</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"nginx-config"</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"mountPath"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/tmp/nginx/"</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">]</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">},</span><span class="w">
+                    </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"grafana"</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"image"</span><span class="p">:</span><span class="w"> </span><span class="s2">"grafana/grafana"</span><span class="p">,</span><span class="w">
+
+                            </span><span class="nl">"ports"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"port"</span><span class="p">:</span><span class="w"> </span><span class="mi">3000</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">],</span><span class="w">
+                            </span><span class="nl">"environmentVariables"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GF_SECURITY_ADMIN_PASSWORD"</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('grafanaAdminPassword')]"</span><span class="w">
+                                </span><span class="p">},</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GF_SERVER_DOMAIN"</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[variables('fqdn')]"</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">],</span><span class="w">
+                            </span><span class="nl">"resources"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                                </span><span class="nl">"requests"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"cpu"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"memoryInGb"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">},</span><span class="w">
+                            </span><span class="nl">"volumeMounts"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"acme-cert"</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"mountPath"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/etc/pki/tls/"</span><span class="w">
+                                </span><span class="p">},</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"nginx-config"</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"mountPath"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/etc/nginx/conf.d/"</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">]</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">}</span><span class="w">
+                </span><span class="p">],</span><span class="w">
+                </span><span class="nl">"osType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Linux"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"restartPolicy"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Never"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"ipAddress"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Public"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"ports"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                        </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"port"</span><span class="p">:</span><span class="w"> </span><span class="mi">80</span><span class="w">
+                        </span><span class="p">},</span><span class="w">
+                        </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"port"</span><span class="p">:</span><span class="w"> </span><span class="mi">443</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">],</span><span class="w">
+                    </span><span class="nl">"dnsNameLabel"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[variables('dnsLabel')]"</span><span class="w">
+                </span><span class="p">},</span><span class="w">
+                </span><span class="nl">"volumes"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                    </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"acme-cert"</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"azureFile"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"shareName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"acme-cert"</span><span class="p">,</span><span class="w">
+                            </span><span class="nl">"storageAccountName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('storageAccountName')]"</span><span class="p">,</span><span class="w">
+                            </span><span class="nl">"storageAccountKey"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[listKeys(resourceId('Microsoft.Storage/storageAccounts',parameters('storageAccountName')),'2017-10-01').keys[0].value]"</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">},</span><span class="w">
+                    </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"nginx-config"</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"secret"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"mysite.template"</span><span class="p">:</span><span class="w"> </span><span class="s2">"c2VydmVyIHsKICAgIGxpc3RlbiA4MDsKICAgIHNlcnZlcl9uYW1lICR7TkdJTlhfSE9TVH07CiAgICBzZXJ2ZXJfdG9rZW5zIG9mZjsKCiAgICBsb2NhdGlvbiAvIHsKICAgICAgICByZXR1cm4gMzAxIGh0dHBzOi8vJGhvc3QkcmVxdWVzdF91cmk7CiAgICB9Cn0KCnNlcnZlciB7CiAgICBsaXN0ZW4gNDQzIHNzbDsKICAgIHNlcnZlcl9uYW1lICR7TkdJTlhfSE9TVH07CiAgICBzZXJ2ZXJfdG9rZW5zIG9mZjsKCiAgICBzc2xfY2VydGlmaWNhdGUgL2V0Yy9wa2kvdGxzL2NlcnRzL2Z1bGxjaGFpbi5wZW07CiAgICBzc2xfY2VydGlmaWNhdGVfa2V5IC9ldGMvcGtpL3Rscy9wcml2YXRlL2tleS5wZW07CiAgICAgICAgCiAgICBzc2xfc2Vzc2lvbl9jYWNoZSBzaGFyZWQ6bGVfbmdpbnhfU1NMOjFtOwogICAgc3NsX3Nlc3Npb25fdGltZW91dCAxZDsKICAgIHNzbF9zZXNzaW9uX3RpY2tldHMgb2ZmOwoKICAgIHNzbF9wcm90b2NvbHMgVExTdjEuMyBUTFN2MS4yOwogICAgc3NsX3ByZWZlcl9zZXJ2ZXJfY2lwaGVycyBvbjsKICAgICNzc2xfY2lwaGVycyAiRUVDREgrQUVTR0NNOkVESCtBRVNHQ006QUVTMjU2K0VFQ0RIOkFFUzI1NitFREgiOwogICAgc3NsX2NpcGhlcnMgRUVDREgrRUNEU0ErQUVTR0NNOkVFQ0RIK2FSU0ErQUVTR0NNOkVFQ0RIK0VDRFNBK1NIQTUxMjpFRUNESCtFQ0RTQStTSEEzODQ6RUVDREgrRUNEU0ErU0hBMjU2OkVDREgrQUVTR0NNOkVDREgrQUVTMjU2OkRIK0FFU0dDTTpESCtBRVMyNTY6UlNBK0FFU0dDTTohYU5VTEw6IWVOVUxMOiFMT1c6IVJDNDohM0RFUzohTUQ1OiFFWFA6IVBTSzohU1JQOiFEU1M7CiAgICBzc2xfZWNkaF9jdXJ2ZSBzZWNwMzg0cjE7CgogICAgc3NsX3N0YXBsaW5nIG9uOwogICAgc3NsX3N0YXBsaW5nX3ZlcmlmeSBvbjsKCiAgICBhZGRfaGVhZGVyIFN0cmljdC1UcmFuc3BvcnQtU2VjdXJpdHkgIm1heC1hZ2U9MTU3NjgwMDA7IGluY2x1ZGVTdWJkb21haW5zOyBwcmVsb2FkOyIgOwogICAgI2FkZF9oZWFkZXIgQ29udGVudC1TZWN1cml0eS1Qb2xpY3kgImRlZmF1bHQtc3JjICdub25lJzsgZnJhbWUtYW5jZXN0b3JzICdub25lJzsgc2NyaXB0LXNyYyAnc2VsZic7IGltZy1zcmMgJ3NlbGYnOyBzdHlsZS1zcmMgJ3NlbGYnOyBiYXNlLXVyaSAnc2VsZic7IGZvcm0tYWN0aW9uICdzZWxmJzsiOwogICAgYWRkX2hlYWRlciBSZWZlcnJlci1Qb2xpY3kgIm5vLXJlZmVycmVyLCBzdHJpY3Qtb3JpZ2luLXdoZW4tY3Jvc3Mtb3JpZ2luIjsKICAgIGFkZF9oZWFkZXIgWC1GcmFtZS1PcHRpb25zIFNBTUVPUklHSU47CiAgICBhZGRfaGVhZGVyIFgtQ29udGVudC1UeXBlLU9wdGlvbnMgbm9zbmlmZjsKICAgIGFkZF9oZWFkZXIgWC1YU1MtUHJvdGVjdGlvbiAiMTsgbW9kZT1ibG9jayI7CgogICAgbG9jYXRpb24gLyB7CiAgICAgICAgcHJveHlfcGFzcyAgaHR0cDovL2xvY2FsaG9zdDozMDAwOwogICAgICAgIHByb3h5X3NldF9oZWFkZXIgICAgSG9zdCAgICAgICAgICAgICAgICAkaHR0cF9ob3N0OwogICAgICAgIHByb3h5X3NldF9oZWFkZXIgICAgWC1SZWFsLUlQICAgICAgICAgICAkcmVtb3RlX2FkZHI7CiAgICAgICAgcHJveHlfc2V0X2hlYWRlciAgICBYLUZvcndhcmRlZC1Gb3IgICAgICRwcm94eV9hZGRfeF9mb3J3YXJkZWRfZm9yOwogICAgfQp9"</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">}</span><span class="w">
+                </span><span class="p">]</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+
+    </span><span class="p">],</span><span class="w">
+    </span><span class="nl">"outputs"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">nginx.parameters.json</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="json"><span class="p">{</span><span class="w">
+    </span><span class="nl">"$schema"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"contentVersion"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1.0.0.0"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"parameters"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"grafanaAdminPassword"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"secretPwd"</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"containerGroupName"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"testacmenginx"</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"storageAccountName"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"stotestacmenginx"</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"tagValues"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="p">{}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"West Europe"</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Un nouveau, l&#8217;on peut déployer avec la cmdlet PowerShell <code>New-AzResourceGroupDeployment</code>.</p>
+</div>
+<div class="paragraph">
+<p>Et voilà&nbsp;:</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="/assets/img/2020-01-30-ssllabs.png" alt="A+ avec SSL Labs"></span></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="conclusion"><a class="anchor" href="#conclusion"></a><a class="link" href="#conclusion">Conclusion</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>L&#8217;utilisation d&#8217;<a href="https://github.com/acmesh-official/acme.sh">acme.sh</a> m&#8217;a permis de récupérer un certificat Let&#8217;s Encrypt et l&#8217;utiliser dans NGINX qui agit comme reverse-proxy pour d&#8217;autres applications (grafana dans mon exemple).</p>
+</div>
+<div class="paragraph">
+<p>Je n&#8217;ai pas abordé la problématique de renouvellement du certificat.
+Les certificats Let&#8217;s Encrypt n&#8217;ont une durée de vie que de 90 jours.
+Cela étant, Azure Container Instances n&#8217;est probablement pas fait pour des programmes "permanents", donc 90 jours est largement suffisant.</p>
+</div>
+<div class="paragraph">
+<p>Il est possible de s&#8217;appuyer sur des fichiers YAML pour le déploiement d&#8217;Azure Container Instances.
+Cela s&#8217;avère très utile en phase de déploiement mais complétement inutile en phase d&#8217;industrialisation.
+En effet, il n&#8217;est pas possible d&#8217;utiliser des variables, des paramètres ou faire référence à d&#8217;autres ressources comme j&#8217;ai pu le faire dans l&#8217;ARM template.</p>
+</div>
+<div class="paragraph">
+<p>Ainsi, dans l&#8217;ARM template, l&#8217;utilisation de l&#8217;image <code>microsoft/azure-cli</code> se fait avec une référence aux clés du compte de stockage:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="json"><span class="p">{</span><span class="w">
+    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"AZURE_STORAGE_KEY"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[listKeys(parameters('storageAccountName'),'2017-10-01').keys[0].value]"</span><span class="w">
+</span><span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Ou même, la commande de génération de certificat avec l&#8217;image <code>neilpang/acme.sh</code> qui utilise une variable de mon ARM template:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="json"><span class="nl">"command"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="s2">"--issue"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"--standalone"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"-d"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"[variables('fqdn')]"</span><span class="w">
+</span><span class="p">]</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>La <a href="https://docs.microsoft.com/fr-fr/azure/templates/Microsoft.ContainerInstance/2018-10-01/containerGroups">référence ARM</a> est relativement bien documentée.
+Il ne faut donc pas hésiter à l&#8217;utiliser&nbsp;!</p>
+</div>
+</div>
+</div></section>
+  
+<footer>
+  <div class="tags">
+    
+    <a class="tag" href="/tags#docker">#docker</a>
+    
+    <a class="tag" href="/tags#aci">#aci</a>
+    
+    <a class="tag" href="/tags#azure">#azure</a>
+    
+    <a class="tag" href="/tags#nginx">#nginx</a>
+    
+    <a class="tag" href="/tags#letsencrypt">#letsencrypt</a>
+    
+    <a class="tag" href="/tags#arm">#arm</a>
+    
+  </div>
+</footer>
+
+
+</article>
+
+<!-- Disqus -->
+
+
+<!-- Post navigation -->
+
+  <div id="post-nav">
+  
+  <div id="previous-post" class="post-nav-post">
+      <p>Article précédent</p>
+      <a href="/2020/01/12/acr-repositories-devops/">
+        Utilisation des autorisations d&#8217;étendue de référentiel dans ACR avec Azure DevOps
+      </a>
+  </div>
+  
+  
+  <div id="next-post" class="post-nav-post">
+      <p>Article suivant</p>
+      <a href="/2020/02/01/aci-grafana-influxdb/">
+        Grafana et InfluxDB sur Azure Container Instances
+      </a>
+  </div>
+  
+</div>
+
+
+
+    </div>
+    
+
+
+<footer class="site-footer">
+	<nav class="site-nav">
+		<ul>
+			
+<li>
+	<a href="/feed.xml" title="Suivre sur RSS">
+		<i class="fa fa-fw fa-rss"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+	<a href="https://github.com/r3dlin3" title="Follow on GitHub">
+		<i class="fa fa-fw fa-github"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		</ul>
+	</nav>
+	<p class="text">Powered by <a href="https://jekyllrb.com/">Jekyll</a> with <i class="fa fa-heart" aria-hidden="true" style="color:Tomato"></i>
+</p>
+</footer>
+
+  </body>
+</html>

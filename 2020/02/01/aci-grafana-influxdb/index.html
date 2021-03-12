@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html class="no-js">
+  <head>
+	<meta charset="utf-8">
+	<title>Grafana et InfluxDB sur Azure Container Instances | A bit of everything</title>
+	<meta name="description" content="Azure Container Instances permet d'exécuter des containers. Voici un petit exemple de groupe de containers avec Grafana et InfluxDB.">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="/assets/css/main.css">
+
+	<!--Favicon-->
+	<link rel="shortcut icon" href="/assets/favicon.ico" type="image/x-icon">
+
+	<!-- Canonical -->
+	<link rel="canonical" href="/2020/02/01/aci-grafana-influxdb/">
+
+	<!-- RSS -->
+	<link type="application/atom+xml" rel="alternate" href="https://r3dlin3.github.io/feed.xml" title="A bit of everything" />
+	<!-- SEO -->
+	<!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Grafana et InfluxDB sur Azure Container Instances | A bit of everything</title>
+<meta name="generator" content="Jekyll v3.8.7" />
+<meta property="og:title" content="Grafana et InfluxDB sur Azure Container Instances" />
+<meta name="author" content="r3dLiN3" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Azure Container Instances permet d’exécuter des containers. Voici un petit exemple de groupe de containers avec Grafana et InfluxDB." />
+<meta property="og:description" content="Azure Container Instances permet d’exécuter des containers. Voici un petit exemple de groupe de containers avec Grafana et InfluxDB." />
+<link rel="canonical" href="https://r3dlin3.github.io/2020/02/01/aci-grafana-influxdb/" />
+<meta property="og:url" content="https://r3dlin3.github.io/2020/02/01/aci-grafana-influxdb/" />
+<meta property="og:site_name" content="A bit of everything" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-02-01T00:00:00+00:00" />
+<script type="application/ld+json">
+{"author":{"@type":"Person","name":"r3dLiN3"},"headline":"Grafana et InfluxDB sur Azure Container Instances","dateModified":"2020-02-01T00:00:00+00:00","datePublished":"2020-02-01T00:00:00+00:00","description":"Azure Container Instances permet d’exécuter des containers. Voici un petit exemple de groupe de containers avec Grafana et InfluxDB.","mainEntityOfPage":{"@type":"WebPage","@id":"https://r3dlin3.github.io/2020/02/01/aci-grafana-influxdb/"},"@type":"BlogPosting","url":"https://r3dlin3.github.io/2020/02/01/aci-grafana-influxdb/","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+	<!-- Google Fonts -->
+	
+	<link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,700italic,400italic" rel="stylesheet" type="text/css">
+	
+
+	<!-- KaTeX -->
+	
+
+	<!-- Google Analytics -->
+	
+</head>
+
+  <body>
+    <header class="site-header">
+	<div class="branding">
+		
+		<a href="/">
+			<img class="avatar" src="/assets/img/avatar.png" alt="avatar"/>
+		</a>
+		
+		<h1 class="site-title">
+			<a href="/">A bit of everything</a>
+		</h1>
+	</div>
+	<nav class="site-nav">
+		<ul>
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/about/">
+					A propos
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/tags/">
+					tags
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<!-- Social icons from Font Awesome, if enabled  -->
+			
+			
+            
+            <!-- Search bar -->
+            
+		</ul>
+	</nav>
+    
+</header>
+
+    <div class="content">
+      <article >
+  <header style="background-image: url('/')">
+    <h1 class="title">Grafana et InfluxDB sur Azure Container Instances</h1>
+    
+    <p class="meta">
+      
+
+
+
+1er
+
+février
+  
+2020
+      
+    </p>
+  </header>
+  <section class="post-content"><div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Azure Container Instances (ACI) fait partie des nombreuses façons d&#8217;exécuter des containers sur Azure.
+Un des avantages d&#8217;ACI par rapport à App Service (présenté dans un <a href="/2020/01/01/sonarqube-app-service/">précédent article</a>) est la
+capacité à exposer plusieurs ports.</p>
+</div>
+<div class="paragraph">
+<p>Ainsi, nous allons exposer un <a href="https://grafana.com/">Grafana</a> et une base <a href="https://www.influxdata.com/products/influxdb-overview/">InfluxDB</a>.
+<a href="https://grafana.com/">Grafana</a> est une solution open source pour la création de tableau de bord.
+<a href="https://www.influxdata.com/products/influxdb-overview/">InfluxDB</a> est son compagnon de choix pour le stockage de série temporelle (<em>time series</em>).</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Dans cet article, pour des raisons de simplicité, je n&#8217;exposerai pas Grafana en HTTPS.
+Il faudra se référer à mon précédent article <a href="/2020/01/30/aci-letsencrypt-nginx/">Certificat Let&#8217;s Encrypt sur Azure Container Instances et NGINX</a> pour la mise en place de HTTPS.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="la_solution"><a class="anchor" href="#la_solution"></a><a class="link" href="#la_solution">La solution</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Comme évoqué, la solution tournera sur Azure Container Instances.</p>
+</div>
+<div class="paragraph">
+<p>Grafana a besoin d&#8217;une base de données pour sa configuration. Grafana <a href="https://grafana.com/docs/grafana/latest/installation/requirements/#supported-databases">supporte 3 bases de données</a>&nbsp;:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>SQLite</p>
+</li>
+<li>
+<p>MySQL</p>
+</li>
+<li>
+<p>PostgreSQL</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Pour éviter de perdre la configuration à chaque redémarrage, la persistance des données est assurée par Azure Files.</p>
+</div>
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-caution" title="Caution"></i>
+</td>
+<td class="content">
+Malheureusement, à cause de certaines <a href="https://docs.microsoft.com/fr-fr/rest/api/storageservices/features-not-supported-by-the-azure-file-service">limitations</a>, il n&#8217;a pas été possible de faire persister SQLite (embarqué par défaut dans Grafana) (une sombre histoire de verrou) ou d&#8217;utiliser l&#8217;image de base de PostgreSQL (une sombre histoire de propriétaire sur des fichiers).
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>On utilisera donc l&#8217;image docker de <a href="https://hub.docker.com/_/mysql">MySQL</a>.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+MySQL ne sera pas exposé sur Internet
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="les_sources_de_données_grafana"><a class="anchor" href="#les_sources_de_données_grafana"></a><a class="link" href="#les_sources_de_données_grafana">Les sources de données Grafana</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Il est <a href="https://grafana.com/docs/grafana/v6.5/administration/provisioning/#datasources">possible de fournir une liste de sources de données</a> par fichier YAML.</p>
+</div>
+<div class="paragraph">
+<p>Nous allons utiliser ce mécanisme pour configurer automatiquement InfluxDB.</p>
+</div>
+<div class="paragraph">
+<p>Ainsi la configuration de la source de données en YAML sera&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="title">influxdb.yaml</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="yaml"><span class="na">apiVersion</span><span class="pi">:</span> <span class="m">1</span>
+
+<span class="na">deleteDatasources</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">InfluxDB</span>
+    <span class="na">orgId</span><span class="pi">:</span> <span class="m">1</span>
+
+<span class="na">datasources</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">InfluxDB</span>
+    <span class="na">type</span><span class="pi">:</span> <span class="s">influxdb</span>
+    <span class="na">access</span><span class="pi">:</span> <span class="s">proxy</span>
+    <span class="na">orgId</span><span class="pi">:</span> <span class="m">1</span>
+    <span class="na">database</span><span class="pi">:</span> <span class="s">PERF</span>
+    <span class="na">user</span><span class="pi">:</span> <span class="s">influxadmin</span>
+    <span class="na">password</span><span class="pi">:</span> <span class="s">influxadmin</span>
+    <span class="na">url</span><span class="pi">:</span> <span class="s">http://localhost:8086</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Ce fichier sera passé comme secret.
+On utilisera la fonction <code>base64</code> d&#8217;ARM template pour passer le fichier YAML en secret.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="note_sur_les_groupes_de_container_dans_azure_container_instances"><a class="anchor" href="#note_sur_les_groupes_de_container_dans_azure_container_instances"></a><a class="link" href="#note_sur_les_groupes_de_container_dans_azure_container_instances">Note sur les groupes de container dans Azure Container Instances</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Azure Container Instances utilisent un format de données "propriétaire" qui n&#8217;est ni Docker Compose, ni un fichier de déploiement Kubernetes.</p>
+</div>
+<div class="paragraph">
+<p>Le point important à garder en tête est que l&#8217;on va déclarer chaque port exposé par un container, puis ensuite quels sont les ports exposés par le groupe de container. Il n&#8217;est pas possible de changer le port exposé par un container par rapport au port du groupe (par une translation), comme rappelé dans la <a href="https://docs.microsoft.com/fr-fr/azure/container-instances/container-instances-troubleshooting#container-group-ip-address-may-not-be-accessible-due-to-mismatched-ports">FAQ</a>.</p>
+</div>
+<div class="paragraph">
+<p>La communication entre les containers se fait non pas en utilisant le nom du container (comme dans Docker Compose) mais <strong>localhost</strong>&nbsp;!</p>
+</div>
+<div class="paragraph">
+<p>Ainsi Grafana pointera dans sa configuration vers localhost:3036 pour sa base de données et localhost:8086 pour le cas d&#8217;InfluxDB.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="automatisation_du_déploiement"><a class="anchor" href="#automatisation_du_déploiement"></a><a class="link" href="#automatisation_du_déploiement">Automatisation du déploiement</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Il est possible d&#8217;utiliser du YAML ou de l&#8217;ARM template.
+Comme évoqué dans mon <a href="/2020/01/30/aci-letsencrypt-nginx/#conclusion">précédent article</a>, je recommande fortement l&#8217;utilisation d&#8217;ARM template qui va permettre de rendre dynamique certains paramètres de déploiement.</p>
+</div>
+<div class="paragraph">
+<p>Pour autant, je vais limiter les paramètres possibles.</p>
+</div>
+<div class="sect2">
+<h3 id="variables_denvironnement"><a class="anchor" href="#variables_denvironnement"></a><a class="link" href="#variables_denvironnement">Variables d&#8217;environnement</a></h3>
+<div class="paragraph">
+<p>Les variables d&#8217;environnement que nous allons utiliser sont décrites ci-dessous.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 1. MySQL</caption>
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nom</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Description</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">MYSQL_DATABASE</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nom de la base crée au démarrage</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">MYSQL_USER, MYSQL_PASSWORD</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nom de l&#8217;utilisateur et mot de passe propriétaire de la base</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">MYSQL_RANDOM_ROOT_PASSWORD</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Va générer un mot de passe aléatoire pour l&#8217;utilisateur root</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>D&#8217;autres variables d&#8217;environnement sont disponibles et sont décrites sur la <a href="https://hub.docker.com/_/mysql">page</a> de l&#8217;image Docker de MySQL.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 2. InfluxDB</caption>
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nom</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Description</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">INFLUXDB_DB</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nom de la base crée au démarrage</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">INFLUXDB_ADMIN_USER, INFLUXDB_ADMIN_PASSWORD</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nom de l&#8217;utilisateur et mot de passe administrateur de la base</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>D&#8217;autres variables d&#8217;environnement sont disponibles et sont décrites sur la <a href="https://hub.docker.com/_/influxdb">page</a> de l&#8217;image Docker d&#8217;InfluxDB.</p>
+</div>
+<div class="paragraph">
+<p>Grafana dispose d&#8217;un mécanisme très extensible qui permet de définir n&#8217;importe quel paramètre <a href="https://grafana.com/docs/grafana/latest/installation/configuration/#using-environment-variables">à partir de variables d&#8217;environnement</a>.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 3. Grafana</caption>
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nom</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Description</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>GF_DATABASE_URL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">URL de connexion à MySQL</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>GF_SECURITY_ADMIN_PASSWORD</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Mot de passe de l&#8217;utilisateur admin (cela évitera de passer dans l&#8217;assistant de configuration)</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Dans mon <a href="/2020/01/30/aci-letsencrypt-nginx/">précédent article</a>, j&#8217;avais également utilisé la variable <code>GF_SERVER_DOMAIN</code> pour configurer Grafana derrière NGINX.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="arm_template"><a class="anchor" href="#arm_template"></a><a class="link" href="#arm_template">ARM template</a></h3>
+<div class="paragraph">
+<p>L&#8217;ARM template et les paramètres sont définis ci-dessous.</p>
+</div>
+<div class="listingblock">
+<div class="title">grafana.json</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="json"><span class="p">{</span><span class="w">
+    </span><span class="nl">"$schema"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"contentVersion"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1.0.0.0"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"parameters"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"grafanaAdminPassword"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"securestring"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Password for Grafana admin."</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"containerGroupName"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Container Group name."</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"dnsLabel"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"defaultValue"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"DNS label used to by the container group. The FQDN is &lt;dnsLabel&gt;.&lt;region&gt;.azurecontainer.io"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"storageAccountName"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Name of the Storage Account"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"storageAccountType"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"defaultValue"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Standard_LRS"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"allowedValues"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="s2">"Standard_LRS"</span><span class="p">,</span><span class="w">
+                </span><span class="s2">"Standard_GRS"</span><span class="p">,</span><span class="w">
+                </span><span class="s2">"Standard_ZRS"</span><span class="p">,</span><span class="w">
+                </span><span class="s2">"Premium_LRS"</span><span class="w">
+            </span><span class="p">],</span><span class="w">
+            </span><span class="nl">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Storage Account type"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"accessTier"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"defaultValue"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Hot"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"allowedValues"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="s2">"Hot"</span><span class="p">,</span><span class="w">
+                </span><span class="s2">"Cool"</span><span class="w">
+            </span><span class="p">],</span><span class="w">
+            </span><span class="nl">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"The access tier used for billing."</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"storageAccountKind"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"defaultValue"</span><span class="p">:</span><span class="w"> </span><span class="s2">"StorageV2"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"allowedValues"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="s2">"StorageV2"</span><span class="p">,</span><span class="w">
+                </span><span class="s2">"Storage"</span><span class="p">,</span><span class="w">
+                </span><span class="s2">"BlobStorage"</span><span class="p">,</span><span class="w">
+                </span><span class="s2">"FileStorage"</span><span class="p">,</span><span class="w">
+                </span><span class="s2">"BlockBlobStorage"</span><span class="w">
+            </span><span class="p">],</span><span class="w">
+            </span><span class="nl">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Storage Account type"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"advancedThreatProtectionEnabled"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"bool"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"defaultValue"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Enable or disable Advanced Threat Protection."</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"shares"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"array"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"List of the file share names."</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"defaultValue"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[resourceGroup().location]"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"The region to deploy the resources into"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"tagValues"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"object"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"defaultValue"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"variables"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"dnsLabel"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[if(empty(parameters('dnsLabel')), parameters('containerGroupName'), parameters('dnsLabel'))]"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"fqdn"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[toLower(concat(variables('dnsLabel'),'.',replace(parameters('location'), ' ', ''),'.azurecontainer.io'))]"</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"resources"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Microsoft.Storage/storageAccounts"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('storageAccountName')]"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('location')]"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"apiVersion"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2018-07-01"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"sku"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('storageAccountType')]"</span><span class="w">
+            </span><span class="p">},</span><span class="w">
+            </span><span class="nl">"kind"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('storageAccountKind')]"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"accessTier"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('accessTier')]"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"encryption"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"keySource"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Microsoft.Storage"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"services"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"blob"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"enabled"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+                        </span><span class="p">},</span><span class="w">
+                        </span><span class="nl">"file"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"enabled"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">}</span><span class="w">
+                </span><span class="p">},</span><span class="w">
+                </span><span class="nl">"supportsHttpsTrafficOnly"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+            </span><span class="p">},</span><span class="w">
+            </span><span class="nl">"resources"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"condition"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('advancedThreatProtectionEnabled')]"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"providers/advancedThreatProtectionSettings"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Microsoft.Security/current"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"apiVersion"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2017-08-01-preview"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"dependsOn"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                        </span><span class="s2">"[resourceId('Microsoft.Storage/storageAccounts/', parameters('storageAccountName'))]"</span><span class="w">
+                    </span><span class="p">],</span><span class="w">
+                    </span><span class="nl">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"isEnabled"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+                    </span><span class="p">}</span><span class="w">
+                </span><span class="p">}</span><span class="w">
+            </span><span class="p">]</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Microsoft.Storage/storageAccounts/fileServices/shares"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"apiVersion"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2019-04-01"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[concat(parameters('storageAccountName'), '/default/', parameters('shares')[copyIndex()])]"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"copy"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"sharecopy"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"count"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[length(parameters('shares'))]"</span><span class="w">
+            </span><span class="p">},</span><span class="w">
+            </span><span class="nl">"dependsOn"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="s2">"[parameters('storageAccountName')]"</span><span class="w">
+            </span><span class="p">]</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('containerGroupName')]"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Microsoft.ContainerInstance/containerGroups"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"dependsOn"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="s2">"sharecopy"</span><span class="w">
+            </span><span class="p">],</span><span class="w">
+            </span><span class="nl">"apiVersion"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2018-10-01"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('location')]"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"containers"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                    </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"mysql"</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"image"</span><span class="p">:</span><span class="w"> </span><span class="s2">"mysql"</span><span class="p">,</span><span class="w">
+                            </span><span class="nl">"environmentVariables"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"MYSQL_USER"</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"grafana"</span><span class="w">
+                                </span><span class="p">},</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"MYSQL_PASSWORD"</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"secureValue"</span><span class="p">:</span><span class="w"> </span><span class="s2">"grafana"</span><span class="w">
+                                </span><span class="p">},</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"MYSQL_RANDOM_ROOT_PASSWORD"</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"yes"</span><span class="w">
+                                </span><span class="p">},</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"MYSQL_DATABASE"</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"grafana"</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">],</span><span class="w">
+                            </span><span class="nl">"resources"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                                </span><span class="nl">"requests"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"cpu"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"memoryInGb"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.5</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">},</span><span class="w">
+                            </span><span class="nl">"ports"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"port"</span><span class="p">:</span><span class="w"> </span><span class="mi">3306</span><span class="w">
+                                </span><span class="p">},</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"port"</span><span class="p">:</span><span class="w"> </span><span class="mi">443</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">],</span><span class="w">
+                            </span><span class="nl">"volumeMounts"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"mysql-data"</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"mountPath"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/var/lib/mysql"</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">]</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">},</span><span class="w">
+                                        </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"influxdb"</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"image"</span><span class="p">:</span><span class="w"> </span><span class="s2">"influxdb"</span><span class="p">,</span><span class="w">
+                            </span><span class="nl">"environmentVariables"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"INFLUXDB_DB"</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"PERF"</span><span class="w">
+                                </span><span class="p">},</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"INFLUXDB_ADMIN_USER"</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"influxadmin"</span><span class="w">
+                                </span><span class="p">},</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"INFLUXDB_ADMIN_PASSWORD"</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"secureValue"</span><span class="p">:</span><span class="w"> </span><span class="s2">"influxadmin"</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">],</span><span class="w">
+                            </span><span class="nl">"resources"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                                </span><span class="nl">"requests"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"cpu"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"memoryInGb"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.5</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">},</span><span class="w">
+                            </span><span class="nl">"ports"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"port"</span><span class="p">:</span><span class="w"> </span><span class="mi">8086</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">],</span><span class="w">
+                            </span><span class="nl">"volumeMounts"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"influxdb-volume"</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"mountPath"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/var/lib/influxdb"</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">]</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">},</span><span class="w">
+                    </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"grafana"</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"image"</span><span class="p">:</span><span class="w"> </span><span class="s2">"grafana/grafana"</span><span class="p">,</span><span class="w">
+
+                            </span><span class="nl">"ports"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"port"</span><span class="p">:</span><span class="w"> </span><span class="mi">3000</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">],</span><span class="w">
+                            </span><span class="nl">"environmentVariables"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GF_SECURITY_ADMIN_PASSWORD"</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"secureValue"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('grafanaAdminPassword')]"</span><span class="w">
+                                </span><span class="p">},</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GF_DATABASE_URL"</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"secureValue"</span><span class="p">:</span><span class="w"> </span><span class="s2">"mysql://grafana:grafana@localhost:3306/grafana"</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">],</span><span class="w">
+                            </span><span class="nl">"resources"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                                </span><span class="nl">"requests"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"cpu"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"memoryInGb"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.5</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">},</span><span class="w">
+                            </span><span class="nl">"volumeMounts"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"grafana-volume"</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"mountPath"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/var/lib/grafana"</span><span class="w">
+                                </span><span class="p">},</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"grafana-provisioning"</span><span class="p">,</span><span class="w">
+                                    </span><span class="nl">"mountPath"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/etc/grafana/provisioning/datasources"</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">]</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">}</span><span class="w">
+                </span><span class="p">],</span><span class="w">
+                </span><span class="nl">"osType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Linux"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"restartPolicy"</span><span class="p">:</span><span class="w"> </span><span class="s2">"OnFailure"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"ipAddress"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Public"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"ports"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                        </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"port"</span><span class="p">:</span><span class="w"> </span><span class="mi">3000</span><span class="w">
+                        </span><span class="p">},</span><span class="w">
+                        </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"port"</span><span class="p">:</span><span class="w"> </span><span class="mi">8086</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">],</span><span class="w">
+                    </span><span class="nl">"dnsNameLabel"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[variables('dnsLabel')]"</span><span class="w">
+                </span><span class="p">},</span><span class="w">
+                </span><span class="nl">"volumes"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                    </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"mysql-data"</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"azureFile"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"shareName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"mysql-data"</span><span class="p">,</span><span class="w">
+                            </span><span class="nl">"storageAccountName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('storageAccountName')]"</span><span class="p">,</span><span class="w">
+                            </span><span class="nl">"storageAccountKey"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[listKeys(resourceId('Microsoft.Storage/storageAccounts',parameters('storageAccountName')),'2017-10-01').keys[0].value]"</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">},</span><span class="w">
+                    </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"influxdb-volume"</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"azureFile"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"shareName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"influxdb-volume"</span><span class="p">,</span><span class="w">
+                            </span><span class="nl">"storageAccountName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('storageAccountName')]"</span><span class="p">,</span><span class="w">
+                            </span><span class="nl">"storageAccountKey"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[listKeys(resourceId('Microsoft.Storage/storageAccounts',parameters('storageAccountName')),'2017-10-01').keys[0].value]"</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">},</span><span class="w">
+                    </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"grafana-volume"</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"azureFile"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"shareName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"grafana-volume"</span><span class="p">,</span><span class="w">
+                            </span><span class="nl">"storageAccountName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('storageAccountName')]"</span><span class="p">,</span><span class="w">
+                            </span><span class="nl">"storageAccountKey"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[listKeys(resourceId('Microsoft.Storage/storageAccounts',parameters('storageAccountName')),'2017-10-01').keys[0].value]"</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">},</span><span class="w">
+                    </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"grafana-provisioning"</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"secret"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"influxdb.yaml"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[base64('apiVersion: 1
+
+deleteDatasources:
+  - name: InfluxDB
+    orgId: 1
+
+datasources:
+  - name: InfluxDB
+    type: influxdb
+    access: proxy
+    orgId: 1
+    database: PERF
+    user: influxadmin
+    password: influxadmin
+    url: http://localhost:8086
+                            ')]"</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">}</span><span class="w">
+                </span><span class="p">]</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+
+    </span><span class="p">],</span><span class="w">
+    </span><span class="nl">"outputs"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">grafana.parameters.json</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="json"><span class="p">{</span><span class="w">
+    </span><span class="nl">"$schema"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"contentVersion"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1.0.0.0"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"parameters"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"grafanaAdminPassword"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"grafanapwd"</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"containerGroupName"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"test-grafana-influxdb"</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"storageAccountName"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"stotestacmenginx"</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"shares"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="s2">"mysql-data"</span><span class="p">,</span><span class="w">
+                </span><span class="s2">"influxdb-volume"</span><span class="p">,</span><span class="w">
+                </span><span class="s2">"grafana-volume"</span><span class="w">
+            </span><span class="p">]</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"West Europe"</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Il est possible de déployer par PowerShell&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="PowerShell"> New-AzResourceGroupDeployment -ResourceGroupName $rg -TemplateFile .\influxdb-grafana.json -TemplateParameterFile .\influxdb-grafana.parameters.json -Verbose</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Egalement, en Az CLI&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="shell">az group deployment create <span class="nt">--resource-group</span> <span class="nv">$rg</span> <span class="nt">--template-file</span> ./influxdb-grafana.json <span class="nt">--parameters</span> @influxdb-grafana.parameters.json <span class="nt">--handle-extended-json-format</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Il faudra bien penser au paramètre <code>--handle-extended-json-format</code> qui apporte le support du multiligne en JSON.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="conclusion"><a class="anchor" href="#conclusion"></a><a class="link" href="#conclusion">Conclusion</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>En quelques minutes, il est possible de monter un Grafana et une base InfluxDB.</p>
+</div>
+<div class="paragraph">
+<p>Les cas d&#8217;usage d&#8217;InfluxDB et Grafana ne manquent pas&nbsp;: IoT, surveillance applicative, etc.
+Un cas d&#8217;utilisation pourrait être aussi des tests de charge avec <a href="https://pypi.org/project/locust-influx/">Locust</a>.
+A suivre&#8230;&#8203;</p>
+</div>
+</div>
+</div></section>
+  
+<footer>
+  <div class="tags">
+    
+    <a class="tag" href="/tags#docker">#docker</a>
+    
+    <a class="tag" href="/tags#aci">#aci</a>
+    
+    <a class="tag" href="/tags#azure">#azure</a>
+    
+    <a class="tag" href="/tags#influxdb">#influxdb</a>
+    
+    <a class="tag" href="/tags#grafana">#grafana</a>
+    
+    <a class="tag" href="/tags#arm">#arm</a>
+    
+  </div>
+</footer>
+
+
+</article>
+
+<!-- Disqus -->
+
+
+<!-- Post navigation -->
+
+  <div id="post-nav">
+  
+  <div id="previous-post" class="post-nav-post">
+      <p>Article précédent</p>
+      <a href="/2020/01/30/aci-letsencrypt-nginx/">
+        Certificat Let&#8217;s Encrypt sur Azure Container Instances et NGINX
+      </a>
+  </div>
+  
+  
+  <div id="next-post" class="post-nav-post">
+      <p>Article suivant</p>
+      <a href="/2020/04/15/docker-windows-2019/">
+        Des containers Linux sur Windows Server 2019
+      </a>
+  </div>
+  
+</div>
+
+
+
+    </div>
+    
+
+
+<footer class="site-footer">
+	<nav class="site-nav">
+		<ul>
+			
+<li>
+	<a href="/feed.xml" title="Suivre sur RSS">
+		<i class="fa fa-fw fa-rss"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+	<a href="https://github.com/r3dlin3" title="Follow on GitHub">
+		<i class="fa fa-fw fa-github"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		</ul>
+	</nav>
+	<p class="text">Powered by <a href="https://jekyllrb.com/">Jekyll</a> with <i class="fa fa-heart" aria-hidden="true" style="color:Tomato"></i>
+</p>
+</footer>
+
+  </body>
+</html>

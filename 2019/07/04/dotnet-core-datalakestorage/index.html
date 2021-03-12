@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html class="no-js">
+  <head>
+	<meta charset="utf-8">
+	<title>Charger des fichiers sur un Data Lake Storage Gen 2 en .Net Core | A bit of everything</title>
+	<meta name="description" content="En l'absence d'API officielle, voici un petit exemple .Net Core pour charger des fichier">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="/assets/css/main.css">
+
+	<!--Favicon-->
+	<link rel="shortcut icon" href="/assets/favicon.ico" type="image/x-icon">
+
+	<!-- Canonical -->
+	<link rel="canonical" href="/2019/07/04/dotnet-core-datalakestorage/">
+
+	<!-- RSS -->
+	<link type="application/atom+xml" rel="alternate" href="https://r3dlin3.github.io/feed.xml" title="A bit of everything" />
+	<!-- SEO -->
+	<!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Charger des fichiers sur un Data Lake Storage Gen 2 en .Net Core | A bit of everything</title>
+<meta name="generator" content="Jekyll v3.8.7" />
+<meta property="og:title" content="Charger des fichiers sur un Data Lake Storage Gen 2 en .Net Core" />
+<meta name="author" content="r3dLiN3" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="En l’absence d’API officielle, voici un petit exemple .Net Core pour charger des fichier" />
+<meta property="og:description" content="En l’absence d’API officielle, voici un petit exemple .Net Core pour charger des fichier" />
+<link rel="canonical" href="https://r3dlin3.github.io/2019/07/04/dotnet-core-datalakestorage/" />
+<meta property="og:url" content="https://r3dlin3.github.io/2019/07/04/dotnet-core-datalakestorage/" />
+<meta property="og:site_name" content="A bit of everything" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2019-07-04T00:00:00+00:00" />
+<script type="application/ld+json">
+{"author":{"@type":"Person","name":"r3dLiN3"},"headline":"Charger des fichiers sur un Data Lake Storage Gen 2 en .Net Core","dateModified":"2019-07-04T00:00:00+00:00","datePublished":"2019-07-04T00:00:00+00:00","description":"En l’absence d’API officielle, voici un petit exemple .Net Core pour charger des fichier","mainEntityOfPage":{"@type":"WebPage","@id":"https://r3dlin3.github.io/2019/07/04/dotnet-core-datalakestorage/"},"@type":"BlogPosting","url":"https://r3dlin3.github.io/2019/07/04/dotnet-core-datalakestorage/","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+	<!-- Google Fonts -->
+	
+	<link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,700italic,400italic" rel="stylesheet" type="text/css">
+	
+
+	<!-- KaTeX -->
+	
+
+	<!-- Google Analytics -->
+	
+</head>
+
+  <body>
+    <header class="site-header">
+	<div class="branding">
+		
+		<a href="/">
+			<img class="avatar" src="/assets/img/avatar.png" alt="avatar"/>
+		</a>
+		
+		<h1 class="site-title">
+			<a href="/">A bit of everything</a>
+		</h1>
+	</div>
+	<nav class="site-nav">
+		<ul>
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/about/">
+					A propos
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/tags/">
+					tags
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<!-- Social icons from Font Awesome, if enabled  -->
+			
+			
+            
+            <!-- Search bar -->
+            
+		</ul>
+	</nav>
+    
+</header>
+
+    <div class="content">
+      <article >
+  <header style="background-image: url('/')">
+    <h1 class="title">Charger des fichiers sur un Data Lake Storage Gen 2 en .Net Core</h1>
+    
+    <p class="meta">
+      
+
+
+
+4
+
+juillet
+  
+2019
+      
+    </p>
+  </header>
+  <section class="post-content"><div class="sect1">
+<h2 id="intro"><a class="anchor" href="#intro"></a><a class="link" href="#intro">Intro</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Azure Data Lake Gen2 est maintenant mon composant de stockage Azure favori pour des gros volumes de données et qui requiert du contrôle d&#8217;accès suivant une arborescence, grâce aux <a href="https://docs.microsoft.com/fr-fr/azure/storage/blobs/data-lake-storage-namespace">espaces de noms hiérarchique</a>.</p>
+</div>
+<div class="paragraph">
+<p>Comme présenté dans un précédent <a href="/2019/07/02/comment-capturer-appels-rest-adls-gen2-storage-calls-avec-azure-using-azure-storage-explorer/">article</a>,  Microsoft ne fournit pas de SDK à ce jour, juste une <a href="https://docs.microsoft.com/en-us/rest/api/storageservices/data-lake-storage-gen2">API REST</a>.</p>
+</div>
+<div class="paragraph">
+<p>Cette API REST est conçue pour s&#8217;adapter à Azure Storage Blob mais aussi être compatible avec un <em>FileSystem</em> Hadoop.
+On verra que cela peut complexifier certaines choses. Dans tous les cas, cette API se rapproche d&#8217;un de l&#8217;API <a href="https://azure.microsoft.com/fr-fr/blog/high-throughput-with-azure-blob-storage/">High-Throughput Block Blob (HTBB)</a> et permet donc un transfert par bloc optimisé.</p>
+</div>
+<div class="paragraph">
+<p>En l&#8217;absence d&#8217;API .Net Core, j&#8217;ai donc démarré un petit projet sur <a href="https://github.com/r3dlin3/datalake.gen2">GitHub</a>. Ce projet est sans prétention et ne vise pas à implémenter l&#8217;ensemble des services de la REST API. Il n&#8217;implémente pas de transfert optimisé, de gestion des appels concurrents, etc. En outre, pour des transferts optimisés, pour le moment, seul AzCopy peut vous aider.</p>
+</div>
+<div class="paragraph">
+<p>Vous trouverez cependant quelques perles que j&#8217;ai récupérées en chemin&#8230;&#8203;</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="charger_un_fichier"><a class="anchor" href="#charger_un_fichier"></a><a class="link" href="#charger_un_fichier">Charger un fichier</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Le chargement de fichier va en réalité nécessiter 3 opérations&nbsp;:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Créer&#8201;&#8212;&#8201;ou plutôt déclarer&#8201;&#8212;&#8201;le fichier</p>
+</li>
+<li>
+<p>Transférer les octets par bloc</p>
+</li>
+<li>
+<p>Finaliser le transfert&#8201;&#8212;&#8201;autrement dit, fermer le fichier.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Au-delà du côté non naturel de ces 3 appels, il est à noter que chaque appel REST va compter comme une opération. Cela peut avoir des conséquences au niveau de la facturation Azure si vous avez beaucoup de petits fichiers.</p>
+</div>
+<div class="paragraph">
+<p>La déclaration du fichier se fait avec la méthode <a href="https://docs.microsoft.com/fr-fr/rest/api/storageservices/datalakestoragegen2/path/create">Create</a> pour une <em>resource</em> <code>file</code>.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Par défaut, l&#8217;écrasement de fichier est autorisé. Si vous voulez empêcher l&#8217;écrasement d&#8217;un fichier, il faut ajouter <code>If-None-Match</code> avec la valeur "*".</p>
+</div>
+<div class="paragraph">
+<p>En .Net Core, il est possible de fixer cet entête sur l&#8217;objet <code>HttpRequestMessage</code> comme suit&nbsp;:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>req.Headers.IfNoneMatch.Add(EntityTagHeaderValue.Any)</pre>
+</div>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Le transfert se fait grâce à la méthode <a href="https://docs.microsoft.com/fr-fr/rest/api/storageservices/datalakestoragegen2/path/update">Update</a> avec le paramètre <code>action=append</code>.</p>
+</div>
+<div class="paragraph">
+<p>Le transfert se faisant par bloc, il faut donner l&#8217;emplacement de ce bloc. Le premier commence à 0. Cette position est à mettre dans le paramètre d&#8217;URL <code>position</code>.</p>
+</div>
+<div class="paragraph">
+<p>Finalement, le fichier doit être fermé. On fait donc appel à la méthode <a href="https://docs.microsoft.com/fr-fr/rest/api/storageservices/datalakestoragegen2/path/update">Update</a> avec le paramètre <code>action=flush</code>. Cette fois-ci, le paramètre <code>position</code> prend comme valeur la taille du fichier complet.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="projet_net_core"><a class="anchor" href="#projet_net_core"></a><a class="link" href="#projet_net_core">Projet .Net Core</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>La documentation Microsoft est bien faite mais à toutes fins utiles, je rappelle ici quelques commandes.</p>
+</div>
+<div class="paragraph">
+<p>Créer un projet console dans le répertoire <code>Ma.Super.Appli</code> avec un namespace par défaut <code>Ma.Super.Appli</code>&nbsp;:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>dotnet new console -n Ma.Super.Appli</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Créer un projet NUnit dans le répertoire <code>Ma.Super.Appli.Tests</code>&nbsp;:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>dotnet new nunit -n Ma.Super.Appli.Tests</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Faire une référence à un autre projet:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>dotnet add reference ../Ma.Super.Appli/Ma.Super.Appli.csproj</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Créer un fichier de solution&nbsp;:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>dotnet new sln -n monsuperprojet.sln</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Ajouter les projets précédemment créés au fichier solution&nbsp;:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>dotnet sln monsuperprojet.sln.sln add Ma.Super.Appli\Ma.Super.Appli.csproj</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>ou si vous êtes déjà dans le bon répertoire&nbsp;:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>dotnet sln add Ma.Super.Appli\Ma.Super.Appli.csproj</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Quelques références:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://docs.microsoft.com/en-us/dotnet/core/testing/unit-testing-with-nunit">Unit testing C# with NUnit and .NET Core</a></p>
+</li>
+<li>
+<p><a href="https://github.com/dotnet/core/blob/master/.gitignore">.gitignore</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="signature"><a class="anchor" href="#signature"></a><a class="link" href="#signature">Signature</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Pour le moment, je n&#8217;ai expérimenté que l&#8217;authentification par <em>Shared Key</em>. D&#8217;après la page du <a href="https://docs.microsoft.com/en-us/azure/storage/blobs/data-lake-storage-abfs-driver#authentication">driver ABFS</a>, l&#8217;API devrait supporter également l&#8217;authentification Azure AD.</p>
+</div>
+<div class="paragraph">
+<p>L&#8217;authentification par <em>Shared Key</em> est expliquée sur la doc <a href="https://docs.microsoft.com/fr-fr/rest/api/storageservices/authorize-with-shared-key">Microsoft</a>.</p>
+</div>
+<div class="paragraph">
+<p>Je me suis appuyé sur les appels d&#8217;Azure Storage Explorer et d&#8217;AzCopy (cf. l&#8217;article <a href="/2019/07/02/comment-capturer-appels-rest-adls-gen2-storage-calls-avec-azure-using-azure-storage-explorer/">Comment capturer les appels REST vers Azure Data Lake gen2 avec Storage Explorer</a>) pour établir un jeu de test.</p>
+</div>
+<div class="paragraph">
+<p>Cela a permis de gérer quelque "bizarrerie" comme la gestion de l&#8217;entête <code>Content-Length</code> qui doit être omis dans la signature s&#8217;il est à 0.</p>
+</div>
+</div>
+</div></section>
+  
+<footer>
+  <div class="tags">
+    
+    <a class="tag" href="/tags#azure">#azure</a>
+    
+    <a class="tag" href="/tags#dotnet-core">#dotnet-core</a>
+    
+    <a class="tag" href="/tags#rest">#rest</a>
+    
+  </div>
+</footer>
+
+
+</article>
+
+<!-- Disqus -->
+
+
+<!-- Post navigation -->
+
+  <div id="post-nav">
+  
+  <div id="previous-post" class="post-nav-post">
+      <p>Article précédent</p>
+      <a href="/2019/07/02/comment-capturer-appels-rest-adls-gen2-storage-calls-avec-azure-using-azure-storage-explorer/">
+        Comment capturer les appels REST vers Azure Data Lake gen2 avec Storage Explorer
+      </a>
+  </div>
+  
+  
+  <div id="next-post" class="post-nav-post">
+      <p>Article suivant</p>
+      <a href="/2019/10/13/TP-docker/">
+        Petit TP Docker
+      </a>
+  </div>
+  
+</div>
+
+
+
+    </div>
+    
+
+
+<footer class="site-footer">
+	<nav class="site-nav">
+		<ul>
+			
+<li>
+	<a href="/feed.xml" title="Suivre sur RSS">
+		<i class="fa fa-fw fa-rss"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+	<a href="https://github.com/r3dlin3" title="Follow on GitHub">
+		<i class="fa fa-fw fa-github"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		</ul>
+	</nav>
+	<p class="text">Powered by <a href="https://jekyllrb.com/">Jekyll</a> with <i class="fa fa-heart" aria-hidden="true" style="color:Tomato"></i>
+</p>
+</footer>
+
+  </body>
+</html>

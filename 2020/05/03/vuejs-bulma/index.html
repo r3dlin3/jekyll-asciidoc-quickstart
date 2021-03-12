@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html class="no-js">
+  <head>
+	<meta charset="utf-8">
+	<title>Intégrer Bulma CSS et Vue.js | A bit of everything</title>
+	<meta name="description" content="Vue.js and Bulma CSS sont 2 frameworks qu'il est facile d'intégrer. Voici comment faire en 5 étapes.">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="/assets/css/main.css">
+
+	<!--Favicon-->
+	<link rel="shortcut icon" href="/assets/favicon.ico" type="image/x-icon">
+
+	<!-- Canonical -->
+	<link rel="canonical" href="/2020/05/03/vuejs-bulma/">
+
+	<!-- RSS -->
+	<link type="application/atom+xml" rel="alternate" href="https://r3dlin3.github.io/feed.xml" title="A bit of everything" />
+	<!-- SEO -->
+	<!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Intégrer Bulma CSS et Vue.js | A bit of everything</title>
+<meta name="generator" content="Jekyll v3.8.7" />
+<meta property="og:title" content="Intégrer Bulma CSS et Vue.js" />
+<meta name="author" content="r3dLiN3" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Vue.js and Bulma CSS sont 2 frameworks qu’il est facile d’intégrer. Voici comment faire en 5 étapes." />
+<meta property="og:description" content="Vue.js and Bulma CSS sont 2 frameworks qu’il est facile d’intégrer. Voici comment faire en 5 étapes." />
+<link rel="canonical" href="https://r3dlin3.github.io/2020/05/03/vuejs-bulma/" />
+<meta property="og:url" content="https://r3dlin3.github.io/2020/05/03/vuejs-bulma/" />
+<meta property="og:site_name" content="A bit of everything" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-05-03T00:00:00+00:00" />
+<script type="application/ld+json">
+{"author":{"@type":"Person","name":"r3dLiN3"},"headline":"Intégrer Bulma CSS et Vue.js","dateModified":"2020-05-03T00:00:00+00:00","datePublished":"2020-05-03T00:00:00+00:00","description":"Vue.js and Bulma CSS sont 2 frameworks qu’il est facile d’intégrer. Voici comment faire en 5 étapes.","mainEntityOfPage":{"@type":"WebPage","@id":"https://r3dlin3.github.io/2020/05/03/vuejs-bulma/"},"@type":"BlogPosting","url":"https://r3dlin3.github.io/2020/05/03/vuejs-bulma/","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+	<!-- Google Fonts -->
+	
+	<link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,700italic,400italic" rel="stylesheet" type="text/css">
+	
+
+	<!-- KaTeX -->
+	
+
+	<!-- Google Analytics -->
+	
+</head>
+
+  <body>
+    <header class="site-header">
+	<div class="branding">
+		
+		<a href="/">
+			<img class="avatar" src="/assets/img/avatar.png" alt="avatar"/>
+		</a>
+		
+		<h1 class="site-title">
+			<a href="/">A bit of everything</a>
+		</h1>
+	</div>
+	<nav class="site-nav">
+		<ul>
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/about/">
+					A propos
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/tags/">
+					tags
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<!-- Social icons from Font Awesome, if enabled  -->
+			
+			
+            
+            <!-- Search bar -->
+            
+		</ul>
+	</nav>
+    
+</header>
+
+    <div class="content">
+      <article >
+  <header style="background-image: url('/')">
+    <h1 class="title">Intégrer Bulma CSS et Vue.js</h1>
+    
+    <p class="meta">
+      
+
+
+
+3
+
+mai
+  
+2020
+      
+    </p>
+  </header>
+  <section class="post-content"><div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="https://vuejs.org/">Vue.js</a> est un framework de développement Web très intéressant. J&#8217;avais également envie de voir autre chose que Bootstrap. J&#8217;ai donc donné un coup d&#8217;essai à <a href="https://bulma.io/">Bulma</a>.</p>
+</div>
+<div class="paragraph">
+<p>Comme j&#8217;ai dû combiner 3 articles et quelques résultats sur Stack Overflow pour avoir une bonne intégration entre les deux, voici un article pour décrire le <em>modus operandi</em> avec un projet utilisant TypeScript.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="création_du_projet"><a class="anchor" href="#création_du_projet"></a><a class="link" href="#création_du_projet">Création du projet</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Lors de la création du projet, pensez à prévoir <strong>un préprocesseur CSS</strong>. J&#8217;utilise <code>node-sass</code> mais je n&#8217;ai pas fait de comparaison avec <code>dart-sass</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="installation"><a class="anchor" href="#installation"></a><a class="link" href="#installation">Installation</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>L&#8217;installation se fait simplement avec la commande suivante&nbsp;:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>yarn add bulma</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="personnalisation"><a class="anchor" href="#personnalisation"></a><a class="link" href="#personnalisation">Personnalisation</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Créer un fichier <code>`.sass</code> dans le répertoire <code>assets</code> avec le contenu suivant&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="title">./assets/main.sass</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sass"><span class="k">@charset</span> <span class="s2">"utf-8"</span>
+
+<span class="nv">$rouge</span><span class="p">:</span> <span class="mh">#DF776D</span>
+<span class="nv">$primary</span><span class="p">:</span> <span class="nv">$rouge</span>
+
+<span class="k">@import</span> <span class="s">"../../node_modules/bulma/bulma.sass"</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="importer_la_feuille_de_style"><a class="anchor" href="#importer_la_feuille_de_style"></a><a class="link" href="#importer_la_feuille_de_style">Importer la feuille de style</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Ouvrir le fichier <code>src\main.ts</code> et ajouter la ligne suivante&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="typescript"><span class="k">import</span> <span class="dl">"</span><span class="s2">./assets/main.sass</span><span class="dl">"</span><span class="p">;</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="les_icônes"><a class="anchor" href="#les_icônes"></a><a class="link" href="#les_icônes">Les icônes</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Bulma s&#8217;appuie sur <a href="https://fontawesome.com/">Font Awesome 5</a> pour afficher des icônes. Pour pouvoir les utiliser, il faut donc penser à charger le fichier de Font Awesome.</p>
+</div>
+<div class="paragraph">
+<p>Pour ce faire, ouvrir <code>public\index.html</code> et ajouter dans la balise <code>head</code> la ligne suivante&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="html"><span class="nt">&lt;script </span><span class="na">defer</span> <span class="na">src=</span><span class="s">"https://use.fontawesome.com/releases/v5.3.1/js/all.js"</span><span class="nt">&gt;&lt;/script&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Comme Font Awesome va continuer à évoluer, vous pouvez vous référer à la page de démarrage de <a href="https://bulma.io/documentation/overview/start/">Bulma</a> ou de <a href="https://fontawesome.com/start">Font Awesome</a> pour avoir la dernière version disponible.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="conclusion"><a class="anchor" href="#conclusion"></a><a class="link" href="#conclusion">Conclusion</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Et voilà 5 étapes pour démarrer du bon pied avec <a href="https://vuejs.org/">Vue.js</a> et <a href="https://bulma.io/">Bulma</a>&nbsp;!</p>
+</div>
+</div>
+</div></section>
+  
+<footer>
+  <div class="tags">
+    
+    <a class="tag" href="/tags#typescript">#typescript</a>
+    
+    <a class="tag" href="/tags#vue.js">#vue.js</a>
+    
+    <a class="tag" href="/tags#css">#css</a>
+    
+  </div>
+</footer>
+
+
+</article>
+
+<!-- Disqus -->
+
+
+<!-- Post navigation -->
+
+  <div id="post-nav">
+  
+  <div id="previous-post" class="post-nav-post">
+      <p>Article précédent</p>
+      <a href="/2020/04/30/programmation-enfant/">
+        Exercices de programmation pour enfant
+      </a>
+  </div>
+  
+  
+  <div id="next-post" class="post-nav-post">
+      <p>Article suivant</p>
+      <a href="/2020/05/19/moteur-template-php-i18n/">
+        Moteur de template PHP et internationalisation
+      </a>
+  </div>
+  
+</div>
+
+
+
+    </div>
+    
+
+
+<footer class="site-footer">
+	<nav class="site-nav">
+		<ul>
+			
+<li>
+	<a href="/feed.xml" title="Suivre sur RSS">
+		<i class="fa fa-fw fa-rss"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+	<a href="https://github.com/r3dlin3" title="Follow on GitHub">
+		<i class="fa fa-fw fa-github"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		</ul>
+	</nav>
+	<p class="text">Powered by <a href="https://jekyllrb.com/">Jekyll</a> with <i class="fa fa-heart" aria-hidden="true" style="color:Tomato"></i>
+</p>
+</footer>
+
+  </body>
+</html>

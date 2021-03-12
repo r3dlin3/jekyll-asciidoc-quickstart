@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html class="no-js">
+  <head>
+	<meta charset="utf-8">
+	<title>Suivre le tutorial d&#8217;Udacity sur Kubernetes avec Azure (1ère partie) | A bit of everything</title>
+	<meta name="description" content="Comment suivre le tutorial d'Udacity avec une souscription Azure? (1ère partie)">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="/assets/css/main.css">
+
+	<!--Favicon-->
+	<link rel="shortcut icon" href="/assets/favicon.ico" type="image/x-icon">
+
+	<!-- Canonical -->
+	<link rel="canonical" href="/2017/12/15/udacity-with-azure/">
+
+	<!-- RSS -->
+	<link type="application/atom+xml" rel="alternate" href="https://r3dlin3.github.io/feed.xml" title="A bit of everything" />
+	<!-- SEO -->
+	<!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Suivre le tutorial d’Udacity sur Kubernetes avec Azure (1ère partie) | A bit of everything</title>
+<meta name="generator" content="Jekyll v3.8.7" />
+<meta property="og:title" content="Suivre le tutorial d’Udacity sur Kubernetes avec Azure (1ère partie)" />
+<meta name="author" content="r3dLiN3" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Comment suivre le tutorial d’Udacity avec une souscription Azure? (1ère partie)" />
+<meta property="og:description" content="Comment suivre le tutorial d’Udacity avec une souscription Azure? (1ère partie)" />
+<link rel="canonical" href="https://r3dlin3.github.io/2017/12/15/udacity-with-azure/" />
+<meta property="og:url" content="https://r3dlin3.github.io/2017/12/15/udacity-with-azure/" />
+<meta property="og:site_name" content="A bit of everything" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2017-12-15T00:00:00+00:00" />
+<script type="application/ld+json">
+{"author":{"@type":"Person","name":"r3dLiN3"},"headline":"Suivre le tutorial d’Udacity sur Kubernetes avec Azure (1ère partie)","dateModified":"2017-12-15T00:00:00+00:00","datePublished":"2017-12-15T00:00:00+00:00","description":"Comment suivre le tutorial d’Udacity avec une souscription Azure? (1ère partie)","mainEntityOfPage":{"@type":"WebPage","@id":"https://r3dlin3.github.io/2017/12/15/udacity-with-azure/"},"@type":"BlogPosting","url":"https://r3dlin3.github.io/2017/12/15/udacity-with-azure/","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+	<!-- Google Fonts -->
+	
+	<link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,700italic,400italic" rel="stylesheet" type="text/css">
+	
+
+	<!-- KaTeX -->
+	
+
+	<!-- Google Analytics -->
+	
+</head>
+
+  <body>
+    <header class="site-header">
+	<div class="branding">
+		
+		<a href="/">
+			<img class="avatar" src="/assets/img/avatar.png" alt="avatar"/>
+		</a>
+		
+		<h1 class="site-title">
+			<a href="/">A bit of everything</a>
+		</h1>
+	</div>
+	<nav class="site-nav">
+		<ul>
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/about/">
+					A propos
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/tags/">
+					tags
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<!-- Social icons from Font Awesome, if enabled  -->
+			
+			
+            
+            <!-- Search bar -->
+            
+		</ul>
+	</nav>
+    
+</header>
+
+    <div class="content">
+      <article >
+  <header style="background-image: url('/')">
+    <h1 class="title">Suivre le tutorial d&#8217;Udacity sur Kubernetes avec Azure (1ère partie)</h1>
+    
+    <p class="meta">
+      
+
+
+
+15
+
+décembre
+
+2017
+      
+    </p>
+  </header>
+  <section class="post-content"><div class="sect1">
+<h2 id="introduction"><a class="anchor" href="#introduction"></a><a class="link" href="#introduction">Introduction</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Udacity propose un <a href="https://eu.udacity.com/course/scalable-microservices-with-kubernetes--ud615">cours gratuit</a> sur Docker, les microservices et Kubernetes (en anglais). Tout est très bien décrit, y compris les commandes mais cela se base (naturellement) sur Google Container Engine (GKE).</p>
+</div>
+<div class="paragraph">
+<p>Disposant déjà d&#8217;une souscription Azure et Azure proposant également une offre managée sur Kubernetes : Azure Container Service (AKS).</p>
+</div>
+<div class="paragraph">
+<p>Azure disposant également d&#8217;un Registry privé (Azure Container Registry), ce sera l&#8217;occasion de l&#8217;utiliser!</p>
+</div>
+<div class="paragraph">
+<p>Le tutorial fait également largement usage de <a href="https://cloud.google.com/shell/docs/">Google Cloud Shell</a>. Azure dispose également d&#8217;un shell: Azure Cloud Shell. Il est même proposé "en plein écran" depuis peu et propose un raccourci vers <a href="http://shell.azure.com/bash">bash</a> ou <a href="http://shell.azure.com/powershell">PowerShell</a>. Il dispose de nombreuses <a href="https://docs.microsoft.com/en-us/azure/cloud-shell/features">fonctionnalités et language</a> par défaut.</p>
+</div>
+<div class="paragraph">
+<p>L&#8217;Azure Cloud Shell <span class="line-through">permet une persistance</span> a un espace de stockage en étant lié à un Storage Account. Ce sera donc parfait pour créer une image, la publier et autre.</p>
+</div>
+<div class="paragraph">
+<p>La suite de cet article présente par leçon, étape par étape les adaptations</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="lesson_1_introduction_to_microservices"><a class="anchor" href="#lesson_1_introduction_to_microservices"></a><a class="link" href="#lesson_1_introduction_to_microservices">Lesson 1: Introduction to Microservices</a></h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="etape_5_get_the_source_code"><a class="anchor" href="#etape_5_get_the_source_code"></a><a class="link" href="#etape_5_get_the_source_code">Etape 5: Get the Source Code</a></h3>
+<div class="paragraph">
+<p>Je fais l&#8217;hypothèse que vous avez une souscription Azure et que vous avez démarré un Bash dans <a href="http://shell.azure.com/bash">Azure Cloud Shell</a>.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+Sous Windows, utilisez <span class="keyseq"><kbd>Ctrl</kbd>+<kbd>Insert</kbd></span> pour copier and <span class="keyseq"><kbd>Shift</kbd>+<kbd>Insert</kbd></span> pour coller.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Go étant déjà installé, rien à faire ici:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="bash"><span class="nv">$ </span>go version
+go version go1.7 linux/amd64</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Donc, hormis l&#8217;installation de Go, vous pouvez procéder comme indiqué et extraire directement le code source:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="bash"><span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"export GOPATH=~/go"</span> <span class="o">&gt;&gt;</span> ~/.bashrc
+<span class="nv">$ </span><span class="nb">source</span> ~/.bashrc
+<span class="nv">$ </span><span class="nb">mkdir</span> <span class="nt">-p</span> <span class="nv">$GOPATH</span>/src/github.com/udacity
+<span class="nv">$ </span>git clone https://github.com/udacity/ud615
+<span class="nv">$ </span><span class="nb">cd </span>ud615/app/</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="etape_6_build_and_interact_with_monolith"><a class="anchor" href="#etape_6_build_and_interact_with_monolith"></a><a class="link" href="#etape_6_build_and_interact_with_monolith">Etape 6: Build And Interact With Monolith</a></h3>
+<div class="paragraph">
+<p>La compilation se passe comme un charge mais pour tester l&#8217;application, cela devient légèrement plus rusé.</p>
+</div>
+<div class="paragraph">
+<p>Pour exécuter le programme monolith, j&#8217;utilise le port 10081 au lieu de 81 car la commande sudo n&#8217;est pas disponible.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+Pour ouvrir une "deuxième console", ouvrez un nouvel onglet dans votre navigateur sur le Cloud Shell.
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>./bin/monolith -http :10080 -health :10081</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Les tests à base de <code>curl</code> s&#8217;exécute corretement.</p>
+</div>
+<div class="paragraph">
+<p>Pour tuer le programme, il suffira de le ramener en avant-plan (commande <code>fg</code> puis <span class="keyseq"><kbd>Ctrl</kbd>+<kbd>C</kbd></span>).</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="etape_9_refactor_to_msa"><a class="anchor" href="#etape_9_refactor_to_msa"></a><a class="link" href="#etape_9_refactor_to_msa">Etape 9: Refactor To MSA</a></h3>
+<div class="paragraph">
+<p>Pas de difficultés ici. Les commandes passent (compilations et tests).</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="lesson_2_building_the_containers_with_docker"><a class="anchor" href="#lesson_2_building_the_containers_with_docker"></a><a class="link" href="#lesson_2_building_the_containers_with_docker">Lesson 2: Building the Containers with Docker</a></h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="etape_3_installing_apps_with_native_os_tools"><a class="anchor" href="#etape_3_installing_apps_with_native_os_tools"></a><a class="link" href="#etape_3_installing_apps_with_native_os_tools">Etape 3: Installing Apps With Native OS Tools</a></h3>
+<div class="paragraph">
+<p>Les festivités commencent&#8230;&#8203;
+Le <a href="https://docs.microsoft.com/en-us/azure/cloud-shell/quickstart">"démarrage rapide"</a> donne en réalité toutes les indications. Dans les grosses mailles:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Choisir sa souscription (<code>az account list</code> puis <code>az account set --subscription my-subscription-name</code>)</p>
+</li>
+<li>
+<p>Créer un resource group (unité de base dans Azure)</p>
+</li>
+<li>
+<p>Créer la VM (configuration de base)</p>
+</li>
+<li>
+<p>Se connecter à la VM</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Ce qui donne:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>az group create --name rg-udacity-test --location westeurope
+az vm create -n ubuntu -g rg-udacity-test --image UbuntuLTS --generate-ssh-keys
+ssh username@ipaddress</pre>
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+Ne pas oublier d&#8217;éteindre la VM pour éviter d&#8217;exploser le forfait!
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+Pour connaitre l&#8217;adresse IP de la VM: <code>az vm list-ip-addresses -g rg-udacity-test -n ubuntu --output table</code>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Une fois connecté, les autres commandes ne changent pas:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>sudo apt-get update
+sudo apt-get install nginx
+nginx -v
+...</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="etape_7_intalling_images_with_docker"><a class="anchor" href="#etape_7_intalling_images_with_docker"></a><a class="link" href="#etape_7_intalling_images_with_docker">Etape 7 : Intalling Images With Docker</a></h3>
+<div class="paragraph">
+<p>Pas de spécificité.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="etape_8_running_images_with_docker"><a class="anchor" href="#etape_8_running_images_with_docker"></a><a class="link" href="#etape_8_running_images_with_docker">Etape 8 : Running Images With Docker</a></h3>
+<div class="paragraph">
+<p>Pas de spécificité.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="etape_9_talking_to_docker_instances"><a class="anchor" href="#etape_9_talking_to_docker_instances"></a><a class="link" href="#etape_9_talking_to_docker_instances">Etape 9 : Talking To Docker Instances</a></h3>
+<div class="paragraph">
+<p>Pas de spécificité.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="etape_11_create_an_image"><a class="anchor" href="#etape_11_create_an_image"></a><a class="link" href="#etape_11_create_an_image">Etape 11 : Create An Image</a></h3>
+<div class="paragraph">
+<p>Pas de spécificité.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="etape_12_create_docker_images_for_the_remaining_microservices_auth_and_hello"><a class="anchor" href="#etape_12_create_docker_images_for_the_remaining_microservices_auth_and_hello"></a><a class="link" href="#etape_12_create_docker_images_for_the_remaining_microservices_auth_and_hello">Etape 12 : Create docker images for the remaining microservices - auth and hello</a></h3>
+<div class="paragraph">
+<p>Pas de spécificité.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="etape_14_push_images"><a class="anchor" href="#etape_14_push_images"></a><a class="link" href="#etape_14_push_images">Etape 14 : Push Images</a></h3>
+<div class="paragraph">
+<p>Nous allons ici utilisé l&#8217;Azure Container Registry.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>az group create --name rg-common-docker --location westeurope
+az acr create --resource-group rg-common-docker --name &lt;acrName&gt; --sku Basic</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>La commande va retourner une structure. Bien noter la ligne:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="json"><span class="nl">"loginServer"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;acrLoginServer&gt;"</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Sur la VM Ubuntu, installer Azure CLI 2.0 en suivant la <a href="https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest#install-with-apt-package-manager">procédure</a>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ wheezy main" | \
+     sudo tee /etc/apt/sources.list.d/azure-cli.list
+sudo apt-key adv --keyserver packages.microsoft.com --recv-keys 52E16F86FEE04B979B07E28DB02C46DF417A0893
+sudo apt-get install apt-transport-https
+sudo apt-get update &amp;&amp; sudo apt-get install azure-cli</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Puis se logguer sur Azure puis l&#8217;ACR avant de publier l&#8217;image</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>sudo az login
+sudo az acr login --name &lt;acrName&gt;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>La commande de publication ('push') doit être adapté:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>docker tag monolith:1.0.0 &lt;acrLoginServer&gt;/example-monolith:1.0.0
+docker push &lt;acrLoginServer&gt;/example-monolith:1.0.0</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On peut ensuite vérifier le travail:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code>$ sudo az acr repository list --name &lt;acrName&gt; --output table
+Result
+----------------
+example-auth
+example-hello
+example-monolith</code></pre>
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+A ce stade, il est possible d&#8217;arrêter la VM: <code>az vm deallocate -g rg-udacity-test -n ubuntu</code>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="un_peu_de_nettoyage"><a class="anchor" href="#un_peu_de_nettoyage"></a><a class="link" href="#un_peu_de_nettoyage">Un peu de nettoyage</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Comme d&#8217;habitude, ne pas oublier de nettoyer. Le plus simple: supprimer le resource group.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>az group delete --name rg-udacity-test</pre>
+</div>
+</div>
+</div>
+</div></section>
+  
+<footer>
+  <div class="tags">
+    
+    <a class="tag" href="/tags#kubernetes">#kubernetes</a>
+    
+    <a class="tag" href="/tags#azure">#azure</a>
+    
+    <a class="tag" href="/tags#aks">#aks</a>
+    
+    <a class="tag" href="/tags#docker">#docker</a>
+    
+    <a class="tag" href="/tags#microservices">#microservices</a>
+    
+  </div>
+</footer>
+
+
+</article>
+
+<!-- Disqus -->
+
+
+<!-- Post navigation -->
+
+  <div id="post-nav">
+  
+  <div id="previous-post" class="post-nav-post">
+      <p>Article précédent</p>
+      <a href="/2017/10/27/hello-world/">
+        Hello World!
+      </a>
+  </div>
+  
+  
+  <div id="next-post" class="post-nav-post">
+      <p>Article suivant</p>
+      <a href="/2017/12/23/udacity-with-azure-part2/">
+        Suivre le tutorial d&#8217;Udacity sur Kubernetes avec Azure (2e partie)
+      </a>
+  </div>
+  
+</div>
+
+
+
+    </div>
+    
+
+
+<footer class="site-footer">
+	<nav class="site-nav">
+		<ul>
+			
+<li>
+	<a href="/feed.xml" title="Suivre sur RSS">
+		<i class="fa fa-fw fa-rss"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+	<a href="https://github.com/r3dlin3" title="Follow on GitHub">
+		<i class="fa fa-fw fa-github"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		</ul>
+	</nav>
+	<p class="text">Powered by <a href="https://jekyllrb.com/">Jekyll</a> with <i class="fa fa-heart" aria-hidden="true" style="color:Tomato"></i>
+</p>
+</footer>
+
+  </body>
+</html>

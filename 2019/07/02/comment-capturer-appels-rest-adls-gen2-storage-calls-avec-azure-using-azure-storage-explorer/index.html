@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html class="no-js">
+  <head>
+	<meta charset="utf-8">
+	<title>Comment capturer les appels REST vers Azure Data Lake gen2 avec Storage Explorer | A bit of everything</title>
+	<meta name="description" content="A l'aide de Fiddler, nous allons voir comment capturer les appels REST pour Data Lake Storage Gen 2">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="/assets/css/main.css">
+
+	<!--Favicon-->
+	<link rel="shortcut icon" href="/assets/favicon.ico" type="image/x-icon">
+
+	<!-- Canonical -->
+	<link rel="canonical" href="/2019/07/02/comment-capturer-appels-rest-adls-gen2-storage-calls-avec-azure-using-azure-storage-explorer/">
+
+	<!-- RSS -->
+	<link type="application/atom+xml" rel="alternate" href="https://r3dlin3.github.io/feed.xml" title="A bit of everything" />
+	<!-- SEO -->
+	<!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Comment capturer les appels REST vers Azure Data Lake gen2 avec Storage Explorer | A bit of everything</title>
+<meta name="generator" content="Jekyll v3.8.7" />
+<meta property="og:title" content="Comment capturer les appels REST vers Azure Data Lake gen2 avec Storage Explorer" />
+<meta name="author" content="r3dLiN3" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="A l’aide de Fiddler, nous allons voir comment capturer les appels REST pour Data Lake Storage Gen 2" />
+<meta property="og:description" content="A l’aide de Fiddler, nous allons voir comment capturer les appels REST pour Data Lake Storage Gen 2" />
+<link rel="canonical" href="https://r3dlin3.github.io/2019/07/02/comment-capturer-appels-rest-adls-gen2-storage-calls-avec-azure-using-azure-storage-explorer/" />
+<meta property="og:url" content="https://r3dlin3.github.io/2019/07/02/comment-capturer-appels-rest-adls-gen2-storage-calls-avec-azure-using-azure-storage-explorer/" />
+<meta property="og:site_name" content="A bit of everything" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2019-07-02T00:00:00+00:00" />
+<script type="application/ld+json">
+{"author":{"@type":"Person","name":"r3dLiN3"},"headline":"Comment capturer les appels REST vers Azure Data Lake gen2 avec Storage Explorer","dateModified":"2019-07-02T00:00:00+00:00","datePublished":"2019-07-02T00:00:00+00:00","description":"A l’aide de Fiddler, nous allons voir comment capturer les appels REST pour Data Lake Storage Gen 2","mainEntityOfPage":{"@type":"WebPage","@id":"https://r3dlin3.github.io/2019/07/02/comment-capturer-appels-rest-adls-gen2-storage-calls-avec-azure-using-azure-storage-explorer/"},"@type":"BlogPosting","url":"https://r3dlin3.github.io/2019/07/02/comment-capturer-appels-rest-adls-gen2-storage-calls-avec-azure-using-azure-storage-explorer/","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+	<!-- Google Fonts -->
+	
+	<link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,700italic,400italic" rel="stylesheet" type="text/css">
+	
+
+	<!-- KaTeX -->
+	
+
+	<!-- Google Analytics -->
+	
+</head>
+
+  <body>
+    <header class="site-header">
+	<div class="branding">
+		
+		<a href="/">
+			<img class="avatar" src="/assets/img/avatar.png" alt="avatar"/>
+		</a>
+		
+		<h1 class="site-title">
+			<a href="/">A bit of everything</a>
+		</h1>
+	</div>
+	<nav class="site-nav">
+		<ul>
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/about/">
+					A propos
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/tags/">
+					tags
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<!-- Social icons from Font Awesome, if enabled  -->
+			
+			
+            
+            <!-- Search bar -->
+            
+		</ul>
+	</nav>
+    
+</header>
+
+    <div class="content">
+      <article >
+  <header style="background-image: url('/')">
+    <h1 class="title">Comment capturer les appels REST vers Azure Data Lake gen2 avec Storage Explorer</h1>
+    
+    <p class="meta">
+      
+
+
+
+2
+
+juillet
+  
+2019
+      
+    </p>
+  </header>
+  <section class="post-content"><div class="sect1">
+<h2 id="intro"><a class="anchor" href="#intro"></a><a class="link" href="#intro">Intro</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Azure Data Lake gen2, qui n&#8217;est autre qu&#8217;un Storage Account avec un <a href="https://docs.microsoft.com/fr-fr/azure/storage/blobs/data-lake-storage-namespace">espace de noms hiérarchique</a>, est disponible depuis quelque temps.</p>
+</div>
+<div class="paragraph">
+<p>Pour autant, Microsoft ne fournit pas de SDK, juste une <a href="https://docs.microsoft.com/en-us/rest/api/storageservices/data-lake-storage-gen2">API REST</a>. Et cette documentation peut s&#8217;avérer sibylline&#8230;&#8203;</p>
+</div>
+<div class="paragraph">
+<p>Mes recherches m&#8217;ont mené sur cette <a href="http://sql.pawlikowski.pro/2019/03/09/how-to-sniff-adls-gen2-storage-rest-api-calls-to-azure-using-azure-storage-explorer/">page</a> mais malheureusement, elle n&#8217;est plus à jour avec les dernières versions.</p>
+</div>
+<div class="paragraph">
+<p>Nous allons voir comment capturer des appels avec Microsoft Azure Storage Explorer version 1.8.1.</p>
+</div>
+<div class="paragraph">
+<p>Ceci permettra d&#8217;apporter un nouvel éclairage sur la doc&nbsp;: l&#8217;implémentation n&#8217;est-elle pas la doc&nbsp;?</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="le_mode_développeur_du_microsoft_azure_storage_explorer"><a class="anchor" href="#le_mode_développeur_du_microsoft_azure_storage_explorer"></a><a class="link" href="#le_mode_développeur_du_microsoft_azure_storage_explorer">Le mode développeur du Microsoft Azure Storage Explorer</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Le plus simple est d&#8217;ouvrir le mode développeur en appuyant sur <kbd>F12</kbd> ou aller dans le menu <strong>Help &gt; Toggle Developer Tools</strong>&nbsp;:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="https://r3dlin3.github.io/assets/img/2019-07-02-helpmenu.png" alt="Toggle Developer Tools">
+</div>
+</div>
+<div class="paragraph">
+<p>En allant dans l&#8217;onglet "Network", on peut ainsi voir les URL, les entêtes des requêtes et des réponses.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="https://r3dlin3.github.io/assets/img/2019-07-02-MicrosoftAzureStorageExplorerNetwork.png" alt="Developer Tools de Microsoft Azure Storage Explorer">
+</div>
+</div>
+<div class="paragraph">
+<p>Malheureusement, comme l&#8217;indique Microsoft Azure Storage Explorer, pour tout ce qui concerne le téléchargement, Microsoft Azure Storage Explorer s&#8217;appuie sur <code>AzCopy</code>&nbsp;:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="https://r3dlin3.github.io/assets/img/2019-07-02-azcopy.png" alt="For ADLS Gen2 Storage accounts" width="AzCopy will always be used for upload and download">
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="commandes_azcopy"><a class="anchor" href="#commandes_azcopy"></a><a class="link" href="#commandes_azcopy">Commandes AzCopy</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>En réalisant un transfert, Microsoft Azure Storage Explorer nous propose de copier la commande AzCopy associée&nbsp;:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="https://r3dlin3.github.io/assets/img/2019-07-02-azcopycmd.png" alt="Copy AzCopy Command to Clipboard">
+</div>
+</div>
+<div class="paragraph">
+<p>Ceci nous donne des commandes PowerShell, comme&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="nv">$</span><span class="nn">env</span><span class="p">:</span><span class="nv">AZCOPY_CRED_TYPE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"SharedKey"</span><span class="p">;</span><span class="w">
+</span><span class="nv">$</span><span class="nn">env</span><span class="p">:</span><span class="nv">ACCOUNT_NAME</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"XXX"</span><span class="p">;</span><span class="w">
+</span><span class="nv">$</span><span class="nn">env</span><span class="p">:</span><span class="nv">ACCOUNT_KEY</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"xbDE/...0isig=="</span><span class="p">;</span><span class="w">
+</span><span class="o">.</span><span class="n">/azcopy.exe</span><span class="w"> </span><span class="nx">copy</span><span class="w"> </span><span class="s2">"c:\path\to\test.png"</span><span class="w"> </span><span class="s2">"https://XXX.dfs.core.windows.net/root/test.png"</span><span class="w"> </span><span class="nt">--overwrite</span><span class="o">=</span><span class="n">false</span><span class="w">  </span><span class="nt">--follow-symlinks</span><span class="w"> </span><span class="nt">--recursive</span><span class="w"> </span><span class="nt">--from-to</span><span class="o">=</span><span class="n">LocalBlobFS</span><span class="w"> </span><span class="nt">--put-md5</span><span class="p">;</span><span class="w">
+</span><span class="nv">$</span><span class="nn">env</span><span class="p">:</span><span class="nv">AZCOPY_CRED_TYPE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">""</span><span class="p">;</span><span class="w">
+</span><span class="nv">$</span><span class="nn">env</span><span class="p">:</span><span class="nv">ACCOUNT_NAME</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">""</span><span class="p">;</span><span class="w">
+</span><span class="nv">$</span><span class="nn">env</span><span class="p">:</span><span class="nv">ACCOUNT_KEY</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">""</span><span class="p">;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Microsoft Azure Storage Explorer vient avec des binaires d&#8217;AzCopy, présent par défaut dans <code>C:\Program Files (x86)\Microsoft Azure Storage Explorer\resources\app\node_modules\se-az-copy-exe-win\dist\bin</code>.</p>
+</div>
+<div class="paragraph">
+<p>Pour tracer les requêtes, nous allons nous appuyer sur Fiddler.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="fiddler"><a class="anchor" href="#fiddler"></a><a class="link" href="#fiddler">Fiddler</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="https://www.telerik.com/fiddler">Fiddler</a> est un excellent proxy Web gratuit proposé par Telerik. Vous pouvez le télécharger et l&#8217;installer simplement.</p>
+</div>
+<div class="paragraph">
+<p>Le point important est de configurer Fiddler pour déchiffrer les flux HTTPS. Pour ce faire, après avoir démarré Fiddler, aller dans le menu <strong>Tools &gt; Options&#8230;&#8203;</strong>.</p>
+</div>
+<div class="paragraph">
+<p>Aller dans l&#8217;onglet <strong>HTTPS</strong> et cocher la case <strong>Decrypt HTTPS traffic</strong>. Des fenêtres vont inviter à faire confiance à un certificat&nbsp;: répondre "oui".</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="https://r3dlin3.github.io/assets/img/2019-07-02-fiddler-options.png" alt="Copy AzCopy Command to Clipboard">
+</div>
+</div>
+<div class="paragraph">
+<p>De retour sur la fenêtre <strong>Options</strong>, cliquer sur <strong>OK</strong>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="capturer_le_trafic_dazcopy"><a class="anchor" href="#capturer_le_trafic_dazcopy"></a><a class="link" href="#capturer_le_trafic_dazcopy">Capturer le trafic d&#8217;AzCopy</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Une fois Fiddler démarré et configuré, démarrez un prompt PowerShell et taper les commandes ci-dessous. Il faut penser à renseigner le nom du compte et la clé primaire. La ligne de commande a été adaptée pour prendre en compte le nom complet du binaire AzCopy et autoriser un écrasement (<code>--overwrite=true</code>).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="n">cd</span><span class="w"> </span><span class="s2">"C:\Program Files (x86)\Microsoft Azure Storage Explorer\resources\app\node_modules\se-az-copy-exe-win\dist\bin"</span><span class="w">
+</span><span class="nv">$</span><span class="nn">env</span><span class="p">:</span><span class="nv">HTTPS_PROXY</span><span class="o">=</span><span class="s2">"http://localhost:8888"</span><span class="w">
+</span><span class="nv">$</span><span class="nn">env</span><span class="p">:</span><span class="nv">AZCOPY_CRED_TYPE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"SharedKey"</span><span class="p">;</span><span class="w">
+</span><span class="nv">$</span><span class="nn">env</span><span class="p">:</span><span class="nv">ACCOUNT_NAME</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"XXX"</span><span class="p">;</span><span class="w">
+</span><span class="nv">$</span><span class="nn">env</span><span class="p">:</span><span class="nv">ACCOUNT_KEY</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"xbDE/...sig=="</span><span class="p">;</span><span class="w">
+</span><span class="o">.</span><span class="n">/azcopy_windows_amd64.exe</span><span class="w"> </span><span class="nx">copy</span><span class="w"> </span><span class="s2">"C:\path\to\test1.png"</span><span class="w"> </span><span class="s2">"https://pocdlgen2.dfs.core.windows.net/root/test1.png"</span><span class="w"> </span><span class="nt">--overwrite</span><span class="o">=</span><span class="n">true</span><span class="w"> </span><span class="nt">--follow-symlinks</span><span class="w"> </span><span class="nt">--recursive</span><span class="w"> </span><span class="nt">--from-to</span><span class="o">=</span><span class="n">LocalBlobFS</span><span class="w"> </span><span class="nt">--put-md5</span><span class="p">;</span><span class="w">
+</span><span class="nv">$</span><span class="nn">env</span><span class="p">:</span><span class="nv">AZCOPY_CRED_TYPE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">""</span><span class="p">;</span><span class="w">
+</span><span class="nv">$</span><span class="nn">env</span><span class="p">:</span><span class="nv">ACCOUNT_NAME</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">""</span><span class="p">;</span><span class="w">
+</span><span class="nv">$</span><span class="nn">env</span><span class="p">:</span><span class="nv">ACCOUNT_KEY</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">""</span><span class="p">;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Si tout se passe bien, dans Fiddler, en allant dans <strong>Inspector</strong>, vous verrez le détail des requêtes et des réponses&nbsp;:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="https://r3dlin3.github.io/assets/img/2019-07-02-fiddler-capture.png" alt="Capture Fiddler">
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Il est possible de récupérer la clé primaire directement dans Microsoft Azure Storage Explorer à partir du panneau <strong>Actions</strong> en bas à gauche simplement en cliquant sur "Copy Primary Key"&nbsp;:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="https://r3dlin3.github.io/assets/img/2019-07-02-storageexplorer-actions.png" alt="Panneau action dans Microsoft Azure Storage Explorer">
+</div>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Si on vous ne voyez que des "tunnel to", c&#8217;est que Fiddler n&#8217;est pas correctement configuré pour déchiffrer le flux HTTPS&nbsp;:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="https://r3dlin3.github.io/assets/img/2019-07-02-fiddler-tunnel.png" alt="Tunnel avec Fiddler">
+</div>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div></section>
+  
+<footer>
+  <div class="tags">
+    
+    <a class="tag" href="/tags#azure">#azure</a>
+    
+    <a class="tag" href="/tags#fiddler">#fiddler</a>
+    
+    <a class="tag" href="/tags#rest">#rest</a>
+    
+  </div>
+</footer>
+
+
+</article>
+
+<!-- Disqus -->
+
+
+<!-- Post navigation -->
+
+  <div id="post-nav">
+  
+  <div id="previous-post" class="post-nav-post">
+      <p>Article précédent</p>
+      <a href="/2018/11/27/trucs-powershell/">
+        Quelques trucs et astuces PowerShell
+      </a>
+  </div>
+  
+  
+  <div id="next-post" class="post-nav-post">
+      <p>Article suivant</p>
+      <a href="/2019/07/04/dotnet-core-datalakestorage/">
+        Charger des fichiers sur un Data Lake Storage Gen 2 en .Net Core
+      </a>
+  </div>
+  
+</div>
+
+
+
+    </div>
+    
+
+
+<footer class="site-footer">
+	<nav class="site-nav">
+		<ul>
+			
+<li>
+	<a href="/feed.xml" title="Suivre sur RSS">
+		<i class="fa fa-fw fa-rss"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+	<a href="https://github.com/r3dlin3" title="Follow on GitHub">
+		<i class="fa fa-fw fa-github"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		</ul>
+	</nav>
+	<p class="text">Powered by <a href="https://jekyllrb.com/">Jekyll</a> with <i class="fa fa-heart" aria-hidden="true" style="color:Tomato"></i>
+</p>
+</footer>
+
+  </body>
+</html>

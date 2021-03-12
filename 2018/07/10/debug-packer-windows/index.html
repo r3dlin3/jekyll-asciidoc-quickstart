@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html class="no-js">
+  <head>
+	<meta charset="utf-8">
+	<title>Débuguer la création d&#8217;image Packer pour Windows sur Azure | A bit of everything</title>
+	<meta name="description" content="Un petit retour d'expérience sur la personnalisation d'image Windows avec Packer dans Azure. Dans certains cas, les scripts échouent mais comment déboguer ?">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="/assets/css/main.css">
+
+	<!--Favicon-->
+	<link rel="shortcut icon" href="/assets/favicon.ico" type="image/x-icon">
+
+	<!-- Canonical -->
+	<link rel="canonical" href="/2018/07/10/debug-packer-windows/">
+
+	<!-- RSS -->
+	<link type="application/atom+xml" rel="alternate" href="https://r3dlin3.github.io/feed.xml" title="A bit of everything" />
+	<!-- SEO -->
+	<!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Débuguer la création d’image Packer pour Windows sur Azure | A bit of everything</title>
+<meta name="generator" content="Jekyll v3.8.7" />
+<meta property="og:title" content="Débuguer la création d’image Packer pour Windows sur Azure" />
+<meta name="author" content="r3dLiN3" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Un petit retour d’expérience sur la personnalisation d’image Windows avec Packer dans Azure. Dans certains cas, les scripts échouent mais comment déboguer ?" />
+<meta property="og:description" content="Un petit retour d’expérience sur la personnalisation d’image Windows avec Packer dans Azure. Dans certains cas, les scripts échouent mais comment déboguer ?" />
+<link rel="canonical" href="https://r3dlin3.github.io/2018/07/10/debug-packer-windows/" />
+<meta property="og:url" content="https://r3dlin3.github.io/2018/07/10/debug-packer-windows/" />
+<meta property="og:site_name" content="A bit of everything" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2018-07-10T00:00:00+00:00" />
+<script type="application/ld+json">
+{"author":{"@type":"Person","name":"r3dLiN3"},"headline":"Débuguer la création d’image Packer pour Windows sur Azure","dateModified":"2018-07-10T00:00:00+00:00","datePublished":"2018-07-10T00:00:00+00:00","description":"Un petit retour d’expérience sur la personnalisation d’image Windows avec Packer dans Azure. Dans certains cas, les scripts échouent mais comment déboguer ?","mainEntityOfPage":{"@type":"WebPage","@id":"https://r3dlin3.github.io/2018/07/10/debug-packer-windows/"},"@type":"BlogPosting","url":"https://r3dlin3.github.io/2018/07/10/debug-packer-windows/","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+	<!-- Google Fonts -->
+	
+	<link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,700italic,400italic" rel="stylesheet" type="text/css">
+	
+
+	<!-- KaTeX -->
+	
+
+	<!-- Google Analytics -->
+	
+</head>
+
+  <body>
+    <header class="site-header">
+	<div class="branding">
+		
+		<a href="/">
+			<img class="avatar" src="/assets/img/avatar.png" alt="avatar"/>
+		</a>
+		
+		<h1 class="site-title">
+			<a href="/">A bit of everything</a>
+		</h1>
+	</div>
+	<nav class="site-nav">
+		<ul>
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/about/">
+					A propos
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/tags/">
+					tags
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<!-- Social icons from Font Awesome, if enabled  -->
+			
+			
+            
+            <!-- Search bar -->
+            
+		</ul>
+	</nav>
+    
+</header>
+
+    <div class="content">
+      <article >
+  <header style="background-image: url('/')">
+    <h1 class="title">Débuguer la création d&#8217;image Packer pour Windows sur Azure</h1>
+    
+    <p class="meta">
+      
+
+
+
+10
+
+juillet
+  
+2018
+      
+    </p>
+  </header>
+  <section class="post-content"><div class="sect1">
+<h2 id="introduction"><a class="anchor" href="#introduction"></a><a class="link" href="#introduction">Introduction</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="https://www.packer.io/">Packer</a> est un outil très adapté à la création d&#8217;images personnalisées sur <a href="https://docs.microsoft.com/en-us/azure/virtual-machines/windows/build-image-with-packer">Azure</a>.</p>
+</div>
+<div class="paragraph">
+<p>Packer va être responsable de créer bon nombre de ressources :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Un Key Vault</p>
+</li>
+<li>
+<p>Un VNET</p>
+</li>
+<li>
+<p>Une interface réseau et son IP publique</p>
+</li>
+<li>
+<p>Une VM</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Tout ça c&#8217;est très bien mais c&#8217;est relativement long à déployer et en phase de développement, cela revient à beaucoup de temps de perdu&#8230;&#8203;</p>
+</div>
+<div class="paragraph">
+<p>Voici donc quelques trucs.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="tester_le_script"><a class="anchor" href="#tester_le_script"></a><a class="link" href="#tester_le_script">Tester le script</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>J&#8217;ai perdu un peu de temps à mes débuts avec ça.
+Ça parait bête mais aujourd&#8217;hui j&#8217;ai toujours une machine virtuelle démarrée pour copier et tester le script en live.
+C&#8217;est très TRES efficace.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Je n&#8217;utilise jamais de "inline" pour les <em>provisioners</em> <a href="https://www.packer.io/docs/provisioners/windows-shell.html">Windows Shell</a> ou <a href="https://www.packer.io/docs/provisioners/powershell.html">PowerShell</a>.</p>
+</div>
+<div class="paragraph">
+<p>Cela me permet de tester plus facilement le script, de le réutiliser ou même d&#8217;enchaîner les scripts de même nature avec l&#8217;utilisation du paramètre "scripts"</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="du_debug_dans_le_script"><a class="anchor" href="#du_debug_dans_le_script"></a><a class="link" href="#du_debug_dans_le_script">Du debug dans le script</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Là aussi ça parait évident, mais il est possible d&#8217;afficher des commentaires qui seront retournés par Packer.
+Rien d&#8217;exceptionnel ici : un <code>Write-Host</code> dans un script PowerShell fera l&#8217;affaire et pourra remonter des informations en cours d&#8217;exécution ou savoir à quel moment exactement le script échoue.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="la_construction_dimage_échoue"><a class="anchor" href="#la_construction_dimage_échoue"></a><a class="link" href="#la_construction_dimage_échoue">La construction d&#8217;image échoue</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Si la construction de l&#8217;image échoue, par défaut, packer supprime les ressources créées.</p>
+</div>
+<div class="paragraph">
+<p>Si vous souhaitez accéder à la machine pour récupérer des logs ou simplement exécuter manuellement le script à des fins de debug, il est possible d&#8217;utiliser le paramètre <a href="https://www.packer.io/docs/commands/build.html#on-error-cleanup"><code>-on-error=abort</code></a> ou <code>-on-error=ask</code>.
+<code>abort</code> sortira dès l&#8217;échec tandis que <code>ask</code> demandera la procédure à suivre.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="en_condition_réelle"><a class="anchor" href="#en_condition_réelle"></a><a class="link" href="#en_condition_réelle">En condition réelle</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Si malgré tout ça, le script échoue sans raison apparente, il va falloir remonter les manches !</p>
+</div>
+<div class="paragraph">
+<p>Packer <a href="https://www.packer.io/docs/builders/azure.html#windows-1">s&#8217;appuie sur WinRM</a> pour passer les scripts et les exécuter.</p>
+</div>
+<div class="paragraph">
+<p>Packer configure déjà WinRM sur la machine, ce qui n&#8217;est pas une mince affaire !
+Nous allons voir comment exécuter des commandes WinRM avec une image construite par Packer.</p>
+</div>
+<div class="sect2">
+<h3 id="le_pied_de_biche"><a class="anchor" href="#le_pied_de_biche"></a><a class="link" href="#le_pied_de_biche">Le pied de biche</a></h3>
+<div class="paragraph">
+<p>Pour se connecter à la machine, il va certainement falloir à réinitialiser le mot de passe administrateur dans le <a href="https://docs.microsoft.com/fr-fr/azure/virtual-machines/windows/reset-rdp">portail Azure</a>, car packer définit un mot de passe aléatoire par défaut.</p>
+</div>
+<div class="paragraph">
+<p>Ceci permet de réinitialiser le mot de passe du compte packer (compte créé par défaut).</p>
+</div>
+<div class="paragraph">
+<p>Une fois le login/mot de passe connu, il est possible de se connecter en RDP à la machine, le portail Azure donnant le FQDN du serveur au format &lt;nom VM aléatoire&gt;.&lt;localisation&gt;.cloudapp.azure.com (ex: pkrvmq69gzbq1tn.westeurope.cloudapp.azure.com). Penser à noter l&#8217;IP par la même occasion.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="certificat"><a class="anchor" href="#certificat"></a><a class="link" href="#certificat">Certificat</a></h3>
+<div class="paragraph">
+<p>L&#8217;utilisation de SSL est obligatoire dans la configuration réalisée par Packer pour WinRM.
+Le certificat est cependant :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Auto-signé</p>
+</li>
+<li>
+<p>Pour un FQDN différent de celui de donné par Azure</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Dans un premier temps, il nous faut extraire le certificat utilisé par WinRM.
+2 possibilités :</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Se connecter à la machine virtuelle, ouvrir le magasin de certificat de la machine, exporter le certificat et copier le certificat sur sa machine</p>
+</li>
+<li>
+<p>Utiliser openssl</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Commme la première méthode est plus longue à détailler, je vais détailler la deuxième. Exécuter la commande openssl suivante en remplacement avec votre FQDN</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>&gt; c:\apps\OpenSSL\bin\openssl.exe s_client -connect pkrvmq69gzbq1tn.westeurope.cloudapp.azure.com:5986 -showcerts
+CONNECTED(0000021C)
+depth=0 CN = pkrvmq69gzbq1tn.cloudapp.net
+verify error:num=20:unable to get local issuer certificate
+verify return:1
+depth=0 CN = pkrvmq69gzbq1tn.cloudapp.net
+verify error:num=21:unable to verify the first certificate
+verify return:1
+---
+Certificate chain
+ 0 s:/CN=pkrvmq69gzbq1tn.cloudapp.net <i class="conum" data-value="1"></i><b>(1)</b>
+   i:/CN=pkrvmq69gzbq1tn.cloudapp.net
+-----BEGIN CERTIFICATE---<i class="conum" data-value="2"></i><b>(2)</b>
+MIIDDjCCAfagAwIBAgIRAOAE4qOtV3FeMAKd0/F4U4EwDQYJKoZIhvcNAQELBQAw
+JzElMCMGA1UEAxMccGtydm1xNjlnemJxMXRuLmNsb3VkYXBwLm5ldDAeFw0xODA3
+MTAyMTE2NTdaFw0xODA3MTEyMTE2NTdaMCcxJTAjBgNVBAMTHHBrcnZtcTY5Z3pi
+cTF0bi5jbG91ZGFwcC5uZXQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIB
+AQCxnTGBTMq0jxbdVNRC1kPRTVyPquIvEbZGDZ64L+NB34vrHa3FlFkGVVzv0uG3
+5z/lgrbgjNdr5pj6LUJ1QS23TLVAeZgrMe1VCly36d7FIu/X+U4vFE2UKKIA/Cft
+myp7vPkzN8v7hye4kM2mQhNw9/k7DSkx+scLhrk1+7qZXl1DebcgpTzOdjM1WtAC
+pu3ZI0F7/qtLaoIRdaBBMVNfsZGasqu+QqpXKG+WVHLkC2VDDwwBC8U6haN6XKFH
+EIcoTyLfDvcDHDBrFwtGVsrBB9I5kHXNDyGgiJZCx7EGpk0uobF+5lQJo7c/z6lW
+Wurqu83U1XrESpp0zsPhDAh1AgMBAAGjNTAzMA4GA1UdDwEB/wQEAwIFoDATBgNV
+HSUEDDAKBggrBgEFBQcDATAMBgNVHRMBAf8EAjAAMA0GCSqGSIb3DQEBCwUAA4IB
+AQCky/mY+BlCA3RTSPy8Bxa8yewdhEL8ENS9UEX7fgrCDTVeiqxSgvYjQqhzVu7v
+Z9nYXttpXhLyi6l56iV3DEs5uBktnOdQZnds3zwfI/e53gqQC82lCGMDskE9kAag
+ppFuNO27K9bXs0szIYUY8yJJdc2QR3xF7l3aLXfF6J42aD9Kw3Q9Iss28BUSu/Tm
+Ry59MZMs5XfSgw9SZGRave2S2c4yPZBUQ67CDL3Ng7Axnl2EBSpT5uQTvXbgxHV1
+15pJ+kIoYqz0iL3rmprlzOLEohlIUn46gVqr+LNHlO1FuvfMx0e2io7lsLvJ933K
+G0QWqNVHvz2hEhi6u3KIqL64
+-----END CERTIFICATE-----
+---
+Server certificate
+subject=/CN=pkrvmq69gzbq1tn.cloudapp.net
+issuer=/CN=pkrvmq69gzbq1tn.cloudapp.net
+---
+No client certificate CA names sent
+Peer signing digest: SHA1
+Server Temp Key: ECDH, P-256, 256 bits
+---
+SSL handshake has read 1270 bytes and written 433 bytes
+---
+New, TLSv1/SSLv3, Cipher is ECDHE-RSA-AES256-GCM-SHA384
+Server public key is 2048 bit
+Secure Renegotiation IS supported
+Compression: NONE
+Expansion: NONE
+No ALPN negotiated
+SSL-Session:
+    Protocol  : TLSv1.2
+    Cipher    : ECDHE-RSA-AES256-GCM-SHA384
+    Session-ID: D820000035CA3984027AC8D13B4C4BDF4D73C0C63091B3DE510EAF06E2FABDA5
+    Session-ID-ctx:
+    Master-Key: 85504F679F0ABA212F87E25A0C3C68B5843B5990EE23523BD56702FBBC736F10C35F26253D795D1804A473620EECA2BE
+    Key-Arg   : None
+    PSK identity: None
+    PSK identity hint: None
+    SRP username: None
+    Start Time: 1531286527
+    Timeout   : 300 (sec)
+    Verify return code: 21 (unable to verify the first certificate)
+---
+read:errno=10093</pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Notez le FQDN inclus dans le certificat auto-signé</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Copier dans le contenu entre les balises "-----BEGIN CERTIFICATE-----" et "-----END CERTIFICATE-----" en incluant ces mêmes balises dans un fichier avec une extension <code>.cer</code> par exemple : vous avez votre certificat !</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Il ne vous reste plus qu&#8217;à installer le certificat. Sous Windows, en cliquant-droit sur le fichier, vous avez dans le menu "Installer le certificat".</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+En suivant le wizard, il est nécessaire de choisir manuellement le magasin de certificat "Autorités de certification racine de confiance"
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="hosts"><a class="anchor" href="#hosts"></a><a class="link" href="#hosts">hosts</a></h3>
+<div class="paragraph">
+<p>Vous l&#8217;aurez remarqué : le FQDN contenu dans le certificat auto-signé est différent de celui utilisé pour se connecter. Et malgré le fait que vous fassiez confiance à ce certificat, l&#8217;établissement de la connexion SSL échouera car le nom inclut dans le certificat est différent de celui utilisé pour la résolution DNS.</p>
+</div>
+<div class="paragraph">
+<p>Il est reste donc une dernière étape pour feinter Windows.</p>
+</div>
+<div class="paragraph">
+<p>Sur votre machine, éditer le fichier <code>C:\Windows\System32\drivers\etc\hosts</code> et y ajouter l&#8217;entrée :</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>&lt;Adresse IP publique&gt; &lt;nom VM aléatoire&gt;.cloudapp.net</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Ex:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>40.91.194.154 pkrvmq69gzbq1tn.cloudapp.net</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="tout_est_bon"><a class="anchor" href="#tout_est_bon"></a><a class="link" href="#tout_est_bon">Tout est bon ?</a></h3>
+<div class="listingblock">
+<div class="content">
+<pre>&gt; $cred = Get-Credential
+&gt; Test-WSMan pkrvmq69gzbq1tn.westeurope.cloudapp.azure.com -Credential $cred -UseSSL -Authentication Default
+wsmid           : http://schemas.dmtf.org/wbem/wsman/identity/1/wsmanidentity.xsd
+ProtocolVersion : http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd
+ProductVendor   : Microsoft Corporation
+ProductVersion  : OS: 10.0.14393 SP: 0.0 Stack: 3.0</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="cest_parti"><a class="anchor" href="#cest_parti"></a><a class="link" href="#cest_parti">C&#8217;est parti</a></h3>
+<div class="literalblock">
+<div class="content">
+<pre>Invoke-Command -ComputerName pkrvmq69gzbq1tn.cloudapp.net -ScriptBlock { ipconfig } -credential $cred -UseSSL</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Il ne reste plus qu&#8217;à remplacer <code>ipconfig</code> par la commande de votre choix.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="conclusion"><a class="anchor" href="#conclusion"></a><a class="link" href="#conclusion">Conclusion</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Le dernier recours à base de commande WinRM est probablement exagéré.
+Je ne l&#8217;ai utilisé qu&#8217;une fois, mais il m&#8217;a permis d&#8217;en savoir plus sur WinRM.
+Certainement une bonne base pour d&#8217;autres outils s&#8217;appuyant sur WinRM comme <a href="https://www.ansible.com/">ansible</a>&#8230;&#8203;</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="bonus_vider_mon_groupe_de_ressource"><a class="anchor" href="#bonus_vider_mon_groupe_de_ressource"></a><a class="link" href="#bonus_vider_mon_groupe_de_ressource">Bonus : vider mon groupe de ressource</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Dans le cas où packer ne nettoierait pas tout, il est possible de vider le groupe de ressource avec la commande suivante :</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>Get-AzureRmResource -ResourceGroupName &lt;mon groupe de resource&gt; | Remove-AzureRmResource -Force</pre>
+</div>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+C&#8217;est l&#8217;équivalent d&#8217;un <code>rm -f</code> sur Linux donc attention à passer le bon groupe de ressource !
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div></section>
+  
+<footer>
+  <div class="tags">
+    
+    <a class="tag" href="/tags#packer">#packer</a>
+    
+    <a class="tag" href="/tags#azure">#azure</a>
+    
+    <a class="tag" href="/tags#windows">#windows</a>
+    
+  </div>
+</footer>
+
+
+</article>
+
+<!-- Disqus -->
+
+
+<!-- Post navigation -->
+
+  <div id="post-nav">
+  
+  <div id="previous-post" class="post-nav-post">
+      <p>Article précédent</p>
+      <a href="/2018/05/23/vscode-extensions/">
+        Mes extensions Visual Studio Code
+      </a>
+  </div>
+  
+  
+  <div id="next-post" class="post-nav-post">
+      <p>Article suivant</p>
+      <a href="/2018/07/11/maj-powershell-azurerm/">
+        Astuce du jour : mettre à jour tous ses modules AzureRm
+      </a>
+  </div>
+  
+</div>
+
+
+
+    </div>
+    
+
+
+<footer class="site-footer">
+	<nav class="site-nav">
+		<ul>
+			
+<li>
+	<a href="/feed.xml" title="Suivre sur RSS">
+		<i class="fa fa-fw fa-rss"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+	<a href="https://github.com/r3dlin3" title="Follow on GitHub">
+		<i class="fa fa-fw fa-github"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		</ul>
+	</nav>
+	<p class="text">Powered by <a href="https://jekyllrb.com/">Jekyll</a> with <i class="fa fa-heart" aria-hidden="true" style="color:Tomato"></i>
+</p>
+</footer>
+
+  </body>
+</html>

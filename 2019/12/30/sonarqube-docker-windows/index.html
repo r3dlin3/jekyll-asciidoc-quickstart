@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html class="no-js">
+  <head>
+	<meta charset="utf-8">
+	<title>SonarQube sur Windows avec Docker | A bit of everything</title>
+	<meta name="description" content="Exécuter SonarQube sur Windows grâce à Docker">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="/assets/css/main.css">
+
+	<!--Favicon-->
+	<link rel="shortcut icon" href="/assets/favicon.ico" type="image/x-icon">
+
+	<!-- Canonical -->
+	<link rel="canonical" href="/2019/12/30/sonarqube-docker-windows/">
+
+	<!-- RSS -->
+	<link type="application/atom+xml" rel="alternate" href="https://r3dlin3.github.io/feed.xml" title="A bit of everything" />
+	<!-- SEO -->
+	<!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>SonarQube sur Windows avec Docker | A bit of everything</title>
+<meta name="generator" content="Jekyll v3.8.7" />
+<meta property="og:title" content="SonarQube sur Windows avec Docker" />
+<meta name="author" content="r3dLiN3" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Exécuter SonarQube sur Windows grâce à Docker" />
+<meta property="og:description" content="Exécuter SonarQube sur Windows grâce à Docker" />
+<link rel="canonical" href="https://r3dlin3.github.io/2019/12/30/sonarqube-docker-windows/" />
+<meta property="og:url" content="https://r3dlin3.github.io/2019/12/30/sonarqube-docker-windows/" />
+<meta property="og:site_name" content="A bit of everything" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2019-12-30T00:00:00+00:00" />
+<script type="application/ld+json">
+{"author":{"@type":"Person","name":"r3dLiN3"},"headline":"SonarQube sur Windows avec Docker","dateModified":"2019-12-30T00:00:00+00:00","datePublished":"2019-12-30T00:00:00+00:00","description":"Exécuter SonarQube sur Windows grâce à Docker","mainEntityOfPage":{"@type":"WebPage","@id":"https://r3dlin3.github.io/2019/12/30/sonarqube-docker-windows/"},"@type":"BlogPosting","url":"https://r3dlin3.github.io/2019/12/30/sonarqube-docker-windows/","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+	<!-- Google Fonts -->
+	
+	<link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,700italic,400italic" rel="stylesheet" type="text/css">
+	
+
+	<!-- KaTeX -->
+	
+
+	<!-- Google Analytics -->
+	
+</head>
+
+  <body>
+    <header class="site-header">
+	<div class="branding">
+		
+		<a href="/">
+			<img class="avatar" src="/assets/img/avatar.png" alt="avatar"/>
+		</a>
+		
+		<h1 class="site-title">
+			<a href="/">A bit of everything</a>
+		</h1>
+	</div>
+	<nav class="site-nav">
+		<ul>
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/about/">
+					A propos
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/tags/">
+					tags
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<!-- Social icons from Font Awesome, if enabled  -->
+			
+			
+            
+            <!-- Search bar -->
+            
+		</ul>
+	</nav>
+    
+</header>
+
+    <div class="content">
+      <article >
+  <header style="background-image: url('/')">
+    <h1 class="title">SonarQube sur Windows avec Docker</h1>
+    
+    <p class="meta">
+      
+
+
+
+30
+
+décembre
+
+2019
+      
+    </p>
+  </header>
+  <section class="post-content"><div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Il existe différente façon de faire tourner SonarQube sur Windows.</p>
+</div>
+<div class="paragraph">
+<p>Mon choix s&#8217;est porté sur Docker pour sa simplicité et sa portabilité.
+SonarQube fournit une <a href="https://hub.docker.com/_/sonarqube">image officielle</a>, autant en profiter.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+Cet article fait l&#8217;hypothèse que vous avez un environnement Docker fonctionnel.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="prérequis"><a class="anchor" href="#prérequis"></a><a class="link" href="#prérequis">Prérequis</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Pour assurer la persistance  de l&#8217;installation, nous allons créer des répertoires sur le disque.
+Ces répertoires contiendront&nbsp;:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>La base de données</p>
+</li>
+<li>
+<p>La configuration</p>
+</li>
+<li>
+<p>Les plugins</p>
+</li>
+<li>
+<p>Les logs</p>
+</li>
+<li>
+<p>etc.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Pour ce faire, ouvrir un prompt PowerShell et exécuter les commandes suivantes&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="nv">$SONARQUBE_HOME</span><span class="o">=</span><span class="s2">"C:\temp\sonarqube"</span><span class="w">
+</span><span class="n">mkdir</span><span class="w"> </span><span class="nv">$SONARQUBE_HOME</span><span class="w">
+</span><span class="n">mkdir</span><span class="w"> </span><span class="nv">$SONARQUBE_HOME</span><span class="nx">/conf</span><span class="w">
+</span><span class="n">mkdir</span><span class="w"> </span><span class="nv">$SONARQUBE_HOME</span><span class="nx">/extensions</span><span class="w">
+</span><span class="n">mkdir</span><span class="w"> </span><span class="nv">$SONARQUBE_HOME</span><span class="nx">/logs</span><span class="w">
+</span><span class="n">mkdir</span><span class="w"> </span><span class="nv">$SONARQUBE_HOME</span><span class="nx">/data</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="récupérer_sonarqube"><a class="anchor" href="#récupérer_sonarqube"></a><a class="link" href="#récupérer_sonarqube">Récupérer SonarQube</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Récupérons maintenant SonarQube.
+Il existe différentes versions disponibles sur Docker Hub mais nous allons utiliser <a href="https://hub.docker.com/_/sonarqube">l&#8217;image officielle</a> et la version 8.1 community.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="shell">docker pull sonarqube:8.1-community-beta</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="exécuter_sonarqube"><a class="anchor" href="#exécuter_sonarqube"></a><a class="link" href="#exécuter_sonarqube">Exécuter SonarQube</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Une seule ligne de commande est nécessaire pour faire tourner SonarQube. Toujours dans le prompt PowerShell (noter les <code>`</code> ci-dessous), exécuter&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="n">docker</span><span class="w"> </span><span class="nx">run</span><span class="w"> </span><span class="nt">-d</span><span class="w"> </span><span class="nt">--name</span><span class="w"> </span><span class="nx">sonarqube</span><span class="w"> </span><span class="se">`
+</span><span class="w">  </span><span class="nt">-p</span><span class="w"> </span><span class="nx">8000:9000</span><span class="w"> </span><span class="se">` </span><span class="w"><i class="conum" data-value="1"></i><b>(1)</b>
+  </span><span class="nt">-v</span><span class="w"> </span><span class="nv">$SONARQUBE_HOME</span><span class="n">/conf:/opt/sonarqube/conf</span><span class="w"> </span><span class="se">` </span><span class="w"><i class="conum" data-value="2"></i><b>(2)</b>
+  </span><span class="nt">-v</span><span class="w"> </span><span class="nv">$SONARQUBE_HOME</span><span class="n">/extensions:/opt/sonarqube/extensions</span><span class="w"> </span><span class="se">`
+</span><span class="w">  </span><span class="nt">-v</span><span class="w"> </span><span class="nv">$SONARQUBE_HOME</span><span class="nx">/logs:/opt/sonarqube/logs</span><span class="w"> </span><span class="se">`
+</span><span class="w">  </span><span class="nt">-v</span><span class="w"> </span><span class="nv">$SONARQUBE_HOME</span><span class="nx">/data:/opt/sonarqube/data</span><span class="w"> </span><span class="se">`
+</span><span class="w">  </span><span class="nt">-e</span><span class="w"> </span><span class="nx">sonar.forceAuthentication</span><span class="o">=</span><span class="n">true</span><span class="w"> </span><span class="se">` </span><span class="w"><i class="conum" data-value="3"></i><b>(3)</b>
+  </span><span class="nt">-e</span><span class="w"> </span><span class="n">sonar.telemetry.enable</span><span class="o">=</span><span class="n">false</span><span class="w"> </span><span class="se">`
+</span><span class="w">  </span><span class="nx">sonarqube:8.1-community-beta</span><span class="w"> <i class="conum" data-value="4"></i><b>(4)</b>
+</span></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Sur mon poste, le port 9000 étant déjà pris, j&#8217;ai fait correspondre le port 9000 de SonarQube avec mon port 8000. Avec cette commande, SonarQube sera donc accessible à l&#8217;adresse <a href="http://localhost:8000" class="bare">http://localhost:8000</a></td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Suis une série de ligne pour créer des volumes, c&#8217;est-à-dire faire correspondre un répertoire local avec un répertoire dans le container</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Il est possible de configurer SonarQube en passant des paramètres au démarrage</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>On retrouve ici la version 8.1 Community</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Comme le container est présent sur le poste, il démarre rapidement.</p>
+</div>
+<div class="paragraph">
+<p>Après quelques minutes, en accédant à <a href="http://localhost:8000" class="bare">http://localhost:8000</a>, vous aurez l&#8217;écran de login. Il ne restera plus qu&#8217;à saisir admin/admin&nbsp;:</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="/assets/img/2019-12-30-SonarQube.png" alt="Login SonarQube"></span></p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+cette version 8.1 vient avec tous les analyseurs de code standard (C#, JS, etc.). Des profils de base sont créés, il est donc possible de passer directement à la création d&#8217;un <a href="/2019/12/31/sonarqube-dotnet/">projet</a>)
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="arrêter_sonarqube"><a class="anchor" href="#arrêter_sonarqube"></a><a class="link" href="#arrêter_sonarqube">Arrêter SonarQube</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Lorsque SonarQube n&#8217;est plus nécessaire, il est possible de l&#8217;arrêter&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="shell">docker stop sonarqube</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Et pour reprendre ultérieurement&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="shell">docker start sonarqube</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="nettoyage"><a class="anchor" href="#nettoyage"></a><a class="link" href="#nettoyage">Nettoyage</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Et si vous voulez nettoyer, 2 commandes pour supprimer le container et l&#8217;image&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="shell">docker <span class="nb">rm </span>sonarqube
+docker image <span class="nb">rm </span>sonarqube</code></pre>
+</div>
+</div>
+</div>
+</div></section>
+  
+<footer>
+  <div class="tags">
+    
+    <a class="tag" href="/tags#docker">#docker</a>
+    
+    <a class="tag" href="/tags#sonarqube">#sonarqube</a>
+    
+    <a class="tag" href="/tags#windows">#windows</a>
+    
+  </div>
+</footer>
+
+
+</article>
+
+<!-- Disqus -->
+
+
+<!-- Post navigation -->
+
+  <div id="post-nav">
+  
+  <div id="previous-post" class="post-nav-post">
+      <p>Article précédent</p>
+      <a href="/2019/10/13/TP-docker/">
+        Petit TP Docker
+      </a>
+  </div>
+  
+  
+  <div id="next-post" class="post-nav-post">
+      <p>Article suivant</p>
+      <a href="/2019/12/31/sonarqube-dotnet/">
+        Analyse de .NET Core avec SonarQube sur Windows
+      </a>
+  </div>
+  
+</div>
+
+
+
+    </div>
+    
+
+
+<footer class="site-footer">
+	<nav class="site-nav">
+		<ul>
+			
+<li>
+	<a href="/feed.xml" title="Suivre sur RSS">
+		<i class="fa fa-fw fa-rss"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+	<a href="https://github.com/r3dlin3" title="Follow on GitHub">
+		<i class="fa fa-fw fa-github"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		</ul>
+	</nav>
+	<p class="text">Powered by <a href="https://jekyllrb.com/">Jekyll</a> with <i class="fa fa-heart" aria-hidden="true" style="color:Tomato"></i>
+</p>
+</footer>
+
+  </body>
+</html>

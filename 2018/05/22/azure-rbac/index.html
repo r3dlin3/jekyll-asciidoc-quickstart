@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html class="no-js">
+  <head>
+	<meta charset="utf-8">
+	<title>Gestion des rôles dans Azure | A bit of everything</title>
+	<meta name="description" content="Comment gérer les rôles (i.e. RBAC ou encore IAM) dans Azure">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="/assets/css/main.css">
+
+	<!--Favicon-->
+	<link rel="shortcut icon" href="/assets/favicon.ico" type="image/x-icon">
+
+	<!-- Canonical -->
+	<link rel="canonical" href="/2018/05/22/azure-rbac/">
+
+	<!-- RSS -->
+	<link type="application/atom+xml" rel="alternate" href="https://r3dlin3.github.io/feed.xml" title="A bit of everything" />
+	<!-- SEO -->
+	<!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Gestion des rôles dans Azure | A bit of everything</title>
+<meta name="generator" content="Jekyll v3.8.7" />
+<meta property="og:title" content="Gestion des rôles dans Azure" />
+<meta name="author" content="r3dLiN3" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Comment gérer les rôles (i.e. RBAC ou encore IAM) dans Azure" />
+<meta property="og:description" content="Comment gérer les rôles (i.e. RBAC ou encore IAM) dans Azure" />
+<link rel="canonical" href="https://r3dlin3.github.io/2018/05/22/azure-rbac/" />
+<meta property="og:url" content="https://r3dlin3.github.io/2018/05/22/azure-rbac/" />
+<meta property="og:site_name" content="A bit of everything" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2018-05-22T00:00:00+00:00" />
+<script type="application/ld+json">
+{"author":{"@type":"Person","name":"r3dLiN3"},"headline":"Gestion des rôles dans Azure","dateModified":"2018-05-22T00:00:00+00:00","datePublished":"2018-05-22T00:00:00+00:00","description":"Comment gérer les rôles (i.e. RBAC ou encore IAM) dans Azure","mainEntityOfPage":{"@type":"WebPage","@id":"https://r3dlin3.github.io/2018/05/22/azure-rbac/"},"@type":"BlogPosting","url":"https://r3dlin3.github.io/2018/05/22/azure-rbac/","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+	<!-- Google Fonts -->
+	
+	<link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,700italic,400italic" rel="stylesheet" type="text/css">
+	
+
+	<!-- KaTeX -->
+	
+
+	<!-- Google Analytics -->
+	
+</head>
+
+  <body>
+    <header class="site-header">
+	<div class="branding">
+		
+		<a href="/">
+			<img class="avatar" src="/assets/img/avatar.png" alt="avatar"/>
+		</a>
+		
+		<h1 class="site-title">
+			<a href="/">A bit of everything</a>
+		</h1>
+	</div>
+	<nav class="site-nav">
+		<ul>
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/about/">
+					A propos
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/tags/">
+					tags
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<!-- Social icons from Font Awesome, if enabled  -->
+			
+			
+            
+            <!-- Search bar -->
+            
+		</ul>
+	</nav>
+    
+</header>
+
+    <div class="content">
+      <article >
+  <header style="background-image: url('/')">
+    <h1 class="title">Gestion des rôles dans Azure</h1>
+    
+    <p class="meta">
+      
+
+
+
+22
+
+mai
+  
+2018
+      
+    </p>
+  </header>
+  <section class="post-content"><div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Je m&#8217;étais posé la question. On m&#8217;a posé la question. Voici donc quelques commandes que j&#8217;ai glanées sur la gestion des rôles dans Azure.</p>
+</div>
+<div class="paragraph">
+<p>Rappelons qu&#8217;il est possible d&#8217;affecter un rôle sur 3 niveaux :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>La souscription (donc l&#8217;ensemble des ressources de la souscription)</p>
+</li>
+<li>
+<p>Un groupe de ressources</p>
+</li>
+<li>
+<p>Directement sur une ressource</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Il existe par défaut de nombreux rôles (cf. <a href="https://docs.microsoft.com/en-us/azure/role-based-access-control/built-in-roles">Built-in roles for Azure role-based access control</a>).
+Certains rôles sont spécialisés sur un type de ressource mais très souvent les ressources n&#8217;utilisent que les rôles de base : owner/propriétaire, contributor/conntributeur et reader/lecteur.</p>
+</div>
+<div class="paragraph">
+<p>En plus de la page de référence de Microsoft, voici quelques éléments pour construire vos rôles.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="liste_des_rôles"><a class="anchor" href="#liste_des_rôles"></a><a class="link" href="#liste_des_rôles">Liste des rôles</a></h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="n">Get-AzureRmRoleDefinition</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">Format-Table</span><span class="w"> </span><span class="nx">Name</span><span class="p">,</span><span class="w"> </span><span class="nx">Description</span><span class="w">
+</span><span class="p">(</span><span class="n">Get-AzureRmRoleDefinition</span><span class="w"> </span><span class="s2">"Virtual Machine Contributor"</span><span class="p">)</span><span class="o">.</span><span class="nf">Actions</span><span class="w">
+</span><span class="p">(</span><span class="n">Get-AzureRmRoleDefinition</span><span class="w"> </span><span class="s2">"Virtual Machine Contributor"</span><span class="p">)</span><span class="o">.</span><span class="nf">NotActions</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="comment_obtenir_la_liste_des_actions_possibles"><a class="anchor" href="#comment_obtenir_la_liste_des_actions_possibles"></a><a class="link" href="#comment_obtenir_la_liste_des_actions_possibles">Comment obtenir la liste des actions possibles</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Un fournisseur correspond plus ou moins à un type de sous-ressource.
+Pour obtenir une liste de fournisseurs:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="n">Get-AzureRmResourceProvider</span><span class="w"> </span><span class="nt">-ListAvailable</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">Select-Object</span><span class="w"> </span><span class="nx">ProviderNamespace</span><span class="p">,</span><span class="w"> </span><span class="nx">RegistrationState</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Pour répertorier les opérations possibles d&#8217;un fournisseur :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="n">Get-AzureRmProviderOperation</span><span class="w"> </span><span class="nx">Microsoft.Compute/virtualMachines/</span><span class="o">*</span><span class="w"> </span><span class="o">|</span><span class="w">  </span><span class="n">select</span><span class="w"> </span><span class="nt">-ExpandProperty</span><span class="w"> </span><span class="nx">operation</span></code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+On notera l&#8217;utilisation du caractère '*' dans la commande précédente pour lister les opérations
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="créer_un_rôle_personnalisé_basé_sur_un_json"><a class="anchor" href="#créer_un_rôle_personnalisé_basé_sur_un_json"></a><a class="link" href="#créer_un_rôle_personnalisé_basé_sur_un_json">Créer un rôle personnalisé basé sur un JSON</a></h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="n">New-AzureRmRoleDefinition</span><span class="w"> </span><span class="nt">-InputFile</span><span class="w"> </span><span class="nx">C:\MycustomRole.json</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="exporter_un_rôle_au_format_json"><a class="anchor" href="#exporter_un_rôle_au_format_json"></a><a class="link" href="#exporter_un_rôle_au_format_json">Exporter un rôle au format JSON</a></h2>
+<div class="sectionbody">
+<div class="literalblock">
+<div class="content">
+<pre>Get-AzureRmRoleDefinition &lt;nom du rôle&gt; | ConvertTo-Json</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Il sera alors possible stocker/versionner un rôle dans un gestionnaire de source.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="mettre_à_jour_un_rôle_personnalisé"><a class="anchor" href="#mettre_à_jour_un_rôle_personnalisé"></a><a class="link" href="#mettre_à_jour_un_rôle_personnalisé">Mettre à jour un rôle personnalisé</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Mettez à jour la définition du rôle avec :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code>$ role = Get-AzureRmRoleDefinition -Name "ROLE_DEFINITION_NAME"
+$ role.AssignableScopes.Add ("/ abonnements / NEW_SUBSCRIPTION_ID_GOES_HERE") ## [[Répétez cette étape pour ajouter tous les abonnements que vous souhaitez ajouter]]
+$ role.Actions.Remove ("Microsoft.Compute / virtualMachines / write") # Ajouter une autorisation à un rôle
+$ role.Actions.Add ("Microsoft.Compute / virtualMachines / write") # Supprimer l'autorisation d'un rôle
+Set-AzureRmRoleDefinition -Role $ role</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="trouver_où_un_rôle_est_utilisé"><a class="anchor" href="#trouver_où_un_rôle_est_utilisé"></a><a class="link" href="#trouver_où_un_rôle_est_utilisé">Trouver où un rôle est utilisé</a></h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="n">Get-AzureRmRoleAssignment</span><span class="w"> </span><span class="nt">-RoleDefinitionName</span><span class="w"> </span><span class="s2">"ROLE_DEFINITION_NAME"</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="affecter_un_rôle_à_un_groupe_sur_un_groupe_de_ressources"><a class="anchor" href="#affecter_un_rôle_à_un_groupe_sur_un_groupe_de_ressources"></a><a class="link" href="#affecter_un_rôle_à_un_groupe_sur_un_groupe_de_ressources">Affecter un rôle à un groupe sur un groupe de ressources</a></h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="nv">$AADGroup</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Get-AzureRmADGroup</span><span class="w"> </span><span class="nt">-SearchString</span><span class="w"> </span><span class="s2">"GROUP_NAME"</span><span class="w">
+</span><span class="n">New-AzureRmRoleAssignment</span><span class="w"> </span><span class="nt">-ObjectID</span><span class="w"> </span><span class="nv">$AADGroup</span><span class="o">.</span><span class="nf">ID</span><span class="w"> </span><span class="se">`
+</span><span class="w">    </span><span class="nt">-RoleDefinitionName</span><span class="w"> </span><span class="s2">"ROLE_DEFINITION_NAME"</span><span class="w"> </span><span class="se">`
+</span><span class="w">    </span><span class="nt">-ResourceGroupName</span><span class="w"> </span><span class="s2">"RG_NAME"</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="supprimer_un_rôle_personnalisé"><a class="anchor" href="#supprimer_un_rôle_personnalisé"></a><a class="link" href="#supprimer_un_rôle_personnalisé">Supprimer un rôle personnalisé</a></h2>
+<div class="sectionbody">
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+Un rôle ne peut être supprimé s&#8217;il est affecté
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Pour supprimer un rôle personnalisé existant, exécutez la commande suivante :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="n">Remove-AzureRmRoleDefinition</span><span class="w"> </span><span class="nt">-Id</span><span class="w"> </span><span class="nx">ROLE_DEFINITION_ID</span><span class="w">
+</span><span class="err">```</span><span class="n">powershell</span><span class="w">
+</span><span class="nx">Ou</span><span class="w">
+</span><span class="err">```</span><span class="n">powershell</span><span class="w">
+</span><span class="nx">Remove-AzureRmRoleDefinition</span><span class="w"> </span><span class="nt">-Name</span><span class="w"> </span><span class="s2">"ROLE_DEFINITION_Name"</span></code></pre>
+</div>
+</div>
+</div>
+</div></section>
+  
+<footer>
+  <div class="tags">
+    
+    <a class="tag" href="/tags#azure">#azure</a>
+    
+    <a class="tag" href="/tags#rbac">#rbac</a>
+    
+    <a class="tag" href="/tags#role">#role</a>
+    
+  </div>
+</footer>
+
+
+</article>
+
+<!-- Disqus -->
+
+
+<!-- Post navigation -->
+
+  <div id="post-nav">
+  
+  <div id="previous-post" class="post-nav-post">
+      <p>Article précédent</p>
+      <a href="/2018/04/30/github-pages-jekyll-travisci/">
+        Faire un blog avec Jekyll, GitHub Pages et TravisCI
+      </a>
+  </div>
+  
+  
+  <div id="next-post" class="post-nav-post">
+      <p>Article suivant</p>
+      <a href="/2018/05/23/vscode-extensions/">
+        Mes extensions Visual Studio Code
+      </a>
+  </div>
+  
+</div>
+
+
+
+    </div>
+    
+
+
+<footer class="site-footer">
+	<nav class="site-nav">
+		<ul>
+			
+<li>
+	<a href="/feed.xml" title="Suivre sur RSS">
+		<i class="fa fa-fw fa-rss"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+	<a href="https://github.com/r3dlin3" title="Follow on GitHub">
+		<i class="fa fa-fw fa-github"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		</ul>
+	</nav>
+	<p class="text">Powered by <a href="https://jekyllrb.com/">Jekyll</a> with <i class="fa fa-heart" aria-hidden="true" style="color:Tomato"></i>
+</p>
+</footer>
+
+  </body>
+</html>

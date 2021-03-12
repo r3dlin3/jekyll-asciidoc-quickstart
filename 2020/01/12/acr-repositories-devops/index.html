@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html class="no-js">
+  <head>
+	<meta charset="utf-8">
+	<title>Utilisation des autorisations d&#8217;étendue de référentiel dans ACR avec Azure DevOps | A bit of everything</title>
+	<meta name="description" content="Azure Container Registry introduit les autorisations d'étendue de référentiel. Voici un exemple d'utilisation avec Azure DevOps.">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="/assets/css/main.css">
+
+	<!--Favicon-->
+	<link rel="shortcut icon" href="/assets/favicon.ico" type="image/x-icon">
+
+	<!-- Canonical -->
+	<link rel="canonical" href="/2020/01/12/acr-repositories-devops/">
+
+	<!-- RSS -->
+	<link type="application/atom+xml" rel="alternate" href="https://r3dlin3.github.io/feed.xml" title="A bit of everything" />
+	<!-- SEO -->
+	<!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Utilisation des autorisations d’étendue de référentiel dans ACR avec Azure DevOps | A bit of everything</title>
+<meta name="generator" content="Jekyll v3.8.7" />
+<meta property="og:title" content="Utilisation des autorisations d’étendue de référentiel dans ACR avec Azure DevOps" />
+<meta name="author" content="r3dLiN3" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Azure Container Registry introduit les autorisations d’étendue de référentiel. Voici un exemple d’utilisation avec Azure DevOps." />
+<meta property="og:description" content="Azure Container Registry introduit les autorisations d’étendue de référentiel. Voici un exemple d’utilisation avec Azure DevOps." />
+<link rel="canonical" href="https://r3dlin3.github.io/2020/01/12/acr-repositories-devops/" />
+<meta property="og:url" content="https://r3dlin3.github.io/2020/01/12/acr-repositories-devops/" />
+<meta property="og:site_name" content="A bit of everything" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-01-12T00:00:00+00:00" />
+<script type="application/ld+json">
+{"author":{"@type":"Person","name":"r3dLiN3"},"headline":"Utilisation des autorisations d’étendue de référentiel dans ACR avec Azure DevOps","dateModified":"2020-01-12T00:00:00+00:00","datePublished":"2020-01-12T00:00:00+00:00","description":"Azure Container Registry introduit les autorisations d’étendue de référentiel. Voici un exemple d’utilisation avec Azure DevOps.","mainEntityOfPage":{"@type":"WebPage","@id":"https://r3dlin3.github.io/2020/01/12/acr-repositories-devops/"},"@type":"BlogPosting","url":"https://r3dlin3.github.io/2020/01/12/acr-repositories-devops/","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+	<!-- Google Fonts -->
+	
+	<link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,700italic,400italic" rel="stylesheet" type="text/css">
+	
+
+	<!-- KaTeX -->
+	
+
+	<!-- Google Analytics -->
+	
+</head>
+
+  <body>
+    <header class="site-header">
+	<div class="branding">
+		
+		<a href="/">
+			<img class="avatar" src="/assets/img/avatar.png" alt="avatar"/>
+		</a>
+		
+		<h1 class="site-title">
+			<a href="/">A bit of everything</a>
+		</h1>
+	</div>
+	<nav class="site-nav">
+		<ul>
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/about/">
+					A propos
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/tags/">
+					tags
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<!-- Social icons from Font Awesome, if enabled  -->
+			
+			
+            
+            <!-- Search bar -->
+            
+		</ul>
+	</nav>
+    
+</header>
+
+    <div class="content">
+      <article >
+  <header style="background-image: url('/')">
+    <h1 class="title">Utilisation des autorisations d&#8217;étendue de référentiel dans ACR avec Azure DevOps</h1>
+    
+    <p class="meta">
+      
+
+
+
+12
+
+janvier
+  
+2020
+      
+    </p>
+  </header>
+  <section class="post-content"><div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Dans un <a href="/2020/01/10/acr-repositories/">précédent article</a>, j&#8217;expliquais comment créer une autorisation d&#8217;étendue de référentiel dans ACR. Nous allons voir comment l&#8217;utiliser dans Azure DevOps.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="création_dune_jeton_daccès"><a class="anchor" href="#création_dune_jeton_daccès"></a><a class="link" href="#création_dune_jeton_daccès">Création d&#8217;une jeton d&#8217;accès</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Comme nous l&#8217;avions vu, nous pouvons créer un jeton d&#8217;accès à partir d&#8217;une <em>scope map</em> existante ou en un créer directement avec la <em>scope map</em>.
+Suivant la deuxième option, voici la commande&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="shell">az acr token create <span class="nt">-n</span> test-azure-devops <span class="nt">-r</span> testscopemap <span class="nt">--repository</span> samples/go content/write content/read</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="création_dune_connexion_de_service_dans_azure_devops"><a class="anchor" href="#création_dune_connexion_de_service_dans_azure_devops"></a><a class="link" href="#création_dune_connexion_de_service_dans_azure_devops">Création d&#8217;une connexion de service dans Azure DevOps</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Dans Azure DevOps, dans votre projet, aller dans les <em>settings</em> en cliquant sur la route dentée en bas à droite <span class="image"><img src="/assets/img/2020-01-12-acr-repositories-devops/2020-01-12-settings.png" alt="Menu Settings"></span>.</p>
+</div>
+<div class="paragraph">
+<p>Dans le menu, choisir "Service Connections"&nbsp;:</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="/assets/img/2020-01-12-acr-repositories-devops/2020-01-12-service-connections-menu.png" alt="Menu Service Connections"></span>.</p>
+</div>
+<div class="paragraph">
+<p>Si vous êtes comme moi et qu&#8217;il s&#8217;agit de votre premier <em>Service Connection</em>, cliquer sur "Create service connection"&nbsp;:</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="/assets/img/2020-01-12-acr-repositories-devops/2020-01-12-service-connections-1.png" alt="Créer Service Connection"></span>.</p>
+</div>
+<div class="paragraph">
+<p>Chercher les connexions de type "Docker" et choisir "Docker Registry"&nbsp;:</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="/assets/img/2020-01-12-acr-repositories-devops/2020-01-12-service-connections-2.png" alt="Type de Service Connection"></span>.</p>
+</div>
+<div class="paragraph">
+<p>Renseigner les informations&nbsp;:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Docker Registry&nbsp;: de la forme <code>https://&lt;nom de l&#8217;ACR&gt;.azurecr.io</code></p>
+</li>
+<li>
+<p>Docker ID&nbsp;: le nom du jeton d&#8217;accès <a href="#création_dune_jeton_daccès">précédemment créé</a></p>
+</li>
+<li>
+<p>Docker Password&nbsp;: Un des 2 mots de passe du  jeton d&#8217;accès <a href="#création_dune_jeton_daccès">précédemment créé</a></p>
+</li>
+<li>
+<p>Service connection name&nbsp;: A noter pour la suite. J&#8217;ai donné le nom du jeton d&#8217;accès mais ce n&#8217;est pas obligatoire</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="/assets/img/2020-01-12-acr-repositories-devops/2020-01-12-service-connections-3.png" alt="Info Service Connection"></span>.</p>
+</div>
+<div class="paragraph">
+<p>Après avoir cliquer sur "Save", la page des connexions d&#8217;affiche&nbsp;:</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="/assets/img/2020-01-12-acr-repositories-devops/2020-01-12-service-connections-4.png" alt="Liste des Service Connections"></span>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="création_du_pipeline_dans_azure_devops"><a class="anchor" href="#création_du_pipeline_dans_azure_devops"></a><a class="link" href="#création_du_pipeline_dans_azure_devops">Création du pipeline dans Azure DevOps</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Dans le menu de gauche, dans le menu "Pipelines"&nbsp;:</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="/assets/img/2020-01-12-acr-repositories-devops/2020-01-12-pipeline-menu.png" alt="Menu Pipelines"></span>.</p>
+</div>
+<div class="paragraph">
+<p>Si comme moi, vous créez le premier pipeline, alors cliquer sur "Create Pipeline"&nbsp;:</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="/assets/img/2020-01-12-acr-repositories-devops/2020-01-12-pipeline-0.png" alt="Create Pipeline"></span>.</p>
+</div>
+<div class="paragraph">
+<p>Mon projet est dans Azure Repos Git, adosser à mon projet.
+Si vous êtes comme dans mon cas, choisir "Azure Repos Git YAML"&nbsp;:</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="/assets/img/2020-01-12-acr-repositories-devops/2020-01-12-pipeline-1.png" alt="Create Pipeline"></span>.</p>
+</div>
+<div class="paragraph">
+<p>Choisir votre repository git&nbsp;:</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="/assets/img/2020-01-12-acr-repositories-devops/2020-01-12-pipeline-2.png" alt="Choix du repository git"></span>.</p>
+</div>
+<div class="paragraph">
+<p>Choisir un "starter pipeline"&nbsp;:</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="/assets/img/2020-01-12-acr-repositories-devops/2020-01-12-pipeline-3.png" alt="Type de Pipeline"></span>.</p>
+</div>
+<div class="paragraph">
+<p>Il est alors possible de renseigner son pipeline</p>
+</div>
+<div class="listingblock">
+<div class="title">azure-pipelines.yml</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="yaml"><span class="na">trigger</span><span class="pi">:</span>
+<span class="pi">-</span> <span class="s">master</span>
+
+<span class="na">pool</span><span class="pi">:</span>
+  <span class="na">vmImage</span><span class="pi">:</span> <span class="s1">'</span><span class="s">ubuntu-latest'</span>
+
+<span class="na">variables</span><span class="pi">:</span>
+  <span class="na">imageName</span><span class="pi">:</span> <span class="s1">'</span><span class="s">samples/go'</span>
+  <span class="na">dockerRegistryServiceConnection</span><span class="pi">:</span> <span class="s">test-azure-devops</span>
+
+<span class="na">steps</span><span class="pi">:</span>
+<span class="pi">-</span> <span class="na">task</span><span class="pi">:</span> <span class="s">Docker@2</span>
+  <span class="na">displayName</span><span class="pi">:</span> <span class="s">Login to ACR</span>
+  <span class="na">inputs</span><span class="pi">:</span>
+    <span class="na">command</span><span class="pi">:</span> <span class="s">login</span>
+    <span class="na">containerRegistry</span><span class="pi">:</span> <span class="s">$(dockerRegistryServiceConnection)</span>
+
+<span class="pi">-</span> <span class="na">task</span><span class="pi">:</span> <span class="s">Docker@2</span>
+  <span class="na">displayName</span><span class="pi">:</span> <span class="s">Build and push an image to container registry</span>
+  <span class="na">inputs</span><span class="pi">:</span>
+    <span class="na">command</span><span class="pi">:</span> <span class="s">buildAndPush</span>
+    <span class="na">repository</span><span class="pi">:</span> <span class="s">$(imageName)</span>
+    <span class="na">containerRegistry</span><span class="pi">:</span> <span class="s">$(dockerRegistryServiceConnection)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>La première tâche va permettre de se connecter vis-à-vis de l&#8217;ACR en utilisant le jeton d&#8217;accès précédemment créé et les droits associés.</p>
+</div>
+<div class="paragraph">
+<p>La deuxième tâche construit l&#8217;image et pousse l&#8217;image dans l&#8217;ACR.</p>
+</div>
+<div class="paragraph">
+<p>Cliquer sur "Save and Run".</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="tout_est_vert"><a class="anchor" href="#tout_est_vert"></a><a class="link" href="#tout_est_vert">Tout est vert&nbsp;!</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Après exécution, on peut voir que la connexion s&#8217;est bien passée ainsi que la construction de l&#8217;image et le transfert vers l&#8217;ACR&nbsp;:</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="/assets/img/2020-01-12-acr-repositories-devops/2020-01-12-pipeline-succes.png" alt="Pipeline en succès"></span>.</p>
+</div>
+<div class="paragraph">
+<p>On peut vérifier dans l&#8217;ACR le référentiel ainsi créé&nbsp;:</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="/assets/img/2020-01-12-acr-repositories-devops/2020-01-12-acr-repositories.png" alt="Référentiel de l&#8217;ACR"></span>.</p>
+</div>
+</div>
+</div></section>
+  
+<footer>
+  <div class="tags">
+    
+    <a class="tag" href="/tags#docker">#docker</a>
+    
+    <a class="tag" href="/tags#azure-devops">#azure-devops</a>
+    
+    <a class="tag" href="/tags#azure">#azure</a>
+    
+    <a class="tag" href="/tags#acr">#acr</a>
+    
+    <a class="tag" href="/tags#pipeline">#pipeline</a>
+    
+    <a class="tag" href="/tags#yaml">#yaml</a>
+    
+  </div>
+</footer>
+
+
+</article>
+
+<!-- Disqus -->
+
+
+<!-- Post navigation -->
+
+  <div id="post-nav">
+  
+  <div id="previous-post" class="post-nav-post">
+      <p>Article précédent</p>
+      <a href="/2020/01/10/acr-repositories/">
+        Utilisation des autorisations d&#8217;étendue de référentiel dans ACR
+      </a>
+  </div>
+  
+  
+  <div id="next-post" class="post-nav-post">
+      <p>Article suivant</p>
+      <a href="/2020/01/30/aci-letsencrypt-nginx/">
+        Certificat Let&#8217;s Encrypt sur Azure Container Instances et NGINX
+      </a>
+  </div>
+  
+</div>
+
+
+
+    </div>
+    
+
+
+<footer class="site-footer">
+	<nav class="site-nav">
+		<ul>
+			
+<li>
+	<a href="/feed.xml" title="Suivre sur RSS">
+		<i class="fa fa-fw fa-rss"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+	<a href="https://github.com/r3dlin3" title="Follow on GitHub">
+		<i class="fa fa-fw fa-github"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		</ul>
+	</nav>
+	<p class="text">Powered by <a href="https://jekyllrb.com/">Jekyll</a> with <i class="fa fa-heart" aria-hidden="true" style="color:Tomato"></i>
+</p>
+</footer>
+
+  </body>
+</html>

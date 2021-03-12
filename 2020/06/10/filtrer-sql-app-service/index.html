@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html class="no-js">
+  <head>
+	<meta charset="utf-8">
+	<title>Configurer automatiquement le firewall SQL/MySQL/PostgreSQL pour un App Service | A bit of everything</title>
+	<meta name="description" content="App Service et Azure SQL sont deux composants PaaS publiques. Il ne s'agit pas ici de se focaliser uniquement sur le firewall comme moyen unique de protectio...">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="/assets/css/main.css">
+
+	<!--Favicon-->
+	<link rel="shortcut icon" href="/assets/favicon.ico" type="image/x-icon">
+
+	<!-- Canonical -->
+	<link rel="canonical" href="/2020/06/10/filtrer-sql-app-service/">
+
+	<!-- RSS -->
+	<link type="application/atom+xml" rel="alternate" href="https://r3dlin3.github.io/feed.xml" title="A bit of everything" />
+	<!-- SEO -->
+	<!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Configurer automatiquement le firewall SQL/MySQL/PostgreSQL pour un App Service | A bit of everything</title>
+<meta name="generator" content="Jekyll v3.8.7" />
+<meta property="og:title" content="Configurer automatiquement le firewall SQL/MySQL/PostgreSQL pour un App Service" />
+<meta name="author" content="r3dLiN3" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="App Service et Azure SQL sont deux composants PaaS publiques. Il ne s’agit pas ici de se focaliser uniquement sur le firewall comme moyen unique de protection. Mais autant le configurer correctement pour agir comme première barrière." />
+<meta property="og:description" content="App Service et Azure SQL sont deux composants PaaS publiques. Il ne s’agit pas ici de se focaliser uniquement sur le firewall comme moyen unique de protection. Mais autant le configurer correctement pour agir comme première barrière." />
+<link rel="canonical" href="https://r3dlin3.github.io/2020/06/10/filtrer-sql-app-service/" />
+<meta property="og:url" content="https://r3dlin3.github.io/2020/06/10/filtrer-sql-app-service/" />
+<meta property="og:site_name" content="A bit of everything" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-06-10T00:00:00+00:00" />
+<script type="application/ld+json">
+{"author":{"@type":"Person","name":"r3dLiN3"},"headline":"Configurer automatiquement le firewall SQL/MySQL/PostgreSQL pour un App Service","dateModified":"2020-06-10T00:00:00+00:00","datePublished":"2020-06-10T00:00:00+00:00","description":"App Service et Azure SQL sont deux composants PaaS publiques. Il ne s’agit pas ici de se focaliser uniquement sur le firewall comme moyen unique de protection. Mais autant le configurer correctement pour agir comme première barrière.","mainEntityOfPage":{"@type":"WebPage","@id":"https://r3dlin3.github.io/2020/06/10/filtrer-sql-app-service/"},"@type":"BlogPosting","url":"https://r3dlin3.github.io/2020/06/10/filtrer-sql-app-service/","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+	<!-- Google Fonts -->
+	
+	<link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,700italic,400italic" rel="stylesheet" type="text/css">
+	
+
+	<!-- KaTeX -->
+	
+
+	<!-- Google Analytics -->
+	
+</head>
+
+  <body>
+    <header class="site-header">
+	<div class="branding">
+		
+		<a href="/">
+			<img class="avatar" src="/assets/img/avatar.png" alt="avatar"/>
+		</a>
+		
+		<h1 class="site-title">
+			<a href="/">A bit of everything</a>
+		</h1>
+	</div>
+	<nav class="site-nav">
+		<ul>
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/about/">
+					A propos
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/tags/">
+					tags
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<!-- Social icons from Font Awesome, if enabled  -->
+			
+			
+            
+            <!-- Search bar -->
+            
+		</ul>
+	</nav>
+    
+</header>
+
+    <div class="content">
+      <article >
+  <header style="background-image: url('/')">
+    <h1 class="title">Configurer automatiquement le firewall SQL/MySQL/PostgreSQL pour un App Service</h1>
+    
+    <p class="meta">
+      
+
+
+
+10
+
+juin
+  
+2020
+      
+    </p>
+  </header>
+  <section class="post-content"><div class="sect1">
+<h2 id="introduction"><a class="anchor" href="#introduction"></a><a class="link" href="#introduction">Introduction</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>App Service et Azure SQL sont deux composants PaaS publiques. Cela veut dire qu&#8217;ils disposent d&#8217;adresses IP publiques.</p>
+</div>
+<div class="paragraph">
+<p><a href="https://docs.microsoft.com/fr-fr/azure/azure-sql/database/firewall-configure">Azure SQL</a> ou <a href="https://docs.microsoft.com/fr-fr/azure/mysql/concepts-firewall-rules">Azure Database pour MySQL</a> ou <a href="https://docs.microsoft.com/en-us/azure/postgresql/concepts-firewall-rules">Azure Database pour PostgreSQL</a> dispose d&#8217;un mécanisme de firewall qui permet de filtrer les connexions entrantes.</p>
+</div>
+<div class="paragraph">
+<p>Ce firewall dispose d&#8217;une case à cocher permettant d&#8217;autoriser ou non le trafic Azure.
+Malheureusement, ce trafic Azure ne se limite pas au trafic de sa souscription.
+Ainsi n&#8217;importe quelle VM ou App service sera autorisée.</p>
+</div>
+<div class="paragraph">
+<p>Pour autant, App Service dispose d&#8217;une liste d&#8217;IP de sortie que l&#8217;on pourra utiliser pour restreindre l&#8217;accès à la base sans aller vers de l&#8217;App Service Environment.</p>
+</div>
+<div class="paragraph">
+<p>Autant il est possible de manuellement récupérer cette liste d&#8217;IP dans le portail Azure et ajouter ces IP au firewall de la base, autant on va essayer  d&#8217;automatiser au mieux la solution par l&#8217;utilisation d&#8217;ARM template.</p>
+</div>
+<div class="paragraph">
+<p>Il ne s&#8217;agit pas ici de se focaliser uniquement sur le firewall comme moyen unique de protection. Mais autant le configurer correctement pour agir comme première barrière.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="organisation_de_larm_template"><a class="anchor" href="#organisation_de_larm_template"></a><a class="link" href="#organisation_de_larm_template">Organisation de l&#8217;ARM template</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Nous allons ici utiliser le mécanisme de modèle imbriqué ou <em>nested templates</em>.
+Ainsi, la création et la configuration des ressources vont se passer en 3 étapes comme montré sur la figure ci-dessous&nbsp;</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="/assets/img/2020-06-11-arm-template.png" alt="Organisation de l&#8217;ARM template">
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="les_adresses_ip_dun_app_service"><a class="anchor" href="#les_adresses_ip_dun_app_service"></a><a class="link" href="#les_adresses_ip_dun_app_service">Les adresses IP d&#8217;un App Service</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Il est possible de récupérer les adresses IP d&#8217;un App Service et de les rendre disponible dans l'`output` de l'<em>ARM Template</em> comme suit&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="json"><span class="nl">"outputs"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"possibleOutboundIps"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"array"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[split(reference(parameters('siteName'), variables('apiVersion')).possibleOutboundIpAddresses, ',')]"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Grâce à la fonction <code>split</code>, on récupère directement un tableau des adresses IP.</p>
+</div>
+<div class="paragraph">
+<p>On peut aussi noter l&#8217;utilisation <code>possibleOutboundIpAddresses</code>, ce qui donne une liste assez large mais qui va empêcher des arrêts de service si l&#8217;App Service doit changer d&#8217;infrastructure pour une raison ou pour une autre.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="formatage_des_règles"><a class="anchor" href="#formatage_des_règles"></a><a class="link" href="#formatage_des_règles">Formatage des règles</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>La liste des IP peut être récupérer à partir du <em>template</em> parent grâce à la syntaxe suivante, avec <code>appserviceNestedDeployment</code> le nom du déploiement du <em>nested template</em> pour l&#8217;App Service&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="json"><span class="p">[</span><span class="err">reference('appserviceNestedDeployment').outputs.possibleOutboundIps.value</span><span class="p">]</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>L&#8217;objectif de l&#8217;étape de formatage va être créer un nouveau tableau d&#8217;objet prêt à l&#8217;emploi pour la dernière étape. On va donc parcourir le tableau d&#8217;IP grâce à une boucle et créer un tableau d&#8217;objet avec le nom de la règle (sur la base d&#8217;un incrément) et une des IP (<code>startIpAddress</code> et <code>endIpAddress</code> sont égaux).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="json"><span class="p">{</span><span class="w">
+    </span><span class="nl">"$schema"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"contentVersion"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1.0.0.0"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"parameters"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"inputArray"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"array"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string array of ip addresses"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"ruleNamePrefix"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"maxLength"</span><span class="p">:</span><span class="w"> </span><span class="mi">26</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"prefix to use in the name of the rule"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"variables"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"outputArray"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"copy"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"items"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"count"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[length(parameters('inputArray'))]"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"input"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"startIpAddress"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('inputArray')[copyIndex('items')]]"</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"endIpAddress"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('inputArray')[copyIndex('items')]]"</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[concat(parameters('ruleNamePrefix'), copyIndex('items'))]"</span><span class="w">
+                    </span><span class="p">}</span><span class="w">
+                </span><span class="p">}</span><span class="w">
+            </span><span class="p">]</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"resources"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w">
+    </span><span class="nl">"outputs"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"firewallRules"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[variables('outputArray').items]"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"array"</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Le tableau ainsi généré est placé dans l'<em>output</em> pour être récupérer dans l&#8217;étape finale.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="configuration_du_firewall"><a class="anchor" href="#configuration_du_firewall"></a><a class="link" href="#configuration_du_firewall">Configuration du firewall</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Dans le cas de MySQL (le cas est similaire pour Azure SQL), on va donc parcourir le tableau d&#8217;objet précédemment créé pour créer la règle de firewall.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="json"><span class="p">{</span><span class="w">
+    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[concat(parameters('mysqlServerName'),'/',parameters('firewallrules')[copyIndex()].name)]"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Microsoft.DBforMySQL/servers/firewallRules"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"apiVersion"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2017-12-01"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('location')]"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"dependsOn"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="s2">"[concat('Microsoft.DBforMySQL/servers/', parameters('mysqlServerName'))]"</span><span class="w">
+    </span><span class="p">],</span><span class="w">
+    </span><span class="nl">"copy"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"firewallRulesCopy"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"count"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[length(parameters('firewallrules'))]"</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"StartIpAddress"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('firewallrules')[copyIndex()].startIpAddress]"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"EndIpAddress"</span><span class="p">:</span><span class="w"> </span><span class="s2">"[parameters('firewallrules')[copyIndex()].endIpAddress]"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="arm_templates"><a class="anchor" href="#arm_templates"></a><a class="link" href="#arm_templates"><em>ARM templates</em></a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Cette mécanique a été utilisée pour les <em>templates</em> de <a href="https://github.com/r3dlin3/phpOIDC">phpOIDC</a>.
+On peut donc retrouver un exemple complet sur <a href="https://github.com/r3dlin3/phpOIDC/tree/master/infra/azure-win">GitHub</a>.</p>
+</div>
+<div class="paragraph">
+<p>Il existe certainement plein de façons d&#8217;arriver au même résultat.
+L&#8217;utilisation des <em>nested templates</em> permet d&#8217;assurer une certaine flexibilité.
+Ainsi, la liste des IP aurait pu être concaténée avec une autre liste, grâce à la fonction <a href="https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/template-functions-array#union"><code>union</code></a>.
+Également, cette méthode peut être conservée pour <a href="https://docs.microsoft.com/fr-fr/azure/azure-sql/database/firewall-configure">Azure SQL</a> ou <a href="https://docs.microsoft.com/fr-fr/azure/mysql/concepts-firewall-rules">Azure Database pour MySQL</a> ou <a href="https://docs.microsoft.com/en-us/azure/postgresql/concepts-firewall-rules">Azure Database pour PostgreSQL</a>.</p>
+</div>
+<div class="paragraph">
+<p>Je recommande l&#8217;utilisation du script <a href="https://github.com/r3dlin3/ARMTemplateGenerator/blob/master/deploy.ps1"><code>deploy.ps1</code></a> qui facilite grandement l&#8217;utilisation des modèles imbriqués.
+Il permet de&nbsp;:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Créer un compte de stockage s&#8217;il n&#8217;existe pas</p>
+</li>
+<li>
+<p>Copier les <em>ARM templates</em>.</p>
+</li>
+<li>
+<p>Générer un token SAS</p>
+</li>
+<li>
+<p>Déployer l&#8217;ARM</p>
+</li>
+</ol>
+</div>
+</div>
+</div></section>
+  
+<footer>
+  <div class="tags">
+    
+    <a class="tag" href="/tags#arm">#arm</a>
+    
+    <a class="tag" href="/tags#azure">#azure</a>
+    
+    <a class="tag" href="/tags#app-service">#app-service</a>
+    
+    <a class="tag" href="/tags#sql">#sql</a>
+    
+  </div>
+</footer>
+
+
+</article>
+
+<!-- Disqus -->
+
+
+<!-- Post navigation -->
+
+  <div id="post-nav">
+  
+  <div id="previous-post" class="post-nav-post">
+      <p>Article précédent</p>
+      <a href="/2020/05/29/aci-grafana-influxdb-en/">
+        Grafana and InfluxDB on Azure Container Instances
+      </a>
+  </div>
+  
+  
+  <div id="next-post" class="post-nav-post">
+      <p>Article suivant</p>
+      <a href="/2020/07/23/creer-arm-template/">
+        Trucs et astuces pour la création d&#8217;ARM template
+      </a>
+  </div>
+  
+</div>
+
+
+
+    </div>
+    
+
+
+<footer class="site-footer">
+	<nav class="site-nav">
+		<ul>
+			
+<li>
+	<a href="/feed.xml" title="Suivre sur RSS">
+		<i class="fa fa-fw fa-rss"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+	<a href="https://github.com/r3dlin3" title="Follow on GitHub">
+		<i class="fa fa-fw fa-github"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		</ul>
+	</nav>
+	<p class="text">Powered by <a href="https://jekyllrb.com/">Jekyll</a> with <i class="fa fa-heart" aria-hidden="true" style="color:Tomato"></i>
+</p>
+</footer>
+
+  </body>
+</html>

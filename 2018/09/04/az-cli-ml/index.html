@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html class="no-js">
+  <head>
+	<meta charset="utf-8">
+	<title>Gérer les certificats d&#8217;Azure CLI | A bit of everything</title>
+	<meta name="description" content="Si jamais vous avez déjà eu des soucis de certificat, avec Azure CLI, cet article est pour vous">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="/assets/css/main.css">
+
+	<!--Favicon-->
+	<link rel="shortcut icon" href="/assets/favicon.ico" type="image/x-icon">
+
+	<!-- Canonical -->
+	<link rel="canonical" href="/2018/09/04/az-cli-ml/">
+
+	<!-- RSS -->
+	<link type="application/atom+xml" rel="alternate" href="https://r3dlin3.github.io/feed.xml" title="A bit of everything" />
+	<!-- SEO -->
+	<!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Gérer les certificats d’Azure CLI | A bit of everything</title>
+<meta name="generator" content="Jekyll v3.8.7" />
+<meta property="og:title" content="Gérer les certificats d’Azure CLI" />
+<meta name="author" content="r3dLiN3" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Si jamais vous avez déjà eu des soucis de certificat, avec Azure CLI, cet article est pour vous" />
+<meta property="og:description" content="Si jamais vous avez déjà eu des soucis de certificat, avec Azure CLI, cet article est pour vous" />
+<link rel="canonical" href="https://r3dlin3.github.io/2018/09/04/az-cli-ml/" />
+<meta property="og:url" content="https://r3dlin3.github.io/2018/09/04/az-cli-ml/" />
+<meta property="og:site_name" content="A bit of everything" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2018-09-04T00:00:00+00:00" />
+<script type="application/ld+json">
+{"author":{"@type":"Person","name":"r3dLiN3"},"headline":"Gérer les certificats d’Azure CLI","dateModified":"2018-09-04T00:00:00+00:00","datePublished":"2018-09-04T00:00:00+00:00","description":"Si jamais vous avez déjà eu des soucis de certificat, avec Azure CLI, cet article est pour vous","mainEntityOfPage":{"@type":"WebPage","@id":"https://r3dlin3.github.io/2018/09/04/az-cli-ml/"},"@type":"BlogPosting","url":"https://r3dlin3.github.io/2018/09/04/az-cli-ml/","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+	<!-- Google Fonts -->
+	
+	<link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,700italic,400italic" rel="stylesheet" type="text/css">
+	
+
+	<!-- KaTeX -->
+	
+
+	<!-- Google Analytics -->
+	
+</head>
+
+  <body>
+    <header class="site-header">
+	<div class="branding">
+		
+		<a href="/">
+			<img class="avatar" src="/assets/img/avatar.png" alt="avatar"/>
+		</a>
+		
+		<h1 class="site-title">
+			<a href="/">A bit of everything</a>
+		</h1>
+	</div>
+	<nav class="site-nav">
+		<ul>
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/about/">
+					A propos
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/tags/">
+					tags
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<!-- Social icons from Font Awesome, if enabled  -->
+			
+			
+            
+            <!-- Search bar -->
+            
+		</ul>
+	</nav>
+    
+</header>
+
+    <div class="content">
+      <article >
+  <header style="background-image: url('/')">
+    <h1 class="title">Gérer les certificats d&#8217;Azure CLI</h1>
+    
+    <p class="meta">
+      
+
+
+
+4
+
+septembre
+  
+2018
+      
+    </p>
+  </header>
+  <section class="post-content"><div class="sect1">
+<h2 id="introduction"><a class="anchor" href="#introduction"></a><a class="link" href="#introduction">Introduction</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>L&#8217;outil de ligne de commande Azure CLI permet aussi de <a href="https://docs.microsoft.com/en-us/machine-learning-server/operationalize/configure-admin-cli-launch">gérer Machine Learning Server</a>.
+Cela permet notamment de :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Configurer les nœuds Web et compute</p>
+</li>
+<li>
+<p>Chiffrer les mots de passe</p>
+</li>
+<li>
+<p>Redémarrer les nœuds</p>
+</li>
+<li>
+<p>Exécuter des tests de diagnostic</p>
+</li>
+<li>
+<p>Etc.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Or, dans mon cas, le Machine Learning Server utilise un certificat émis par une autorité de certification interne.
+Cela générait l&#8217;erreur suivante :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>&gt;az login --mls --mls-endpoint https://monendpoint/
+The behavior of this command has been altered by the following extension: azure-ml-admin-cli
+Username: XXX@XXX.com
+Password:
+2018-09-04 09:05:19,307 WARNING Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'SSLError(SSLError("bad handshake: Error([('SSL routines', 'tls_process_server_certificate', 'certificate verify failed')],)",),)': //login
+2018-09-04 09:05:19,323 WARNING Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'SSLError(SSLError("bad handshake: Error([('SSL routines', 'tls_process_server_certificate', 'certificate verify failed')],)",),)': //login
+2018-09-04 09:05:19,354 WARNING Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'SSLError(SSLError("bad handshake: Error([('SSL routines', 'tls_process_server_certificate', 'certificate verify failed')],)",),)': //login
+Assert that [--mls-endpoint https://monendpoint/] is correct.
+HTTPSConnectionPool(host='monendpoint', port=443): Max retries exceeded with url: //login (Caused by SSLError(SSLError("bad handshake: Error([('SSL routines', 'tls_process_server_certificate', 'certificate verify failed')],)",),))</pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+A noter la syntaxe de la commande <code>az login</code> pour ML Server, qui est un peu différente de la <a href="https://docs.microsoft.com/en-us/machine-learning-server/operationalize/configure-run-diagnostics#test-your-configuration">doc</a>.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="résolution"><a class="anchor" href="#résolution"></a><a class="link" href="#résolution">Résolution</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Azure CLI s&#8217;appuie sur python. Malgré mes tentatives pour ajouter les variables classiques (<code>CA_BUNDLE</code>, <code>CURL_CA_BUNDLE</code>, <code>REQUESTS_CA_BUNDLE</code>, <code>SSL_CERT_FILE</code>) mais rien n&#8217;y fait : la vérification de certificat échoue lamentablement.</p>
+</div>
+<div class="paragraph">
+<p>Un peu de recherche pointe vers le projet <a href="http://python-requests.org">Requests</a>.
+Il s&#8217;appuie sur le projet sur <a href="https://pypi.org/project/certifi/">Certifi</a>.</p>
+</div>
+<div class="paragraph">
+<p>Pour s&#8217;en convaincre, il suffit de lancer python et les quelques lignes suivantes :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>cd C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2&gt;python.exe
+C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2&gt;python.exe
+Python 3.6.1 (v3.6.1:69c0db5, Mar 21 2017, 17:54:52) [MSC v.1900 32 bit (Intel)] on win32
+Type "help", "copyright", "credits" or "license" for more information.
+&gt;&gt;&gt; import requests.adapters
+&gt;&gt;&gt; print(requests.adapters.DEFAULT_CA_BUNDLE_PATH)
+C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\lib\site-packages\certifi\cacert.pem</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Il ne reste plus qu&#8217;à éditer <code>C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\lib\site-packages\certifi\cacert.pem</code>.
+A noter qu&#8217;il faut <em>ajouter</em> ses autorités de certification au fichier et ne pas remplacer le contenu.</p>
+</div>
+</div>
+</div></section>
+  
+<footer>
+  <div class="tags">
+    
+    <a class="tag" href="/tags#azure">#azure</a>
+    
+    <a class="tag" href="/tags#windows">#windows</a>
+    
+    <a class="tag" href="/tags#az-cli">#az-cli</a>
+    
+  </div>
+</footer>
+
+
+</article>
+
+<!-- Disqus -->
+
+
+<!-- Post navigation -->
+
+  <div id="post-nav">
+  
+  <div id="previous-post" class="post-nav-post">
+      <p>Article précédent</p>
+      <a href="/2018/07/11/maj-powershell-azurerm/">
+        Astuce du jour : mettre à jour tous ses modules AzureRm
+      </a>
+  </div>
+  
+  
+  <div id="next-post" class="post-nav-post">
+      <p>Article suivant</p>
+      <a href="/2018/11/27/trucs-powershell/">
+        Quelques trucs et astuces PowerShell
+      </a>
+  </div>
+  
+</div>
+
+
+
+    </div>
+    
+
+
+<footer class="site-footer">
+	<nav class="site-nav">
+		<ul>
+			
+<li>
+	<a href="/feed.xml" title="Suivre sur RSS">
+		<i class="fa fa-fw fa-rss"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+	<a href="https://github.com/r3dlin3" title="Follow on GitHub">
+		<i class="fa fa-fw fa-github"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		</ul>
+	</nav>
+	<p class="text">Powered by <a href="https://jekyllrb.com/">Jekyll</a> with <i class="fa fa-heart" aria-hidden="true" style="color:Tomato"></i>
+</p>
+</footer>
+
+  </body>
+</html>

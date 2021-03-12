@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html class="no-js">
+  <head>
+	<meta charset="utf-8">
+	<title>PHP sur Azure App Service : Windows ou Linux ? | A bit of everything</title>
+	<meta name="description" content="PHP est supporté sur App Service. Mais je me suis toujours demandé s'il était préférable d'utiliser un App Service sous Windows ou sous Linux. Voici les résu...">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="/assets/css/main.css">
+
+	<!--Favicon-->
+	<link rel="shortcut icon" href="/assets/favicon.ico" type="image/x-icon">
+
+	<!-- Canonical -->
+	<link rel="canonical" href="/2020/12/21/php-app-service/">
+
+	<!-- RSS -->
+	<link type="application/atom+xml" rel="alternate" href="https://r3dlin3.github.io/feed.xml" title="A bit of everything" />
+	<!-- SEO -->
+	<!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>PHP sur Azure App Service : Windows ou Linux ? | A bit of everything</title>
+<meta name="generator" content="Jekyll v3.8.7" />
+<meta property="og:title" content="PHP sur Azure App Service : Windows ou Linux ?" />
+<meta name="author" content="r3dLiN3" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="PHP est supporté sur App Service. Mais je me suis toujours demandé s’il était préférable d’utiliser un App Service sous Windows ou sous Linux. Voici les résultats de ma comparaison." />
+<meta property="og:description" content="PHP est supporté sur App Service. Mais je me suis toujours demandé s’il était préférable d’utiliser un App Service sous Windows ou sous Linux. Voici les résultats de ma comparaison." />
+<link rel="canonical" href="https://r3dlin3.github.io/2020/12/21/php-app-service/" />
+<meta property="og:url" content="https://r3dlin3.github.io/2020/12/21/php-app-service/" />
+<meta property="og:site_name" content="A bit of everything" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-12-21T00:00:00+00:00" />
+<script type="application/ld+json">
+{"author":{"@type":"Person","name":"r3dLiN3"},"headline":"PHP sur Azure App Service : Windows ou Linux ?","dateModified":"2020-12-21T00:00:00+00:00","datePublished":"2020-12-21T00:00:00+00:00","description":"PHP est supporté sur App Service. Mais je me suis toujours demandé s’il était préférable d’utiliser un App Service sous Windows ou sous Linux. Voici les résultats de ma comparaison.","mainEntityOfPage":{"@type":"WebPage","@id":"https://r3dlin3.github.io/2020/12/21/php-app-service/"},"@type":"BlogPosting","url":"https://r3dlin3.github.io/2020/12/21/php-app-service/","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+	<!-- Google Fonts -->
+	
+	<link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,700italic,400italic" rel="stylesheet" type="text/css">
+	
+
+	<!-- KaTeX -->
+	
+
+	<!-- Google Analytics -->
+	
+</head>
+
+  <body>
+    <header class="site-header">
+	<div class="branding">
+		
+		<a href="/">
+			<img class="avatar" src="/assets/img/avatar.png" alt="avatar"/>
+		</a>
+		
+		<h1 class="site-title">
+			<a href="/">A bit of everything</a>
+		</h1>
+	</div>
+	<nav class="site-nav">
+		<ul>
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/about/">
+					A propos
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/tags/">
+					tags
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<!-- Social icons from Font Awesome, if enabled  -->
+			
+			
+            
+            <!-- Search bar -->
+            
+		</ul>
+	</nav>
+    
+</header>
+
+    <div class="content">
+      <article >
+  <header style="background-image: url('/')">
+    <h1 class="title">PHP sur Azure App Service : Windows ou Linux ?</h1>
+    
+    <p class="meta">
+      
+
+
+
+21
+
+décembre
+
+2020
+      
+    </p>
+  </header>
+  <section class="post-content"><div class="sect1">
+<h2 id="introduction"><a class="anchor" href="#introduction"></a><a class="link" href="#introduction">Introduction</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>PHP est supporté sur App Service. Bien avant l&#8217;avènement des App Services sous Linux, il était possible de faire tourner un Wordpress sur un App Service Windows.</p>
+</div>
+<div class="paragraph">
+<p>App Service sur Linux permet de faire tourner son application parmi les piles d&#8217;application supportées ou faire tourner son propre container.</p>
+</div>
+<div class="paragraph">
+<p>Pour mes tests, j&#8217;ai utilisé <a href="https://github.com/r3dlin3/phpOIDC/">phpOIDC</a> comme base de référence et <a href="https://locust.io/">Locust</a> comme injecteur.</p>
+</div>
+<div class="paragraph">
+<p>Le scénario de test comprend&nbsp;:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>L&#8217;interrogation de l&#8217;URL de métadonnées</p>
+</li>
+<li>
+<p>L&#8217;interrogation de l&#8217;URL de webfinger</p>
+</li>
+<li>
+<p>L&#8217;authentification et la récupération d&#8217;un token</p>
+</li>
+<li>
+<p>La récupération des informations de l&#8217;utilisateur (<em>userinfo</em>)</p>
+</li>
+<li>
+<p>La validation du jeton</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="windows"><a class="anchor" href="#windows"></a><a class="link" href="#windows">Windows</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Les graphiques suivants présentent les résultats pour un App Service plan B1 sous Windows.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="https://r3dlin3.github.io/assets/img/2020-12-21-php-app-service/win/B1/number_of_users_1597081204.png" alt="Nombre d&#8217;utilisateurs">
+</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="https://r3dlin3.github.io/assets/img/2020-12-21-php-app-service/win/B1/response_times_1597081204.png" alt="temps de réponse">
+</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="https://r3dlin3.github.io/assets/img/2020-12-21-php-app-service/win/B1/total_requests_per_second_1597081204.png" alt="Nombre de requêtes par seconde">
+</div>
+</div>
+<div class="paragraph">
+<p>Le nombre de requêtes est relativement erratique&#8201;&#8212;&#8201;entre 2 et 6 requêtes/s&#8201;&#8212;&#8201;avec une moyenne d&#8217;environ 3 requêtes/s.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="linux"><a class="anchor" href="#linux"></a><a class="link" href="#linux">Linux</a></h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="plan_b1"><a class="anchor" href="#plan_b1"></a><a class="link" href="#plan_b1">Plan B1</a></h3>
+<div class="paragraph">
+<p>Les graphiques suivants présentent les résultats pour un App Service plan B1 sous Linux.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="https://r3dlin3.github.io/assets/img/2020-12-21-php-app-service/lin/B1/number_of_users_1597086026.png" alt="Nombre d&#8217;utilisateurs">
+</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="https://r3dlin3.github.io/assets/img/2020-12-21-php-app-service/lin/B1/response_times_1597086026.png" alt="temps de réponse">
+</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="https://r3dlin3.github.io/assets/img/2020-12-21-php-app-service/lin/B1/total_requests_per_second_1597086026.png" alt="Nombre de requêtes par seconde">
+</div>
+</div>
+<div class="paragraph">
+<p>Le nombre de requêtes est relativement plus stable que pour Windows avec une moyenne d&#8217;environ 3 requêtes/s.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="plan_b3"><a class="anchor" href="#plan_b3"></a><a class="link" href="#plan_b3">Plan B3.</a></h3>
+<div class="paragraph">
+<p>Au moment de la rédaction de cet article, les plans Linux sont beaucoup moins cher que Windows.
+Ainsi en décembre 2020 pour France Central&nbsp;:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">OS</th>
+<th class="tableblock halign-left valign-top">Taille</th>
+<th class="tableblock halign-left valign-top">Cores</th>
+<th class="tableblock halign-left valign-top">Mémoire</th>
+<th class="tableblock halign-left valign-top">Prix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Windows</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">B1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1,75 GB</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">~€57.868/mois</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Linux</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">B1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1,75 GB</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">~€11.081/mois</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Linux</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">B3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">7 GB</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">~€43.093/mois</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>On voit ainsi que l&#8217;on peut avoir beaucoup plus de ressources avec un plan Linux B3 qu&#8217;un plan Windows B1.</p>
+</div>
+<div class="paragraph">
+<p>Comparons ce qui est comparable et voyons les résultats pour un plan Linux B3&nbsp;:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="https://r3dlin3.github.io/assets/img/2020-12-21-php-app-service/lin/B3/number_of_users_1597086533.png" alt="Nombre d&#8217;utilisateurs">
+</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="https://r3dlin3.github.io/assets/img/2020-12-21-php-app-service/lin/B3/response_times_1597086533.png" alt="temps de réponse">
+</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="https://r3dlin3.github.io/assets/img/2020-12-21-php-app-service/lin/B3/total_requests_per_second_1597086533.png" alt="Nombre de requêtes par seconde">
+</div>
+</div>
+<div class="paragraph">
+<p>Cette fois-ci, avec un peu de stress, on arrive à 12 requêtes par secondes.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="opcache_à_la_rescousse"><a class="anchor" href="#opcache_à_la_rescousse"></a><a class="link" href="#opcache_à_la_rescousse">OPcache à la rescousse</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>OPcache améliore les performances de PHP en stockant le bytecode des
+scripts précompilés en mémoire partagée, faisant ainsi qu&#8217;il n&#8217;est
+plus nécessaire à PHP de charger et d&#8217;analyser les scripts à chaque
+demande.
+Il est inclus par défaut depuis PHP 5.5.</p>
+</div>
+<div class="paragraph">
+<p>Les graphiques suivants présentent les résultats pour un App Service plan B1 sous Linux avec OPcache activé dans l&#8217;image Docker&nbsp;:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="https://r3dlin3.github.io/assets/img/2020-12-21-php-app-service/lin-opcache/B1/number_of_users_1602237945.png" alt="Nombre d&#8217;utilisateurs">
+</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="https://r3dlin3.github.io/assets/img/2020-12-21-php-app-service/lin-opcache/B1/response_times_1602237945.png" alt="temps de réponse">
+</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="https://r3dlin3.github.io/assets/img/2020-12-21-php-app-service/lin-opcache/B1/total_requests_per_second_1602237945.png" alt="Nombre de requêtes par seconde">
+</div>
+</div>
+<div class="paragraph">
+<p>Le nombre de requêtes est relativement erratique&#8201;&#8212;&#8201;entre 6 et 10 requêtes/s&#8201;&#8212;&#8201;avec une moyenne d&#8217;environ 8 requêtes/s.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="conclusion"><a class="anchor" href="#conclusion"></a><a class="link" href="#conclusion">Conclusion</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Les tests de performance de <a href="https://github.com/r3dlin3/phpOIDC/">phpOIDC</a> n&#8217;ont pas du tout été impressionnant (sic.).</p>
+</div>
+<div class="paragraph">
+<p>Je n&#8217;ai pas joué avec le cache local sur <a href="https://docs.microsoft.com/fr-fr/azure/app-service/overview-local-cache">App Service sur Windows</a>.
+C&#8217;est une option intéressante en termes de performance.</p>
+</div>
+<div class="paragraph">
+<p>Cela étant, on a pu voir qu&#8217;à prix équivalent, il est préférable d&#8217;utiliser un plan Linux.
+L&#8217;utilisation d&#8217;OPcache permet également de grandement améliorer les performances. Seule une image personnalisée permet d&#8217;avoir OPcache activé, donc un plan Linux.</p>
+</div>
+<div class="paragraph">
+<p>Il n&#8217;existe pas de réponse absolue quand on parle de tests de performance&nbsp;: Cela dépend fortement de l&#8217;application, des accès en lecture/écriture, etc.
+On peut voir que l&#8217;utilisation de plan sur Linux permet d&#8217;être plus efficace et devrait être favorisé.</p>
+</div>
+</div>
+</div></section>
+  
+<footer>
+  <div class="tags">
+    
+    <a class="tag" href="/tags#azure">#azure</a>
+    
+    <a class="tag" href="/tags#php">#php</a>
+    
+    <a class="tag" href="/tags#app-service">#app-service</a>
+    
+  </div>
+</footer>
+
+
+</article>
+
+<!-- Disqus -->
+
+
+<!-- Post navigation -->
+
+  <div id="post-nav">
+  
+  <div id="previous-post" class="post-nav-post">
+      <p>Article précédent</p>
+      <a href="/2020/09/24/azure-cli-powershell/">
+        Transformer des commandes Bash Azure CLI pour PowerShell
+      </a>
+  </div>
+  
+  
+  <div id="next-post" class="post-nav-post">
+      <p>Article suivant</p>
+      <a href="/2021/01/05/logic-app-azure-media-services/">
+        Logic App, API Azure et Media Services
+      </a>
+  </div>
+  
+</div>
+
+
+
+    </div>
+    
+
+
+<footer class="site-footer">
+	<nav class="site-nav">
+		<ul>
+			
+<li>
+	<a href="/feed.xml" title="Suivre sur RSS">
+		<i class="fa fa-fw fa-rss"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+	<a href="https://github.com/r3dlin3" title="Follow on GitHub">
+		<i class="fa fa-fw fa-github"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		</ul>
+	</nav>
+	<p class="text">Powered by <a href="https://jekyllrb.com/">Jekyll</a> with <i class="fa fa-heart" aria-hidden="true" style="color:Tomato"></i>
+</p>
+</footer>
+
+  </body>
+</html>

@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html class="no-js">
+  <head>
+	<meta charset="utf-8">
+	<title>SonarQube sur App Service | A bit of everything</title>
+	<meta name="description" content="Faire tourner SonarQube dans Azure sur App Service en utilisant une image Docker">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="/assets/css/main.css">
+
+	<!--Favicon-->
+	<link rel="shortcut icon" href="/assets/favicon.ico" type="image/x-icon">
+
+	<!-- Canonical -->
+	<link rel="canonical" href="/2020/01/01/sonarqube-app-service/">
+
+	<!-- RSS -->
+	<link type="application/atom+xml" rel="alternate" href="https://r3dlin3.github.io/feed.xml" title="A bit of everything" />
+	<!-- SEO -->
+	<!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>SonarQube sur App Service | A bit of everything</title>
+<meta name="generator" content="Jekyll v3.8.7" />
+<meta property="og:title" content="SonarQube sur App Service" />
+<meta name="author" content="r3dLiN3" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Faire tourner SonarQube dans Azure sur App Service en utilisant une image Docker" />
+<meta property="og:description" content="Faire tourner SonarQube dans Azure sur App Service en utilisant une image Docker" />
+<link rel="canonical" href="https://r3dlin3.github.io/2020/01/01/sonarqube-app-service/" />
+<meta property="og:url" content="https://r3dlin3.github.io/2020/01/01/sonarqube-app-service/" />
+<meta property="og:site_name" content="A bit of everything" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-01-01T00:00:00+00:00" />
+<script type="application/ld+json">
+{"author":{"@type":"Person","name":"r3dLiN3"},"headline":"SonarQube sur App Service","dateModified":"2020-01-01T00:00:00+00:00","datePublished":"2020-01-01T00:00:00+00:00","description":"Faire tourner SonarQube dans Azure sur App Service en utilisant une image Docker","mainEntityOfPage":{"@type":"WebPage","@id":"https://r3dlin3.github.io/2020/01/01/sonarqube-app-service/"},"@type":"BlogPosting","url":"https://r3dlin3.github.io/2020/01/01/sonarqube-app-service/","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+	<!-- Google Fonts -->
+	
+	<link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,700italic,400italic" rel="stylesheet" type="text/css">
+	
+
+	<!-- KaTeX -->
+	
+
+	<!-- Google Analytics -->
+	
+</head>
+
+  <body>
+    <header class="site-header">
+	<div class="branding">
+		
+		<a href="/">
+			<img class="avatar" src="/assets/img/avatar.png" alt="avatar"/>
+		</a>
+		
+		<h1 class="site-title">
+			<a href="/">A bit of everything</a>
+		</h1>
+	</div>
+	<nav class="site-nav">
+		<ul>
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/about/">
+					A propos
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/tags/">
+					tags
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<!-- Social icons from Font Awesome, if enabled  -->
+			
+			
+            
+            <!-- Search bar -->
+            
+		</ul>
+	</nav>
+    
+</header>
+
+    <div class="content">
+      <article >
+  <header style="background-image: url('/')">
+    <h1 class="title">SonarQube sur App Service</h1>
+    
+    <p class="meta">
+      
+
+
+
+1er
+
+janvier
+  
+2020
+      
+    </p>
+  </header>
+  <section class="post-content"><div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="/2019/12/30/sonarqube-docker-windows/">SonarQube sur son poste</a>, c&#8217;est top&nbsp;!
+Mais il peut être nécessaire de le rendre accessible depuis Internet, depuis Azure DevOps ou simplement partager l&#8217;instance entre plusieurs personnes et plusieurs projets.</p>
+</div>
+<div class="paragraph">
+<p>Il existe différentes stratégies pour héberger SonarQube sur Azure et le rendre accessible&nbsp;:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/RazorSPoint/SonarQubeAsAService">Utiliser App Service et le tomcat intégré</a></p>
+</li>
+<li>
+<p>Héberger SonarQube sur une machine virtuelle</p>
+</li>
+<li>
+<p>etc.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>J&#8217;ai choisi ici d&#8217;utiliser Docker pour les raisons déjà évoquées&nbsp;:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Simplicité&nbsp;: en utilisant l&#8217;image officielle de Docker, on peut démarrer sans passer de temps à installer le logiciel</p>
+</li>
+<li>
+<p>Portabilité&nbsp;: je peux utiliser le même genre de configuration sur mon poste ou dans Azure</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Il n&#8217;existe pas moins de 6 façons d&#8217;exécuter Docker dans Azure. J&#8217;ai donc retenu d&#8217;utiliser App Service dont les coûts pour un App Service Plan Linux ont diminué. Ainsi, nous allons pouvoir faire tourner App Service sur une instance B2 à ~€21.547/mois (offre promotionnelle visiblement).</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Azure Container Instance nous permettrait de régler plus finement la mémoire et le CPU alloués ainsi que d&#8217;arrêter le container au besoin mais App Service intègre une connexion HTTPS par défaut avec un certificat reconnu, ce qui particulièrement intéressant pour des raisons de sécurité évidentes.
+</td>
+</tr>
+</table>
+</div>
+<div id="toc" class="toc">
+<div id="toctitle" class="title">Table des matières</div>
+<ul class="sectlevel1">
+<li><a href="#architecture">Architecture</a></li>
+<li><a href="#version_simple">Version simple</a></li>
+<li><a href="#docker_compose">Docker Compose</a>
+<ul class="sectlevel2">
+<li><a href="#image_docker">Image Docker</a></li>
+<li><a href="#construction_de_limage">Construction de l&#8217;image</a></li>
+<li><a href="#préparation_du_docker_compose">Préparation du Docker Compose</a></li>
+<li><a href="#création_de_lapp_service_avec_docker_compose">Création de l&#8217;App Service avec Docker Compose</a></li>
+</ul>
+</li>
+<li><a href="#accès_ssh">Accès SSH</a></li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="architecture"><a class="anchor" href="#architecture"></a><a class="link" href="#architecture">Architecture</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>L&#8217;architecture se composera simplement de&nbsp;:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Un App Service Plan Linux</p>
+</li>
+<li>
+<p>Un App Service s&#8217;appuyant sur une image Docker</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Pas de base de données externe.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="version_simple"><a class="anchor" href="#version_simple"></a><a class="link" href="#version_simple">Version simple</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Dans un premier temps, nous allons procéder à la création d&#8217;un container sur la base de <a href="https://hub.docker.com/_/sonarqube">l&#8217;image officielle</a> seule.
+Pour ce faire, ouvrir un prompt PowerShell et exécuter les commandes AZ CLI suivantes&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="c"># Variables à adapter</span><span class="w">
+</span><span class="nv">$rg</span><span class="o">=</span><span class="s2">"&lt;resource-group-name&gt;"</span><span class="w"> </span><span class="c"># Nom du groupe de ressources</span><span class="w">
+</span><span class="nv">$ASP</span><span class="o">=</span><span class="s2">"&lt;app-service-plan&gt;"</span><span class="w"> </span><span class="c"># Nom de l'App Service Plan</span><span class="w">
+</span><span class="nv">$appName</span><span class="o">=</span><span class="s2">"&lt;app-name&gt;"</span><span class="w"> </span><span class="c"># Nom de l'App Service (va déterminer l'URL d'accès)</span><span class="w">
+
+</span><span class="c"># Création du groupe de ressources. La localisation est à adapter. Ici "France Central"</span><span class="w">
+</span><span class="n">az</span><span class="w"> </span><span class="nx">group</span><span class="w"> </span><span class="nx">create</span><span class="w"> </span><span class="nt">--location</span><span class="w"> </span><span class="s2">"France Central"</span><span class="w"> </span><span class="nt">--name</span><span class="w"> </span><span class="nv">$rg</span><span class="w">
+
+</span><span class="c">#Création de l'App Service Plan.</span><span class="w">
+</span><span class="n">az</span><span class="w"> </span><span class="nx">appservice</span><span class="w"> </span><span class="nx">plan</span><span class="w"> </span><span class="nx">create</span><span class="w"> </span><span class="nt">--name</span><span class="w"> </span><span class="nv">$ASP</span><span class="w"> </span><span class="nt">--resource-group</span><span class="w"> </span><span class="nv">$rg</span><span class="w"> </span><span class="nt">--sku</span><span class="w"> </span><span class="nx">B2</span><span class="w"> </span><span class="nt">--is-linux</span><span class="w">
+
+</span><span class="c"># Création de L'App Service sur la base de l'image officielle</span><span class="w">
+</span><span class="n">az</span><span class="w"> </span><span class="nx">webapp</span><span class="w"> </span><span class="nx">create</span><span class="w"> </span><span class="nt">--resource-group</span><span class="w"> </span><span class="nv">$rg</span><span class="w"> </span><span class="nt">--plan</span><span class="w"> </span><span class="nv">$ASP</span><span class="w"> </span><span class="nt">--name</span><span class="w"> </span><span class="nv">$appName</span><span class="w"> </span><span class="nt">--deployment-container-image-name</span><span class="w"> </span><span class="nx">sonarqube:8.1-community-beta</span><span class="w">
+
+</span><span class="c"># Publication du port 9000</span><span class="w">
+</span><span class="n">az</span><span class="w"> </span><span class="nx">webapp</span><span class="w"> </span><span class="nx">config</span><span class="w"> </span><span class="nx">appsettings</span><span class="w"> </span><span class="nx">set</span><span class="w">  </span><span class="nt">--resource-group</span><span class="w"> </span><span class="nv">$rg</span><span class="w"> </span><span class="nt">--name</span><span class="w"> </span><span class="nv">$appName</span><span class="w"> </span><span class="nt">--settings</span><span class="w"> </span><span class="nx">WEBSITES_PORT</span><span class="o">=</span><span class="mi">9000</span><span class="w">
+
+</span><span class="c"># Configuration du stockage permanent</span><span class="w">
+</span><span class="n">az</span><span class="w"> </span><span class="nx">webapp</span><span class="w"> </span><span class="nx">config</span><span class="w"> </span><span class="nx">appsettings</span><span class="w"> </span><span class="nx">set</span><span class="w"> </span><span class="nt">--resource-group</span><span class="w"> </span><span class="nv">$rg</span><span class="w"> </span><span class="nt">--name</span><span class="w"> </span><span class="nv">$appName</span><span class="w"> </span><span class="nt">--settings</span><span class="w"> </span><span class="nx">WEBSITES_ENABLE_APP_SERVICE_STORAGE</span><span class="o">=</span><span class="n">true</span><span class="w">
+
+</span><span class="c"># Configuration des logs</span><span class="w">
+</span><span class="n">az</span><span class="w"> </span><span class="nx">webapp</span><span class="w"> </span><span class="nx">log</span><span class="w"> </span><span class="nx">config</span><span class="w"> </span><span class="nt">--resource-group</span><span class="w"> </span><span class="nv">$rg</span><span class="w"> </span><span class="nt">--name</span><span class="w"> </span><span class="nv">$appName</span><span class="w"> </span><span class="nt">--docker-container-logging</span><span class="w"> </span><span class="nx">filesystem</span><span class="w">
+
+</span><span class="c"># Petit redémarrage</span><span class="w">
+</span><span class="n">az</span><span class="w"> </span><span class="nx">webapp</span><span class="w"> </span><span class="nx">restart</span><span class="w"> </span><span class="nt">--resource-group</span><span class="w"> </span><span class="nv">$rg</span><span class="w"> </span><span class="nt">--name</span><span class="w"> </span><span class="nv">$appName</span><span class="w">
+
+</span><span class="c"># Accès à SonarQube</span><span class="w">
+</span><span class="n">start</span><span class="w"> </span><span class="s2">"https://</span><span class="nv">$appName</span><span class="s2">.azurewebsites.net"</span><span class="w">
+
+</span><span class="c"># Récupération des logs</span><span class="w">
+</span><span class="n">az</span><span class="w"> </span><span class="nx">webapp</span><span class="w"> </span><span class="nx">log</span><span class="w"> </span><span class="nx">tail</span><span class="w"> </span><span class="nt">--resource-group</span><span class="w"> </span><span class="nv">$rg</span><span class="w"> </span><span class="nt">--name</span><span class="w"> </span><span class="nv">$appName</span></code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Sans l&#8217;accès à l&#8217;URL, le déploiement de l&#8217;image ne semble pas se faire
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+Le premier démarrage, incluant le téléchargement de l&#8217;image est assez long.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="docker_compose"><a class="anchor" href="#docker_compose"></a><a class="link" href="#docker_compose">Docker Compose</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Le support de Docker Compose est encore en preview mais il permet de&nbsp;:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Contrôler les variables d&#8217;environnements</p>
+</li>
+<li>
+<p>Déclarer des volumes</p>
+</li>
+<li>
+<p>Ajouter une base de données externe telle que postgre</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Malheureusement, plusieurs problèmes se sont posés, nécessitant la création d&#8217;une image personnalisée (mais héritée de l&#8217;image officielle).
+L&#8217;utilisation d&#8217;une image personnalisée a pu apporter le support de <a href="https://docs.microsoft.com/fr-fr/azure/app-service/containers/configure-custom-container#enable-ssh">SSH</a> dans App Service.</p>
+</div>
+<div class="paragraph">
+<p>Les problèmes étaient, par ordre d&#8217;apparition&nbsp;:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Erreur "max virtual memory areas vm.max_map_count [65530] is too low, increase to at least [262144]". C&#8217;est erreur est remontée par Elastic Search.
+Sachant qu&#8217;il n&#8217;est pas possible de modifier cette valeur sur un App Service, plusieurs solutions sont possibles&nbsp;:</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p>Modifier les paramètres d&#8217;Elastic Search (cf. <a href="https://jira.sonarsource.com/browse/SONAR-12264" class="bare">https://jira.sonarsource.com/browse/SONAR-12264</a>)</p>
+</li>
+<li>
+<p>Empêcher SonarQube de forcer la vérification. <a href="https://github.com/SonarSource/sonarqube/blob/8.1.0.31237/server/sonar-main/src/main/java/org/sonar/application/command/EsJvmOptions.java#L114">Cette vérification est forcée</a> lorsqu&#8217;une base autre que H2 est utilisée.</p>
+</li>
+</ol>
+</div>
+</li>
+<li>
+<p>App Service remplace les "." des variables d&#8217;environnement par des "_", ce qui ne m&#8217;a pas permis de facilement surchargé les paramètres de SonarQube</p>
+</li>
+<li>
+<p>Le container s&#8217;exécute en tant que l&#8217;utilisateur "sonarqube" par défaut, ce qui est une bonne chose d&#8217;un point de vue sécurité, mais ce qui ne permet pas de démarrer le service SSH simplement</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Le projet est disponible sur <a href="https://github.com/r3dlin3/sonarqube-on-azure/">GitHub</a></p>
+</div>
+<div class="paragraph">
+<p>Commençons donc par la création d&#8217;une image Docker.</p>
+</div>
+<div class="sect2">
+<h3 id="image_docker"><a class="anchor" href="#image_docker"></a><a class="link" href="#image_docker">Image Docker</a></h3>
+<div class="paragraph">
+<p>L&#8217;image est préparée à partir de l&#8217;image officielle <code>sonarqube:8.1-community-beta</code>.</p>
+</div>
+<div class="listingblock">
+<div class="title">Dockerfile</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="dockerfile"><span class="k">FROM</span><span class="s"> sonarqube:8.1-community-beta</span>
+
+<span class="c"># ssh</span>
+<span class="k">ENV</span><span class="s"> SSH_PASSWD "root:Docker!"</span>
+<span class="k">USER</span><span class="s"> root</span>
+<span class="k">RUN </span>apt-get update <span class="se">\
+</span>     <span class="o">&amp;&amp;</span> apt-get <span class="nb">install</span> <span class="nt">-y</span> openssh-server dialog <span class="nt">--no-install-recommends</span> <span class="se">\
+</span>     <span class="o">&amp;&amp;</span> <span class="nb">rm</span> <span class="nt">-rf</span> /var/lib/apt/lists/<span class="k">*</span> <span class="se">\
+</span>     <span class="o">&amp;&amp;</span> <span class="nb">echo</span> <span class="s2">"</span><span class="nv">$SSH_PASSWD</span><span class="s2">"</span> | chpasswd
+<span class="k">ADD</span><span class="s"> sshd_config /etc/ssh/</span>
+<span class="k">EXPOSE</span><span class="s"> 9000 2222</span>
+
+<span class="k">COPY</span><span class="s"> --chown=sonarqube:sonarqube run.sh "$SONARQUBE_HOME/bin/"</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Il consiste en&nbsp;:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Devenir root pour pouvoir installer le serveur OpenSSH et exécuter le container en tant que root</p>
+</li>
+<li>
+<p>Personnaliser la configuration d&#8217;OpenSSH à partir d&#8217;un <a href="https://github.com/Azure-App-Service/node/blob/master/10.14/sshd_config">fichier d&#8217;exemple</a></p>
+</li>
+<li>
+<p>Définir le mot de passe de root</p>
+</li>
+<li>
+<p>Modifier la directive <code>EXPOSE</code> pour exposer le serveur OpenSSH en plus de SonarQube</p>
+</li>
+<li>
+<p>La copie du fichier personnalisé <code>run.sh</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Le fichier <code>run.sh</code> reprend quasiment entièrement le <a href="https://github.com/SonarSource/docker-sonarqube/blob/master/8/community/run.sh">fichier</a> de l&#8217;image officielle, à quelques détails près.</p>
+</div>
+<div class="listingblock">
+<div class="title">run.sh</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="bash"><span class="k">while </span><span class="nv">IFS</span><span class="o">=</span><span class="s1">'='</span> <span class="nb">read</span> <span class="nt">-r</span> envvar_key envvar_value
+<span class="k">do
+    if</span> <span class="o">[[</span> <span class="s2">"</span><span class="nv">$envvar_key</span><span class="s2">"</span> <span class="o">=</span>~ sonar.<span class="k">*</span> <span class="o">]]</span> <span class="o">||</span> <span class="o">[[</span> <span class="s2">"</span><span class="nv">$envvar_key</span><span class="s2">"</span> <span class="o">=</span>~ ldap.<span class="k">*</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then
+        </span>sq_opts+<span class="o">=(</span><span class="s2">"-D</span><span class="k">${</span><span class="nv">envvar_key</span><span class="k">}</span><span class="s2">=</span><span class="k">${</span><span class="nv">envvar_value</span><span class="k">}</span><span class="s2">"</span><span class="o">)</span>
+    <span class="k">fi
+    if</span> <span class="o">[[</span> <span class="s2">"</span><span class="nv">$envvar_key</span><span class="s2">"</span> <span class="o">=</span>~ sonar_<span class="k">*</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
+        <span class="c"># Replacing '_' by '.'</span>
+        <span class="nv">envvar_key</span><span class="o">=</span><span class="s2">"</span><span class="si">$(</span><span class="nb">sed </span>s/_/./g <span class="o">&lt;&lt;&lt;</span><span class="nv">$envvar_key</span><span class="si">)</span><span class="s2">"</span>
+        sq_opts+<span class="o">=(</span><span class="s2">"-D</span><span class="k">${</span><span class="nv">envvar_key</span><span class="k">}</span><span class="s2">=</span><span class="k">${</span><span class="nv">envvar_value</span><span class="k">}</span><span class="s2">"</span><span class="o">)</span>
+    <span class="k">fi
+done</span> &lt; &lt;<span class="o">(</span><span class="nb">env</span><span class="o">)</span>
+...
+<span class="k">if</span> <span class="o">[</span> <span class="s2">"</span><span class="nv">$init_only</span><span class="s2">"</span> <span class="o">=</span> <span class="nb">false</span> <span class="o">]</span><span class="p">;</span> <span class="k">then
+  </span><span class="nb">echo</span> <span class="s2">"Starting SSH ..."</span>
+  service ssh start
+  su sonarqube <span class="nt">-c</span> <span class="s1">'java -jar "lib/sonar-application-$SONAR_VERSION.jar" -Dsonar.log.console=true "$@"'</span> <span class="nt">--</span> <span class="s2">"run.sh"</span> <span class="s2">"</span><span class="k">${</span><span class="nv">sq_opts</span><span class="p">[@]</span><span class="k">}</span><span class="s2">"</span> <span class="s2">"</span><span class="nv">$@</span><span class="s2">"</span>
+<span class="k">fi</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>La première partie se charge de restaurer le "." sur les variables d&#8217;environnement.</p>
+</div>
+<div class="paragraph">
+<p>La deuxième partie se charge de&nbsp;:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Démarrer le service SSH</p>
+</li>
+<li>
+<p>Exécuter SonarQube en tant qu&#8217;utilisateur sonarqube. En effet, Elastic Search ne démarre pas s&#8217;il est exécuté en tant que root. Peut-être existait-il un flag à chercher au fin fond d&#8217;une doc mais cela semblait une bonne pratique de ne pas l&#8217;exécuter en tant que root.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="construction_de_limage"><a class="anchor" href="#construction_de_limage"></a><a class="link" href="#construction_de_limage">Construction de l&#8217;image</a></h3>
+<div class="paragraph">
+<p>L&#8217;image va être construite et poussée sur un Azure Container Registry.</p>
+</div>
+<div class="paragraph">
+<p>Pour ce faire, dans un prompt PowerShell&nbsp;:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Création d&#8217;un Azure Container Registry</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="nv">$acr</span><span class="o">=</span><span class="s2">"myregistry"</span><span class="w">
+</span><span class="nv">$rg</span><span class="o">=</span><span class="s2">"&lt;resource-group-name&gt;"</span><span class="w">
+</span><span class="n">az</span><span class="w"> </span><span class="nx">acr</span><span class="w"> </span><span class="nx">create</span><span class="w"> </span><span class="nt">-n</span><span class="w"> </span><span class="nv">$acr</span><span class="w"> </span><span class="nt">-g</span><span class="w"> </span><span class="nv">$rg</span><span class="w"> </span><span class="nt">--sku</span><span class="w"> </span><span class="nx">Basic</span><span class="w"> </span><span class="nt">--admin-enabled</span><span class="w"> </span><span class="nx">true</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Login</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="n">az</span><span class="w"> </span><span class="nx">acr</span><span class="w"> </span><span class="nx">login</span><span class="w"> </span><span class="nt">-n</span><span class="w"> </span><span class="nv">$acr</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Récupération des credentials</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="n">az</span><span class="w"> </span><span class="nx">acr</span><span class="w"> </span><span class="nx">credential</span><span class="w"> </span><span class="nx">show</span><span class="w"> </span><span class="nt">-n</span><span class="w"> </span><span class="nv">$acr</span><span class="w"> </span><span class="nt">--password-name</span><span class="w"> </span><span class="nx">password</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Construction de l&#8217;image et publication</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="nv">$tag</span><span class="o">=</span><span class="s2">"8"</span><span class="w">
+</span><span class="nv">$image</span><span class="o">=</span><span class="s2">"sonarqubeonazure"</span><span class="w">
+</span><span class="n">docker</span><span class="w"> </span><span class="nx">build</span><span class="w">  </span><span class="nt">-t</span><span class="w"> </span><span class="nv">$image</span><span class="p">:</span><span class="nv">$tag</span><span class="w"> </span><span class="nt">-f</span><span class="w"> </span><span class="s2">".\8.Dockerfile"</span><span class="w"> </span><span class="o">.</span><span class="w">
+</span><span class="n">docker</span><span class="w"> </span><span class="nx">tag</span><span class="w"> </span><span class="nv">$image</span><span class="p">:</span><span class="nv">$tag</span><span class="w"> </span><span class="nv">$acr</span><span class="o">.</span><span class="nf">azurecr</span><span class="o">.</span><span class="nf">io</span><span class="nx">/</span><span class="nv">$image</span><span class="p">:</span><span class="nv">$tag</span><span class="w">
+</span><span class="n">docker</span><span class="w"> </span><span class="nx">push</span><span class="w"> </span><span class="nv">$acr</span><span class="o">.</span><span class="nf">azurecr</span><span class="o">.</span><span class="nf">io</span><span class="nx">/</span><span class="nv">$image</span><span class="p">:</span><span class="nv">$tag</span></code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="préparation_du_docker_compose"><a class="anchor" href="#préparation_du_docker_compose"></a><a class="link" href="#préparation_du_docker_compose">Préparation du Docker Compose</a></h3>
+<div class="paragraph">
+<p>SonarQube fournit un <a href="https://github.com/SonarSource/docker-sonarqube/blob/branch-8.1/recipes/docker-compose-postgres-example.yml">exemple</a> assez proche de la cible</p>
+</div>
+<div class="listingblock">
+<div class="title">docker-compose.yml</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="yaml"><span class="na">version</span><span class="pi">:</span> <span class="s1">'</span><span class="s">3.3'</span>
+
+<span class="na">services</span><span class="pi">:</span>
+  <span class="na">sonarqube</span><span class="pi">:</span>
+    <span class="na">depends_on</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">db</span>
+    <span class="na">image</span><span class="pi">:</span> <span class="s">myregistry.azurecr.io/sonarqubeonazure:7</span>
+    <span class="na">ports</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">7000:9000"</span>
+    <span class="na">networks</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">sonarnet</span>
+    <span class="na">environment</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">sonar.forceAuthentication=true</span>
+      <span class="pi">-</span> <span class="s">sonar.telemetry.enable=false</span>
+      <span class="pi">-</span> <span class="s">sonar.es.bootstrap.checks.disable=true</span>
+      <span class="pi">-</span> <span class="s">SONARQUBE_JDBC_URL=jdbc:postgresql://db:5432/sonar</span>
+      <span class="pi">-</span> <span class="s">SONARQUBE_JDBC_USERNAME=sonar</span>
+      <span class="pi">-</span> <span class="s">SONARQUBE_JDBC_PASSWORD=sonar</span>
+    <span class="na">volumes</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">sonarqube_conf:/opt/sonarqube/conf</span>
+      <span class="pi">-</span> <span class="s">sonarqube_data:/opt/sonarqube/data</span>
+      <span class="pi">-</span> <span class="s">sonarqube_extensions:/opt/sonarqube/extensions</span>
+
+  <span class="na">db</span><span class="pi">:</span>
+    <span class="na">image</span><span class="pi">:</span> <span class="s">postgres</span>
+    <span class="na">networks</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">sonarnet</span>
+    <span class="na">environment</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">POSTGRES_USER=sonar</span>
+      <span class="pi">-</span> <span class="s">POSTGRES_PASSWORD=sonar</span>
+    <span class="na">volumes</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">postgresql:/var/lib/postgresql</span>
+      <span class="c1"># This needs explicit mapping due to https://github.com/docker-library/postgres/blob/4e48e3228a30763913ece952c611e5e9b95c8759/Dockerfile.template#L52</span>
+      <span class="pi">-</span> <span class="s">postgresql_data:/var/lib/postgresql/data</span>
+
+<span class="na">networks</span><span class="pi">:</span>
+  <span class="na">sonarnet</span><span class="pi">:</span>
+    <span class="na">driver</span><span class="pi">:</span> <span class="s">bridge</span>
+
+<span class="na">volumes</span><span class="pi">:</span>
+  <span class="na">sonarqube_conf</span><span class="pi">:</span>
+  <span class="na">sonarqube_data</span><span class="pi">:</span>
+  <span class="na">sonarqube_extensions</span><span class="pi">:</span>
+  <span class="na">postgresql</span><span class="pi">:</span>
+  <span class="na">postgresql_data</span><span class="pi">:</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Les différences avec l&#8217;exemple concernent&nbsp;:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>L&#8217;utilisation des variables d&#8217;environnement SONARQUBE_JDBC_USERNAME et SONARQUBE_JDBC_PASSWORD</p>
+</li>
+<li>
+<p>Ajout de la directive <code>depends_on</code></p>
+</li>
+<li>
+<p>Et bien sûr, ajout de la variable d&#8217;environnement <code>sonar.es.bootstrap.checks.disable</code> pour désactiver le check</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>On peut alors tester le fichier docker compose à l&#8217;aide de la commande&nbsp;:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>docker-compose up</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Les containers peuvent être supprimés, ainsi que les volumes avec la commande</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>docker-compose down -v</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="création_de_lapp_service_avec_docker_compose"><a class="anchor" href="#création_de_lapp_service_avec_docker_compose"></a><a class="link" href="#création_de_lapp_service_avec_docker_compose">Création de l&#8217;App Service avec Docker Compose</a></h3>
+<div class="paragraph">
+<p>Le déploiement d&#8217;un App Service avec Docker Compose est assez proche de <a href="#version_simple">la version simple</a>.</p>
+</div>
+<div class="paragraph">
+<p>Ouvrir un prompt PowerShell et exécuter les commandes suivantes&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="powershell"><span class="c"># Variables à adapter</span><span class="w">
+</span><span class="nv">$rg</span><span class="o">=</span><span class="s2">"&lt;resource-group-name&gt;"</span><span class="w"> </span><span class="c"># Nom du groupe de ressources</span><span class="w">
+</span><span class="nv">$ASP</span><span class="o">=</span><span class="s2">"&lt;app-service-plan&gt;"</span><span class="w"> </span><span class="c"># Nom de l'App Service Plan</span><span class="w">
+</span><span class="nv">$appName</span><span class="o">=</span><span class="s2">"&lt;app-name&gt;"</span><span class="w"> </span><span class="c"># Nom de l'App Service (va déterminer l'URL d'accès)</span><span class="w">
+</span><span class="nv">$dockerComposePath</span><span class="o">=</span><span class="s2">".\docker-compose.yml"</span><span class="w"> </span><span class="c"># Chemin vers le fichier Docker Compose</span><span class="w">
+
+</span><span class="c"># Création du groupe de ressources. La localisation est à adapter. Ici "France Central"</span><span class="w">
+</span><span class="n">az</span><span class="w"> </span><span class="nx">group</span><span class="w"> </span><span class="nx">create</span><span class="w"> </span><span class="nt">--location</span><span class="w"> </span><span class="s2">"France Central"</span><span class="w"> </span><span class="nt">--name</span><span class="w"> </span><span class="nv">$rg</span><span class="w">
+
+</span><span class="c"># Création de l'App Service Plan.</span><span class="w">
+</span><span class="n">az</span><span class="w"> </span><span class="nx">appservice</span><span class="w"> </span><span class="nx">plan</span><span class="w"> </span><span class="nx">create</span><span class="w"> </span><span class="nt">--name</span><span class="w"> </span><span class="nv">$ASP</span><span class="w"> </span><span class="nt">--resource-group</span><span class="w"> </span><span class="nv">$rg</span><span class="w"> </span><span class="nt">--sku</span><span class="w"> </span><span class="nx">B2</span><span class="w"> </span><span class="nt">--is-linux</span><span class="w">
+
+</span><span class="c"># Création de L'App Service à partir du fichier Docker Compose</span><span class="w">
+</span><span class="n">az</span><span class="w"> </span><span class="nx">webapp</span><span class="w"> </span><span class="nx">create</span><span class="w"> </span><span class="nt">--resource-group</span><span class="w"> </span><span class="nv">$rg</span><span class="w"> </span><span class="nt">--plan</span><span class="w"> </span><span class="nv">$ASP</span><span class="w"> </span><span class="nt">--name</span><span class="w"> </span><span class="nv">$appName</span><span class="w"> </span><span class="nt">--multicontainer-config-type</span><span class="w"> </span><span class="nx">compose</span><span class="w"> </span><span class="nt">--multicontainer-config-file</span><span class="w"> </span><span class="nv">$dockerComposePath</span><span class="w"> </span><span class="nt">--docker-registry-server-user</span><span class="w"> </span><span class="nv">$acr</span><span class="w"> </span><span class="nt">--docker-registry-server-password</span><span class="w"> </span><span class="s2">"3...9bHTFzFd"</span><span class="w">
+
+</span><span class="c"># Publication du port 7000</span><span class="w">
+</span><span class="n">az</span><span class="w"> </span><span class="nx">webapp</span><span class="w"> </span><span class="nx">config</span><span class="w"> </span><span class="nx">appsettings</span><span class="w"> </span><span class="nx">set</span><span class="w">  </span><span class="nt">--resource-group</span><span class="w"> </span><span class="nv">$rg</span><span class="w"> </span><span class="nt">--name</span><span class="w"> </span><span class="nv">$appName</span><span class="w"> </span><span class="nt">--settings</span><span class="w"> </span><span class="nx">WEBSITES_PORT</span><span class="o">=</span><span class="mi">7000</span><span class="w">
+
+</span><span class="c"># Configuration du stockage permanent</span><span class="w">
+</span><span class="n">az</span><span class="w"> </span><span class="nx">webapp</span><span class="w"> </span><span class="nx">config</span><span class="w"> </span><span class="nx">appsettings</span><span class="w"> </span><span class="nx">set</span><span class="w"> </span><span class="nt">--resource-group</span><span class="w"> </span><span class="nv">$rg</span><span class="w"> </span><span class="nt">--name</span><span class="w"> </span><span class="nv">$appName</span><span class="w"> </span><span class="nt">--settings</span><span class="w"> </span><span class="nx">WEBSITES_ENABLE_APP_SERVICE_STORAGE</span><span class="o">=</span><span class="n">true</span><span class="w">
+
+</span><span class="n">az</span><span class="w"> </span><span class="nx">webapp</span><span class="w"> </span><span class="nx">config</span><span class="w"> </span><span class="nx">appsettings</span><span class="w"> </span><span class="nx">set</span><span class="w"> </span><span class="nt">--resource-group</span><span class="w"> </span><span class="nv">$rg</span><span class="w"> </span><span class="nt">--name</span><span class="w"> </span><span class="nv">$appName</span><span class="w"> </span><span class="nt">--settings</span><span class="w"> </span><span class="nx">DOCKER_REGISTRY_SERVER_URL</span><span class="o">=</span><span class="n">https://</span><span class="nv">$acr</span><span class="o">.</span><span class="nf">azurecr</span><span class="o">.</span><span class="nf">io</span><span class="w">
+</span><span class="nx">az</span><span class="w"> </span><span class="nx">webapp</span><span class="w"> </span><span class="nx">config</span><span class="w"> </span><span class="nx">appsettings</span><span class="w"> </span><span class="nx">set</span><span class="w"> </span><span class="nt">--resource-group</span><span class="w"> </span><span class="nv">$rg</span><span class="w"> </span><span class="nt">--name</span><span class="w"> </span><span class="nv">$appName</span><span class="w"> </span><span class="nt">--settings</span><span class="w"> </span><span class="nx">DOCKER_REGISTRY_SERVER_USERNAME</span><span class="o">=</span><span class="nv">$acr</span><span class="w">
+</span><span class="n">az</span><span class="w"> </span><span class="nx">webapp</span><span class="w"> </span><span class="nx">config</span><span class="w"> </span><span class="nx">appsettings</span><span class="w"> </span><span class="nx">set</span><span class="w"> </span><span class="nt">--resource-group</span><span class="w"> </span><span class="nv">$rg</span><span class="w"> </span><span class="nt">--name</span><span class="w"> </span><span class="nv">$appName</span><span class="w"> </span><span class="nt">--settings</span><span class="w"> </span><span class="nx">DOCKER_REGISTRY_SERVER_PASSWORD</span><span class="o">=</span><span class="mi">3</span><span class="o">...</span><span class="nf">9bHTFzFd</span><span class="w">
+
+</span><span class="c"># Configuration des logs</span><span class="w">
+</span><span class="n">az</span><span class="w"> </span><span class="nx">webapp</span><span class="w"> </span><span class="nx">log</span><span class="w"> </span><span class="nx">config</span><span class="w"> </span><span class="nt">--resource-group</span><span class="w"> </span><span class="nv">$rg</span><span class="w"> </span><span class="nt">--name</span><span class="w"> </span><span class="nv">$appName</span><span class="w"> </span><span class="nt">--docker-container-logging</span><span class="w"> </span><span class="nx">filesystem</span><span class="w">
+
+</span><span class="c"># Petit redémarrage</span><span class="w">
+</span><span class="n">az</span><span class="w"> </span><span class="nx">webapp</span><span class="w"> </span><span class="nx">restart</span><span class="w"> </span><span class="nt">--resource-group</span><span class="w"> </span><span class="nv">$rg</span><span class="w"> </span><span class="nt">--name</span><span class="w"> </span><span class="nv">$appName</span><span class="w">
+
+</span><span class="c"># Accès à SonarQube</span><span class="w">
+</span><span class="n">start</span><span class="w"> </span><span class="s2">"https://</span><span class="nv">$appName</span><span class="s2">.azurewebsites.net"</span><span class="w">
+
+</span><span class="c"># Récupération des logs</span><span class="w">
+</span><span class="n">az</span><span class="w"> </span><span class="nx">webapp</span><span class="w"> </span><span class="nx">log</span><span class="w"> </span><span class="nx">tail</span><span class="w"> </span><span class="nt">--resource-group</span><span class="w"> </span><span class="nv">$rg</span><span class="w"> </span><span class="nt">--name</span><span class="w"> </span><span class="nv">$appName</span><span class="w">
+</span></code></pre>
+</div>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+Le téléchargement de l&#8217;image, le démarrage de l&#8217;application sont toujours aussi long. Mais éventuellement, cela marchera&#8230;&#8203;
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="accès_ssh"><a class="anchor" href="#accès_ssh"></a><a class="link" href="#accès_ssh">Accès SSH</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Comme évoqué précédemment, si nécessaire, il est possible d&#8217;accéder à SonarQube en SSH en allant à l&#8217;adresse https://$appName.scm.azurewebsites.net/webssh/host</p>
+</div>
+</div>
+</div></section>
+  
+<footer>
+  <div class="tags">
+    
+    <a class="tag" href="/tags#docker">#docker</a>
+    
+    <a class="tag" href="/tags#sonarqube">#sonarqube</a>
+    
+    <a class="tag" href="/tags#azure">#azure</a>
+    
+    <a class="tag" href="/tags#app-service">#app-service</a>
+    
+  </div>
+</footer>
+
+
+</article>
+
+<!-- Disqus -->
+
+
+<!-- Post navigation -->
+
+  <div id="post-nav">
+  
+  <div id="previous-post" class="post-nav-post">
+      <p>Article précédent</p>
+      <a href="/2019/12/31/sonarqube-dotnet/">
+        Analyse de .NET Core avec SonarQube sur Windows
+      </a>
+  </div>
+  
+  
+  <div id="next-post" class="post-nav-post">
+      <p>Article suivant</p>
+      <a href="/2020/01/10/acr-repositories/">
+        Utilisation des autorisations d&#8217;étendue de référentiel dans ACR
+      </a>
+  </div>
+  
+</div>
+
+
+
+    </div>
+    
+
+
+<footer class="site-footer">
+	<nav class="site-nav">
+		<ul>
+			
+<li>
+	<a href="/feed.xml" title="Suivre sur RSS">
+		<i class="fa fa-fw fa-rss"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+	<a href="https://github.com/r3dlin3" title="Follow on GitHub">
+		<i class="fa fa-fw fa-github"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		</ul>
+	</nav>
+	<p class="text">Powered by <a href="https://jekyllrb.com/">Jekyll</a> with <i class="fa fa-heart" aria-hidden="true" style="color:Tomato"></i>
+</p>
+</footer>
+
+  </body>
+</html>

@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html class="no-js">
+  <head>
+	<meta charset="utf-8">
+	<title>Faire un blog avec Jekyll, GitHub Pages et TravisCI | A bit of everything</title>
+	<meta name="description" content="Découvrir la chaîne complète permettant la génération de ce blog">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="/assets/css/main.css">
+
+	<!--Favicon-->
+	<link rel="shortcut icon" href="/assets/favicon.ico" type="image/x-icon">
+
+	<!-- Canonical -->
+	<link rel="canonical" href="/2018/04/30/github-pages-jekyll-travisci/">
+
+	<!-- RSS -->
+	<link type="application/atom+xml" rel="alternate" href="https://r3dlin3.github.io/feed.xml" title="A bit of everything" />
+	<!-- SEO -->
+	<!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Faire un blog avec Jekyll, GitHub Pages et TravisCI | A bit of everything</title>
+<meta name="generator" content="Jekyll v3.8.7" />
+<meta property="og:title" content="Faire un blog avec Jekyll, GitHub Pages et TravisCI" />
+<meta name="author" content="r3dLiN3" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Découvrir la chaîne complète permettant la génération de ce blog" />
+<meta property="og:description" content="Découvrir la chaîne complète permettant la génération de ce blog" />
+<link rel="canonical" href="https://r3dlin3.github.io/2018/04/30/github-pages-jekyll-travisci/" />
+<meta property="og:url" content="https://r3dlin3.github.io/2018/04/30/github-pages-jekyll-travisci/" />
+<meta property="og:site_name" content="A bit of everything" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2018-04-30T00:00:00+00:00" />
+<script type="application/ld+json">
+{"author":{"@type":"Person","name":"r3dLiN3"},"headline":"Faire un blog avec Jekyll, GitHub Pages et TravisCI","dateModified":"2018-04-30T00:00:00+00:00","datePublished":"2018-04-30T00:00:00+00:00","description":"Découvrir la chaîne complète permettant la génération de ce blog","mainEntityOfPage":{"@type":"WebPage","@id":"https://r3dlin3.github.io/2018/04/30/github-pages-jekyll-travisci/"},"@type":"BlogPosting","url":"https://r3dlin3.github.io/2018/04/30/github-pages-jekyll-travisci/","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+	<!-- Google Fonts -->
+	
+	<link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,700italic,400italic" rel="stylesheet" type="text/css">
+	
+
+	<!-- KaTeX -->
+	
+
+	<!-- Google Analytics -->
+	
+</head>
+
+  <body>
+    <header class="site-header">
+	<div class="branding">
+		
+		<a href="/">
+			<img class="avatar" src="/assets/img/avatar.png" alt="avatar"/>
+		</a>
+		
+		<h1 class="site-title">
+			<a href="/">A bit of everything</a>
+		</h1>
+	</div>
+	<nav class="site-nav">
+		<ul>
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/about/">
+					A propos
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/tags/">
+					tags
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<!-- Social icons from Font Awesome, if enabled  -->
+			
+			
+            
+            <!-- Search bar -->
+            
+		</ul>
+	</nav>
+    
+</header>
+
+    <div class="content">
+      <article >
+  <header style="background-image: url('/')">
+    <h1 class="title">Faire un blog avec Jekyll, GitHub Pages et TravisCI</h1>
+    
+    <p class="meta">
+      
+
+
+
+30
+
+avril
+  
+2018
+      
+    </p>
+  </header>
+  <section class="post-content"><div class="sect1">
+<h2 id="pourquoi_déjà"><a class="anchor" href="#pourquoi_déjà"></a><a class="link" href="#pourquoi_déjà">Pourquoi déjà ?</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="https://jekyllrb.com/">Jekyll</a> est un moteur puissant de générateur de site statique développé en Ruby. Il offre de nombreux plugins, thèmes ainsi que le support d&#8217;<a href="http://www.methods.co.nz/asciidoc/">AsciiDoc</a> au travers d&#8217;un <a href="https://github.com/asciidoctor/jekyll-asciidoc">plugin particulier</a>.</p>
+</div>
+<div class="paragraph">
+<p><a href="https://pages.github.com/">GitHub Pages</a> est un bon moyen d&#8217;héberger son site statique. GitHub Pages <a href="https://help.github.com/articles/using-jekyll-as-a-static-site-generator-with-github-pages/">supporte</a> même Jekyll mais sans le plugin AsciiDoc.</p>
+</div>
+<div class="paragraph">
+<p>Bien sûr, il aurait été possible de générer son site statique sur son poste et de le pousser sur GitHub pour publication, mais cela aurait dû être fait à chaque fois.
+J&#8217;ai donc préféré automatiser complètement la génération du site grâce à <a href="https://travis-ci.org/">TravisCI</a>.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+Je ne suis ni un expert Jekyll ni Ruby.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Cet article regroupe donc quelques points sur la configuration de la chaîne complète.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="base_du_site"><a class="anchor" href="#base_du_site"></a><a class="link" href="#base_du_site">Base du site</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Comme préconisé par le  plugin, je suis parti d&#8217;un fork du <a href="https://github.com/asciidoctor/jekyll-asciidoc-quickstart">démarrage rapide</a>.</p>
+</div>
+<div class="paragraph">
+<p>Ceci a permis de :</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><a href="https://jekyllrb.com/docs/installation/">Installer les prérequis</a></p>
+</li>
+<li>
+<p><a href="https://github.com/asciidoctor/jekyll-asciidoc-quickstart#4-enable-travis-ci">Activer TravisCI</a></p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="jeton_daccès"><a class="anchor" href="#jeton_daccès"></a><a class="link" href="#jeton_daccès">Jeton d&#8217;accès</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Pour générer le jeton, ne pas à se référer à la doc du site, mais plutôt à <a href="https://docs.travis-ci.com/user/deployment/pages/#Setting-the-GitHub-token">celle</a> de TravisCI.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="branche_github"><a class="anchor" href="#branche_github"></a><a class="link" href="#branche_github">Branche GitHub</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Dans le cas d&#8217;un site perso, par opposition à un site projet, il est obligatoire de publier dans la branche <code>master</code>.</p>
+</div>
+<div class="paragraph">
+<p>J&#8217;ai donc créé et mis le code du site dans une branche <code>dev</code>. Pour ma part, j&#8217;ai utilisé :</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>git checkout -b dev</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="configuration_de_travisci"><a class="anchor" href="#configuration_de_travisci"></a><a class="link" href="#configuration_de_travisci">Configuration de TravisCI</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>TravisCI permet d&#8217;automatiser tout pipeline de livraison.
+Il propose même un <a href="https://docs.travis-ci.com/user/deployment/pages/">déploiement</a> pour GitHub Pages, ce qui évite la création de scripts spécifiques devant gérer les git clone, push, etc.</p>
+</div>
+<div class="paragraph">
+<p>Le premier élément concerne le fichier <a href="https://github.com/r3dlin3/r3dlin3.github.io/blob/dev/.travis.yml">.travis.yml</a>.</p>
+</div>
+<div class="paragraph">
+<p>Celui-ci se compose de la sorte :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="yml"><span class="na">language</span><span class="pi">:</span> <span class="s">ruby</span>
+<span class="na">rvm</span><span class="pi">:</span> <span class="m">2.2</span>
+<span class="na">install</span><span class="pi">:</span> <span class="s">bundle install</span>
+<span class="na">script</span><span class="pi">:</span> <span class="s">bundle exec jekyll build</span>
+<span class="na">deploy</span><span class="pi">:</span>
+  <span class="na">provider</span><span class="pi">:</span> <span class="s">pages</span>
+  <span class="na">skip_cleanup</span><span class="pi">:</span> <span class="no">true</span>
+  <span class="na">github_token</span><span class="pi">:</span> <span class="s">$GITHUB_TOKEN</span> <span class="c1"># Set in travis-ci.org dashboard </span><i class="conum" data-value="1"></i><b>(1)</b>
+  <span class="na">local-dir</span><span class="pi">:</span> <span class="s">_site</span> <i class="conum" data-value="2"></i><b>(2)</b>
+  <span class="na">target-branch</span><span class="pi">:</span> <span class="s">master</span> <i class="conum" data-value="3"></i><b>(3)</b>
+  <span class="na">on</span><span class="pi">:</span>
+    <span class="na">branch</span><span class="pi">:</span> <span class="s">dev</span></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Il existe plusieurs façons de sécuriser son jeton GitHub.
+Ici, j&#8217;utilise les variables d&#8217;environnement. J&#8217;ai donc créer une variable <code>GITHUB_TOKEN</code> avec mon jeton (cf. <a href="https://docs.travis-ci.com/user/environment-variables#Defining-Variables-in-Repository-Settings">doc</a>). Par défaut, la valeur de la variable n&#8217;est pas affichée ("Display value in build log" à "Off")</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Jekyll génère les pages dans le répertoire <code>_site</code></td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Il faut pousser les modifications dans la branche <code>master</code></td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="ne_pas_construire"><a class="anchor" href="#ne_pas_construire"></a><a class="link" href="#ne_pas_construire">Ne pas construire</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Lorsque je poussais mes modifications sur la branche <code>dev</code>, cela résultait en des modifications poussées sur la branche <code>master</code> : le site en lui-même.</p>
+</div>
+<div class="paragraph">
+<p>TravisCI essayait de construire le site sur master ce qui donnait inexorablement une erreur.</p>
+</div>
+<div class="paragraph">
+<p>En cochant la case "Build only if .travis.yml is present", cela a empêché la construction de la branche <code>master</code>.</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="https://r3dlin3.github.io/assets/img/travisci_settings.png" alt="TravisCI Settings"></span></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="conclusion"><a class="anchor" href="#conclusion"></a><a class="link" href="#conclusion">Conclusion</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Après tous ces efforts, quelle fierté d&#8217;avoir son petit build au vert :
+<span class="image"><img src="https://travis-ci.org/r3dlin3/r3dlin3.github.io.svg?branch=dev" alt="r3dlin3.github.io"></span></p>
+</div>
+</div>
+</div></section>
+  
+<footer>
+  <div class="tags">
+    
+    <a class="tag" href="/tags#github">#github</a>
+    
+    <a class="tag" href="/tags#jekyll">#jekyll</a>
+    
+    <a class="tag" href="/tags#travisci">#travisci</a>
+    
+    <a class="tag" href="/tags#blog">#blog</a>
+    
+  </div>
+</footer>
+
+
+</article>
+
+<!-- Disqus -->
+
+
+<!-- Post navigation -->
+
+  <div id="post-nav">
+  
+  <div id="previous-post" class="post-nav-post">
+      <p>Article précédent</p>
+      <a href="/2017/12/23/udacity-with-azure-part2/">
+        Suivre le tutorial d&#8217;Udacity sur Kubernetes avec Azure (2e partie)
+      </a>
+  </div>
+  
+  
+  <div id="next-post" class="post-nav-post">
+      <p>Article suivant</p>
+      <a href="/2018/05/22/azure-rbac/">
+        Gestion des rôles dans Azure
+      </a>
+  </div>
+  
+</div>
+
+
+
+    </div>
+    
+
+
+<footer class="site-footer">
+	<nav class="site-nav">
+		<ul>
+			
+<li>
+	<a href="/feed.xml" title="Suivre sur RSS">
+		<i class="fa fa-fw fa-rss"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+	<a href="https://github.com/r3dlin3" title="Follow on GitHub">
+		<i class="fa fa-fw fa-github"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		</ul>
+	</nav>
+	<p class="text">Powered by <a href="https://jekyllrb.com/">Jekyll</a> with <i class="fa fa-heart" aria-hidden="true" style="color:Tomato"></i>
+</p>
+</footer>
+
+  </body>
+</html>

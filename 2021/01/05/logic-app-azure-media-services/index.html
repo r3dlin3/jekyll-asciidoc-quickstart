@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html class="no-js">
+  <head>
+	<meta charset="utf-8">
+	<title>Logic App, API Azure et Media Services | A bit of everything</title>
+	<meta name="description" content="Logic App dispose d'ores-et-déjà de nombreux connecteurs pour piloter des ressources Azure. Si le connecteur n'existe pas, l'utilisation du connecteur REST e...">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="/assets/css/main.css">
+
+	<!--Favicon-->
+	<link rel="shortcut icon" href="/assets/favicon.ico" type="image/x-icon">
+
+	<!-- Canonical -->
+	<link rel="canonical" href="/2021/01/05/logic-app-azure-media-services/">
+
+	<!-- RSS -->
+	<link type="application/atom+xml" rel="alternate" href="https://r3dlin3.github.io/feed.xml" title="A bit of everything" />
+	<!-- SEO -->
+	<!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Logic App, API Azure et Media Services | A bit of everything</title>
+<meta name="generator" content="Jekyll v3.8.7" />
+<meta property="og:title" content="Logic App, API Azure et Media Services" />
+<meta name="author" content="r3dLiN3" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Logic App dispose d’ores-et-déjà de nombreux connecteurs pour piloter des ressources Azure. Si le connecteur n’existe pas, l’utilisation du connecteur REST et des identités managés permettent de rapidement arriver à ses fins." />
+<meta property="og:description" content="Logic App dispose d’ores-et-déjà de nombreux connecteurs pour piloter des ressources Azure. Si le connecteur n’existe pas, l’utilisation du connecteur REST et des identités managés permettent de rapidement arriver à ses fins." />
+<link rel="canonical" href="https://r3dlin3.github.io/2021/01/05/logic-app-azure-media-services/" />
+<meta property="og:url" content="https://r3dlin3.github.io/2021/01/05/logic-app-azure-media-services/" />
+<meta property="og:site_name" content="A bit of everything" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-01-05T00:00:00+00:00" />
+<script type="application/ld+json">
+{"author":{"@type":"Person","name":"r3dLiN3"},"headline":"Logic App, API Azure et Media Services","dateModified":"2021-01-05T00:00:00+00:00","datePublished":"2021-01-05T00:00:00+00:00","description":"Logic App dispose d’ores-et-déjà de nombreux connecteurs pour piloter des ressources Azure. Si le connecteur n’existe pas, l’utilisation du connecteur REST et des identités managés permettent de rapidement arriver à ses fins.","mainEntityOfPage":{"@type":"WebPage","@id":"https://r3dlin3.github.io/2021/01/05/logic-app-azure-media-services/"},"@type":"BlogPosting","url":"https://r3dlin3.github.io/2021/01/05/logic-app-azure-media-services/","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+	<!-- Google Fonts -->
+	
+	<link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,700italic,400italic" rel="stylesheet" type="text/css">
+	
+
+	<!-- KaTeX -->
+	
+
+	<!-- Google Analytics -->
+	
+</head>
+
+  <body>
+    <header class="site-header">
+	<div class="branding">
+		
+		<a href="/">
+			<img class="avatar" src="/assets/img/avatar.png" alt="avatar"/>
+		</a>
+		
+		<h1 class="site-title">
+			<a href="/">A bit of everything</a>
+		</h1>
+	</div>
+	<nav class="site-nav">
+		<ul>
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/about/">
+					A propos
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/tags/">
+					tags
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<!-- Social icons from Font Awesome, if enabled  -->
+			
+			
+            
+            <!-- Search bar -->
+            
+		</ul>
+	</nav>
+    
+</header>
+
+    <div class="content">
+      <article >
+  <header style="background-image: url('/')">
+    <h1 class="title">Logic App, API Azure et Media Services</h1>
+    
+    <p class="meta">
+      
+
+
+
+5
+
+janvier
+  
+2021
+      
+    </p>
+  </header>
+  <section class="post-content"><div class="sect1">
+<h2 id="introduction"><a class="anchor" href="#introduction"></a><a class="link" href="#introduction">Introduction</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Logic App dispose d&#8217;ores-et-déjà de nombreux connecteurs pour piloter des ressources Azure&nbsp;:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://docs.microsoft.com/fr-fr/connectors/azureappservice/">L&#8217;arrêt/relance d&#8217;instance App Service</a></p>
+</li>
+<li>
+<p><a href="https://docs.microsoft.com/fr-fr/connectors/keyvault/">La gestion des clés ou des secrets dans Azure Key Vault</a></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Si le connecteur n&#8217;existe pas, l&#8217;utilisation du connecteur REST et des identités managés permettent de rapidement arriver à ses fins.</p>
+</div>
+<div class="paragraph">
+<p>Ainsi, dans mon cas, je voulais pouvoir arrêter un <em>Streaming Endpoint</em> sur un Azure Media Services.
+En effet, un <em>Streaming Endpoint</em> est facturé mais peut être arrêté. Et dans mon environnement de bac à sable, je n&#8217;en ai pas besoin en permanence.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="création_de_la_logic_app"><a class="anchor" href="#création_de_la_logic_app"></a><a class="link" href="#création_de_la_logic_app">Création de la Logic App</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>La création d&#8217;une Logic App se fait assez simplement dans le portail.</p>
+</div>
+<div class="sect2">
+<h3 id="identité_managée"><a class="anchor" href="#identité_managée"></a><a class="link" href="#identité_managée">Identité managée</a></h3>
+<div class="paragraph">
+<p>Une fois créée, il faut activer l&#8217;identité managée, qui est désactivée par défaut.
+Pour ce faire, il faut simplement aller dans la <em>blade Identity</em>&nbsp;:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="https://r3dlin3.github.io/assets/img/2021-01-05-logic-app-azure-media-services/logic-app-identity.png" alt="Identité managée d&#8217;une Logic App">
+</div>
+</div>
+<div class="paragraph">
+<p>Le bouton "Attributions de rôle Azure" permet d&#8217;attribuer des droits sur le Media Services.
+Malheureusement, par ce biais, il n&#8217;est possible, pour le moment, que d&#8217;attribuer des droits au niveau d&#8217;une souscription ou d&#8217;un groupe de ressources ou des ressources comme SQL, compte de stockage ou Key Vault, mais pas sur un media services.</p>
+</div>
+<div class="paragraph">
+<p>Il n&#8217;existe pas de rôle spécifique à Media Services.
+Nous allons devoir recourir au rôle "Contributeur" si l&#8217;on ne veut pas avoir de rôle personnalisé, ce qui est mon cas, car je veux garder les choses simples.</p>
+</div>
+<div class="paragraph">
+<p>Pour autant, pour éviter d&#8217;attribuer trop de droits, je préconise d&#8217;attribuer le rôle "Contributeur" directement sur l&#8217;instance Media Services.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="api_rest_et_connecteur_logic_app"><a class="anchor" href="#api_rest_et_connecteur_logic_app"></a><a class="link" href="#api_rest_et_connecteur_logic_app">API REST et connecteur Logic App</a></h3>
+<div class="paragraph">
+<p>Azure Media Services dispose d&#8217;une API REST et donc d&#8217;une <a href="https://docs.microsoft.com/fr-fr/rest/api/media/streamingendpoints/stop">méthode</a> spécifique pour arrêter un <em>Streaming Endpoint</em>.</p>
+</div>
+<div class="paragraph">
+<p>Il s&#8217;agit d&#8217;une simple requête POST sur L&#8217;URL <code>https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Media/mediaservices/{accountName}/streamingEndpoints/{streamingEndpointName}/stop?api-version=2020-05-01</code></p>
+</div>
+<div class="paragraph">
+<p>Une fois les valeurs remplacées dans l&#8217;URL ci-dessus, on peut utiliser simplement un connecteur HTTP en <strong>activant l&#8217;authentification par identité managée</strong>&nbsp;:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="https://r3dlin3.github.io/assets/img/2021-01-05-logic-app-azure-media-services/http-connector.png" alt="Connecteur HTTP avec authentification par identité managée">
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="le_déploiement_automatisé_par_arm_template"><a class="anchor" href="#le_déploiement_automatisé_par_arm_template"></a><a class="link" href="#le_déploiement_automatisé_par_arm_template">Le déploiement automatisé par ARM template</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>J&#8217;ai préparé un ARM template qui va&nbsp;:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Déployer la Logic App et configurer l&#8217;URL</p>
+</li>
+<li>
+<p>Attribuer le droit "Contributeur" sur Media Services</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Je fais l&#8217;hypothèse que la Logic App est déployée dans le même groupe de ressources que l&#8217;Azure Media Services.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p><script src="https://gist.github.com/r3dlin3/71a2d05222c848615c2d5caac0155f0f.js?file=template.json"></script></p>
+</div>
+<div class="paragraph">
+<p><script src="https://gist.github.com/r3dlin3/71a2d05222c848615c2d5caac0155f0f.js?file=parameters.json"></script></p>
+</div>
+<div class="paragraph">
+<p>Comme d&#8217;habitude, il existe plusieurs façon de le déployer, comme par exemple&nbsp;:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>En 1 clic&nbsp;:
+<span class="image"><a class="image" href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fgist.githubusercontent.com%2Fr3dlin3%2F71a2d05222c848615c2d5caac0155f0f%2Fraw%2Ff0e12fd6373c6ee7d087854b0b84a80ca8d59917%2Ftemplate.json"><img src="https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.svg?sanitize=true" alt="Deploy To Azure"></a></span></p>
+</li>
+<li>
+<p>En PowerShell</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>New-AzResourceGroupDeployment -ResourceGroupName "mon-rg" -TemplateParameterFile .\parameters.json -TemplateFile .\template.json -Verbose</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="conclusion"><a class="anchor" href="#conclusion"></a><a class="link" href="#conclusion">Conclusion</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>En quelques clics, il est possible d&#8217;automatiser des tâches dans Azure avec Logic App, même si le connecteur n&#8217;est pas disponible.
+L&#8217;économie peut être substantielle alors que le coût de mise en œuvre est ridicule.</p>
+</div>
+</div>
+</div></section>
+  
+<footer>
+  <div class="tags">
+    
+    <a class="tag" href="/tags#azure">#azure</a>
+    
+    <a class="tag" href="/tags#logic-app">#logic-app</a>
+    
+  </div>
+</footer>
+
+
+</article>
+
+<!-- Disqus -->
+
+
+<!-- Post navigation -->
+
+  <div id="post-nav">
+  
+  <div id="previous-post" class="post-nav-post">
+      <p>Article précédent</p>
+      <a href="/2020/12/21/php-app-service/">
+        PHP sur Azure App Service : Windows ou Linux ?
+      </a>
+  </div>
+  
+  
+  <div id="next-post" class="post-nav-post">
+      <p>Article suivant</p>
+      <a href="/2021/03/11/postman-dynamic-content/">
+        Requêtes dynamiques avec Postman
+      </a>
+  </div>
+  
+</div>
+
+
+
+    </div>
+    
+
+
+<footer class="site-footer">
+	<nav class="site-nav">
+		<ul>
+			
+<li>
+	<a href="/feed.xml" title="Suivre sur RSS">
+		<i class="fa fa-fw fa-rss"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+	<a href="https://github.com/r3dlin3" title="Follow on GitHub">
+		<i class="fa fa-fw fa-github"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		</ul>
+	</nav>
+	<p class="text">Powered by <a href="https://jekyllrb.com/">Jekyll</a> with <i class="fa fa-heart" aria-hidden="true" style="color:Tomato"></i>
+</p>
+</footer>
+
+  </body>
+</html>

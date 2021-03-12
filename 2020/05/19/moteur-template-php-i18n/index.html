@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html class="no-js">
+  <head>
+	<meta charset="utf-8">
+	<title>Moteur de template PHP et internationalisation | A bit of everything</title>
+	<meta name="description" content="Mes déboires en matière d'internationalisation avec PHP m'ont amené vers BladeOne. Voici le pourquoi et un rapide tutorial.">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="/assets/css/main.css">
+
+	<!--Favicon-->
+	<link rel="shortcut icon" href="/assets/favicon.ico" type="image/x-icon">
+
+	<!-- Canonical -->
+	<link rel="canonical" href="/2020/05/19/moteur-template-php-i18n/">
+
+	<!-- RSS -->
+	<link type="application/atom+xml" rel="alternate" href="https://r3dlin3.github.io/feed.xml" title="A bit of everything" />
+	<!-- SEO -->
+	<!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Moteur de template PHP et internationalisation | A bit of everything</title>
+<meta name="generator" content="Jekyll v3.8.7" />
+<meta property="og:title" content="Moteur de template PHP et internationalisation" />
+<meta name="author" content="r3dLiN3" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Mes déboires en matière d’internationalisation avec PHP m’ont amené vers BladeOne. Voici le pourquoi et un rapide tutorial." />
+<meta property="og:description" content="Mes déboires en matière d’internationalisation avec PHP m’ont amené vers BladeOne. Voici le pourquoi et un rapide tutorial." />
+<link rel="canonical" href="https://r3dlin3.github.io/2020/05/19/moteur-template-php-i18n/" />
+<meta property="og:url" content="https://r3dlin3.github.io/2020/05/19/moteur-template-php-i18n/" />
+<meta property="og:site_name" content="A bit of everything" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-05-19T00:00:00+00:00" />
+<script type="application/ld+json">
+{"author":{"@type":"Person","name":"r3dLiN3"},"headline":"Moteur de template PHP et internationalisation","dateModified":"2020-05-19T00:00:00+00:00","datePublished":"2020-05-19T00:00:00+00:00","description":"Mes déboires en matière d’internationalisation avec PHP m’ont amené vers BladeOne. Voici le pourquoi et un rapide tutorial.","mainEntityOfPage":{"@type":"WebPage","@id":"https://r3dlin3.github.io/2020/05/19/moteur-template-php-i18n/"},"@type":"BlogPosting","url":"https://r3dlin3.github.io/2020/05/19/moteur-template-php-i18n/","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+	<!-- Google Fonts -->
+	
+	<link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,700italic,400italic" rel="stylesheet" type="text/css">
+	
+
+	<!-- KaTeX -->
+	
+
+	<!-- Google Analytics -->
+	
+</head>
+
+  <body>
+    <header class="site-header">
+	<div class="branding">
+		
+		<a href="/">
+			<img class="avatar" src="/assets/img/avatar.png" alt="avatar"/>
+		</a>
+		
+		<h1 class="site-title">
+			<a href="/">A bit of everything</a>
+		</h1>
+	</div>
+	<nav class="site-nav">
+		<ul>
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/about/">
+					A propos
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/tags/">
+					tags
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<!-- Social icons from Font Awesome, if enabled  -->
+			
+			
+            
+            <!-- Search bar -->
+            
+		</ul>
+	</nav>
+    
+</header>
+
+    <div class="content">
+      <article >
+  <header style="background-image: url('/')">
+    <h1 class="title">Moteur de template PHP et internationalisation</h1>
+    
+    <p class="meta">
+      
+
+
+
+19
+
+mai
+  
+2020
+      
+    </p>
+  </header>
+  <section class="post-content"><div class="sect1">
+<h2 id="introduction"><a class="anchor" href="#introduction"></a><a class="link" href="#introduction">Introduction</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Les frameworks PHP comme <a href="https://laravel.com/">Laravel</a>, <a href="https://symfony.com/">Symfony</a> ou <a href="https://phalcon.io">Phalcon</a>
+dispose tous d&#8217;un moteur de template propre, respectivement <a href="https://laravel.com/docs/7.x/blade">Blade</a>,
+<a href="https://twig.symfony.com/">Twig</a> ou <a href="https://docs.phalcon.io/4.0/en/volt">Volt</a>.</p>
+</div>
+<div class="paragraph">
+<p>Reprenant un projet PHP qui n&#8217;utilisait aucun framework, il me fallait une solution qui tourne sans framework imposé.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="et_pourquoi_pas_twig"><a class="anchor" href="#et_pourquoi_pas_twig"></a><a class="link" href="#et_pourquoi_pas_twig">Et pourquoi pas Twig ?</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Mon choix s&#8217;est d&#8217;abord porté sur <a href="https://twig.symfony.com/">Twig</a>, qui existe en autonome en principe.</p>
+</div>
+<div class="paragraph">
+<p>J&#8217;ai dû m&#8217;en détourner pour les raisons suivantes&nbsp;:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>La toute dernière version (3.x) ne supporte plus l&#8217;<a href="https://twig-extensions.readthedocs.io/en/latest/i18n.html">extensions d&#8217;internalisation</a> mais requiert <code>symfony/twig-bridge</code> pour le tag <a href="https://symfony.com/doc/current/reference/twig_reference.html#trans"><code>trans</code></a>. Or, <code>symfony/twig-bridge</code>. Il n&#8217;y a pas de documentation pour l&#8217;intégration dans un projet sans Symfony</p>
+</li>
+<li>
+<p>Ces extensions d&#8217;internationalisation reposent sur <a href="https://www.php.net/manual/en/book.gettext.php"><code>gettext</code></a>.
+<code>gettext</code> est une solution très préformante, cependant&nbsp;:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Il n&#8217;y a pas d&#8217;outil gratuit qui permette une extraction des chaînes de caractères&nbsp;:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://poedit.net">Poedit</a> est certainement une très bonne solution mais l&#8217;extraction des chaînes d&#8217;un fichier Twig requiert la licence pro.</p>
+</li>
+<li>
+<p>Toute autre solution est vouée à générée les pages de Twig en fichier PHP et utiliser <code>xgettext</code>. Malheureusement, on perd le fichier d&#8217;origine.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Les fichiers de traduction sont mis en cache par le serveur. La mise à jour d&#8217;un fichier compilé (<em>i.e.</em> <code>.mo</code>) peut requérir un redémarrage.</p>
+</li>
+<li>
+<p>Le comportement est différent entre Windows et Linux. Par exemple, Windows ne définit la constante <code>LC_MESSAGES</code>, ce qui impose de forcer la locale pour <code>LC_ALL</code> ce qui peut avoir des conséquences importantes (dans la gestion des nombres, etc.).</p>
+</li>
+<li>
+<p>Il faut que la locale soit présente sur le serveur, ce qui est rédhibitoire pour un serveur partagé.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="le_sauveur"><a class="anchor" href="#le_sauveur"></a><a class="link" href="#le_sauveur">Le sauveur&nbsp;?</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Pour toute ces raisons, je me suis donc intéressé au projet <a href="https://github.com/EFTEC/BladeOne/">BladeOne</a>, une implémentation autonome et légère de Blade.
+Elle supporte un module d&#8217;internationalisation intégré au moteur&nbsp;: <a href="https://github.com/EFTEC/BladeOne/blob/master/BladeOneLang.md">BladeOneLang</a>.</p>
+</div>
+<div class="paragraph">
+<p>Il est clair que la gestion des traductions ne pourrait convenir à un projet d&#8217;envergure mais pour un projet sans Framework comme le mien, c&#8217;est parfait&nbsp;!</p>
+</div>
+<div class="sect2">
+<h3 id="installation"><a class="anchor" href="#installation"></a><a class="link" href="#installation">Installation</a></h3>
+<div class="paragraph">
+<p>L&#8217;installation se fait le plus simplement du monde grâce à <code>composer</code>&nbsp;:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>composer require eftec/bladeone</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Il existe d&#8217;autres méthodes documentées dans le <a href="https://github.com/EFTEC/BladeOne/blob/master/README.md#usage">README</a>.</p>
+</div>
+<div class="paragraph">
+<p>Il faut ensuite prévoir la création de 3 répertoires&nbsp;:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>cache</code></dt>
+<dd>
+<p>Pour le cache</p>
+</dd>
+<dt class="hdlist1"><code>views</code></dt>
+<dd>
+<p>Pour les vues</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="utilisation"><a class="anchor" href="#utilisation"></a><a class="link" href="#utilisation">Utilisation</a></h3>
+<div class="paragraph">
+<p>Cet exemple ultrasimple va se décomposer en 3 fichiers&nbsp;:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>La vue</p>
+</li>
+<li>
+<p>La traduction</p>
+</li>
+<li>
+<p>Le fichier PHP exécuté</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Commençons par la vue. BladeOneLang définit 3 méthodes pour aider à la traduction&nbsp;:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">@_e</dt>
+<dd>
+<p>Va rechercher la chaîne à partir de la clé</p>
+</dd>
+<dt class="hdlist1">@_ef</dt>
+<dd>
+<p>Va permettre d&#8217;avoir des paramètres</p>
+</dd>
+<dt class="hdlist1">@_n</dt>
+<dd>
+<p>Va permettre de mettre au pluriel</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>L&#8217;exemple ci-dessous est un exemple de remplacement&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="title">views\translation.blade.php</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="html"><span class="nt">&lt;h1&gt;</span>Translation<span class="nt">&lt;/h1&gt;</span>
+
+Hat:<span class="nt">&lt;br&gt;</span>
+@_e('Hat')<span class="nt">&lt;br&gt;&lt;br&gt;</span>
+<span class="nt">&lt;hr&gt;</span>
+
+Trust this site always :<span class="nt">&lt;br&gt;</span>
+@_e('Trust this site always')<span class="nt">&lt;br&gt;&lt;br&gt;</span>
+<span class="nt">&lt;hr&gt;</span>
+
+'%s is a nice cat' with '{{$variable1}}' :<span class="nt">&lt;br&gt;</span>
+@_ef('%s is a nice cat', $variable1)<span class="nt">&lt;br&gt;&lt;br&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>La traduction se fait simplement dans un tableau associatif. Le tableau statique <code>BladeOne::$dictionary</code> sera utilisé pour la traduction&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="title">locales\fr.php</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="php"><span class="o">&lt;?</span><span class="n">php</span>
+
+<span class="kn">use</span> <span class="nc">eftec\bladeone\BladeOne</span><span class="p">;</span>
+
+<span class="nc">BladeOne</span><span class="o">::</span><span class="nv">$dictionary</span><span class="o">=</span><span class="k">array</span><span class="p">(</span>
+    <span class="s1">'Hat'</span><span class="o">=&gt;</span><span class="s1">'Chapeau'</span><span class="p">,</span>
+    <span class="s1">'Cat'</span><span class="o">=&gt;</span><span class="s1">'Chat'</span><span class="p">,</span>
+    <span class="s1">'%s is a nice cat'</span><span class="o">=&gt;</span><span class="s1">'%s est un bon chat'</span><span class="p">,</span>
+    <span class="s2">"Trust this site always"</span> <span class="o">=&gt;</span> <span class="s2">"Toujours faire confiance à ce site"</span><span class="p">,</span>
+    <span class="s2">"Deny"</span> <span class="o">=&gt;</span> <span class="s2">"Refuser"</span>
+<span class="p">);</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Finalement, le bout de code d&#8217;exécution&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="title">translation.php</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="php"><span class="o">&lt;?</span><span class="n">php</span>
+
+<span class="k">require</span> <span class="s2">"vendor/autoload.php"</span><span class="p">;</span>
+
+<span class="kn">Use</span> <span class="nc">eftec\bladeone\BladeOne</span><span class="p">;</span>
+
+<span class="nv">$views</span> <span class="o">=</span> <span class="k">__DIR__</span> <span class="mf">.</span> <span class="s1">'/views'</span><span class="p">;</span>
+<span class="nv">$cache</span> <span class="o">=</span> <span class="k">__DIR__</span> <span class="mf">.</span> <span class="s1">'/cache'</span><span class="p">;</span>
+<span class="nv">$blade</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">BladeOne</span><span class="p">(</span><span class="nv">$views</span><span class="p">,</span><span class="nv">$cache</span><span class="p">,</span><span class="nc">BladeOne</span><span class="o">::</span><span class="no">MODE_AUTO</span><span class="p">);</span> <i class="conum" data-value="1"></i><b>(1)</b>
+
+<span class="nv">$lang</span><span class="o">=</span><span class="s1">'fr'</span><span class="p">;</span> <span class="c1">// try es,jp or fr</span>
+<span class="k">include</span> <span class="s1">'./locales/'</span><span class="mf">.</span><span class="nv">$lang</span><span class="mf">.</span><span class="s1">'.php'</span><span class="p">;</span> <i class="conum" data-value="2"></i><b>(2)</b>
+
+<span class="nv">$blade</span><span class="o">-&gt;</span><span class="n">missingLog</span><span class="o">=</span><span class="s1">'./missingkey.txt'</span><span class="p">;</span> <span class="c1">// (optional) if a traduction is missing the it will be saved here.</span>
+<span class="k">echo</span> <span class="nv">$blade</span><span class="o">-&gt;</span><span class="nf">run</span><span class="p">(</span><span class="s2">"translation"</span><span class="p">,</span><span class="k">array</span><span class="p">(</span><span class="s2">"variable1"</span><span class="o">=&gt;</span><span class="s2">"value1"</span><span class="p">));</span> <i class="conum" data-value="3"></i><b>(3)</b></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Initialisation du moteur avec les répertoires de cache et de vue.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Chargement du dictionnaire (statique) pour les traductions</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Génération du contenu à partir de la vue</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Un petit coup de <code>php -S localhost:8000</code>, on saute sur <a href="http://localhost:8000/translation.php" class="bare">http://localhost:8000/translation.php</a> et voilà&nbsp;:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="https://r3dlin3.github.io/assets/img/2020-05-19-translation.png" alt="Résultat">
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="conclusion"><a class="anchor" href="#conclusion"></a><a class="link" href="#conclusion">Conclusion</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="https://github.com/EFTEC/BladeOne/">BladeOne</a> n&#8217;est probablement pas le projet du siècle mais propose une réponse simple et élégante pour celui ou celle qui ne veut pas s&#8217;imposer un framework complet mais souhaite tout de même séparer la vue du reste de l&#8217;application tout en conservant des capacités d&#8217;internationalisation.</p>
+</div>
+<div class="paragraph">
+<p>Ce projet offre des avantages comme&nbsp;:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>L&#8217;indépendance par rapport aux locales du serveur</p>
+</li>
+<li>
+<p>L&#8217;indépendance par rapport au système d&#8217;exploitation du serveur</p>
+</li>
+<li>
+<p>La rapidité et flexibilité de Blade</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>A conserver en tête donc pour des <em>petits</em> projets requérant de l&#8217;internationalisation.</p>
+</div>
+</div>
+</div></section>
+  
+<footer>
+  <div class="tags">
+    
+    <a class="tag" href="/tags#php">#php</a>
+    
+    <a class="tag" href="/tags#i18n">#i18n</a>
+    
+    <a class="tag" href="/tags#blade">#blade</a>
+    
+  </div>
+</footer>
+
+
+</article>
+
+<!-- Disqus -->
+
+
+<!-- Post navigation -->
+
+  <div id="post-nav">
+  
+  <div id="previous-post" class="post-nav-post">
+      <p>Article précédent</p>
+      <a href="/2020/05/03/vuejs-bulma/">
+        Intégrer Bulma CSS et Vue.js
+      </a>
+  </div>
+  
+  
+  <div id="next-post" class="post-nav-post">
+      <p>Article suivant</p>
+      <a href="/2020/05/29/aci-grafana-influxdb-en/">
+        Grafana and InfluxDB on Azure Container Instances
+      </a>
+  </div>
+  
+</div>
+
+
+
+    </div>
+    
+
+
+<footer class="site-footer">
+	<nav class="site-nav">
+		<ul>
+			
+<li>
+	<a href="/feed.xml" title="Suivre sur RSS">
+		<i class="fa fa-fw fa-rss"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+	<a href="https://github.com/r3dlin3" title="Follow on GitHub">
+		<i class="fa fa-fw fa-github"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		</ul>
+	</nav>
+	<p class="text">Powered by <a href="https://jekyllrb.com/">Jekyll</a> with <i class="fa fa-heart" aria-hidden="true" style="color:Tomato"></i>
+</p>
+</footer>
+
+  </body>
+</html>

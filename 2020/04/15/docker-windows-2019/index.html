@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html class="no-js">
+  <head>
+	<meta charset="utf-8">
+	<title>Des containers Linux sur Windows Server 2019 | A bit of everything</title>
+	<meta name="description" content="La documentation Microsoft est légère sur l'utilisation des containers Linux sur Windows Server 2019. Voici un article rapide qui décrive les étapes nécessai...">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="/assets/css/main.css">
+
+	<!--Favicon-->
+	<link rel="shortcut icon" href="/assets/favicon.ico" type="image/x-icon">
+
+	<!-- Canonical -->
+	<link rel="canonical" href="/2020/04/15/docker-windows-2019/">
+
+	<!-- RSS -->
+	<link type="application/atom+xml" rel="alternate" href="https://r3dlin3.github.io/feed.xml" title="A bit of everything" />
+	<!-- SEO -->
+	<!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Des containers Linux sur Windows Server 2019 | A bit of everything</title>
+<meta name="generator" content="Jekyll v3.8.7" />
+<meta property="og:title" content="Des containers Linux sur Windows Server 2019" />
+<meta name="author" content="r3dLiN3" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="La documentation Microsoft est légère sur l’utilisation des containers Linux sur Windows Server 2019. Voici un article rapide qui décrive les étapes nécessaires." />
+<meta property="og:description" content="La documentation Microsoft est légère sur l’utilisation des containers Linux sur Windows Server 2019. Voici un article rapide qui décrive les étapes nécessaires." />
+<link rel="canonical" href="https://r3dlin3.github.io/2020/04/15/docker-windows-2019/" />
+<meta property="og:url" content="https://r3dlin3.github.io/2020/04/15/docker-windows-2019/" />
+<meta property="og:site_name" content="A bit of everything" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-04-15T00:00:00+00:00" />
+<script type="application/ld+json">
+{"author":{"@type":"Person","name":"r3dLiN3"},"headline":"Des containers Linux sur Windows Server 2019","dateModified":"2020-04-15T00:00:00+00:00","datePublished":"2020-04-15T00:00:00+00:00","description":"La documentation Microsoft est légère sur l’utilisation des containers Linux sur Windows Server 2019. Voici un article rapide qui décrive les étapes nécessaires.","mainEntityOfPage":{"@type":"WebPage","@id":"https://r3dlin3.github.io/2020/04/15/docker-windows-2019/"},"@type":"BlogPosting","url":"https://r3dlin3.github.io/2020/04/15/docker-windows-2019/","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+	<!-- Google Fonts -->
+	
+	<link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,700italic,400italic" rel="stylesheet" type="text/css">
+	
+
+	<!-- KaTeX -->
+	
+
+	<!-- Google Analytics -->
+	
+</head>
+
+  <body>
+    <header class="site-header">
+	<div class="branding">
+		
+		<a href="/">
+			<img class="avatar" src="/assets/img/avatar.png" alt="avatar"/>
+		</a>
+		
+		<h1 class="site-title">
+			<a href="/">A bit of everything</a>
+		</h1>
+	</div>
+	<nav class="site-nav">
+		<ul>
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/about/">
+					A propos
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/tags/">
+					tags
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<!-- Social icons from Font Awesome, if enabled  -->
+			
+			
+            
+            <!-- Search bar -->
+            
+		</ul>
+	</nav>
+    
+</header>
+
+    <div class="content">
+      <article >
+  <header style="background-image: url('/')">
+    <h1 class="title">Des containers Linux sur Windows Server 2019</h1>
+    
+    <p class="meta">
+      
+
+
+
+15
+
+avril
+  
+2020
+      
+    </p>
+  </header>
+  <section class="post-content"><div class="sect1">
+<h2 id="introduction"><a class="anchor" href="#introduction"></a><a class="link" href="#introduction">Introduction</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Microsoft fournit de la <a href="https://docs.microsoft.com/en-us/virtualization/windowscontainers/quick-start/set-up-environment?tabs=Windows-Server">doc</a> pour installer Docker sur Windows Server 2019.
+Dès que l&#8217;on parle Linux, on est renvoyé vers de la <a href="https://docs.microsoft.com/en-us/virtualization/windowscontainers/deploy-containers/linux-containers">doc</a> pour Windows 10, qui pousse vers l&#8217;utilisation de Docker Desktop.
+En outre, la <a href="https://docs.docker.com/docker-for-windows/install/">doc de Docker</a> est référencée.</p>
+</div>
+<div class="paragraph">
+<p>Pour autant, je voulais une solution qui fonctionne sans Docker Desktop, qui requiert aujourd&#8217;hui un compte, ce qui ne convient pas dans un contexte "Serveur".</p>
+</div>
+<div class="paragraph">
+<p>Cette page est TRES fortement inspirée d&#8217;un <a href="https://bcthomas.com/2019/02/getting-started-with-linux-containers-on-windows-server-2019/#enable-linux-container-support">article</a> de <a href="https://twitter.com/NZ_BenThomas">Ben Thomas</a>.
+Il s&#8217;agit en premier lieu d&#8217;une traduction. J&#8217;ai cependant adapté quelques étapes car cela n&#8217;a pas fonctionné pour moi.</p>
+</div>
+<div class="paragraph">
+<p>La procédure a été testée sur Windows Server 2019 1809, qui bénéficie d&#8217;un support long terme.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+Pour faire ce test sur une VM Azure, il faut s&#8217;assurer que la VM supporte la virtualisation imbriquée. La liste des types de VM supportant la virtualisation imbriquée est disponible sur le site de Microsoft.
+On pourra faire des tests avec les VM de série D_v3 ou Ds_v3 par exemple.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Toutes les commandes PowerShell données ci-dessous sont à exécuter dans un prompt PowerShell <strong>En tant qu&#8217;administrateur</strong>.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="installation_dhyper_v"><a class="anchor" href="#installation_dhyper_v"></a><a class="link" href="#installation_dhyper_v">Installation d&#8217;Hyper-V</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>L&#8217;installation d&#8217;Hyper-V peut faire simplement en PowerShell grâce à la ligne de commande suivante&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="PowerShell">Install-WindowsFeature -Name Hyper-V,Containers -IncludeAllSubFeature -IncludeManagementTools</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>En principe, un redémarrage est nécessaire. Ceci étant, on peut attendre la fin de la procédure.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="installation_de_docker"><a class="anchor" href="#installation_de_docker"></a><a class="link" href="#installation_de_docker">Installation de Docker</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Toujours en PowerShell&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="PowerShell">Install-Module -Name DockerMsftProvider -Repository PSGallery -Force
+Install-Package -Name docker -ProviderName DockerMsftProvider -Update -Force</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Pour une raison que j&#8217;ignore, docker vient avec une version 17.0.
+En forçant la mise à jour, on obtient une version 19.03, beaucoup plus acceptable.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="groupe_de_sécurité"><a class="anchor" href="#groupe_de_sécurité"></a><a class="link" href="#groupe_de_sécurité">Groupe de sécurité</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Par défaut, il faut être administrateur de la machine pour pouvoir communiquer avec le démon Docker, pour construire ou exécuter une image par exemple.
+Il est cependant possible d&#8217;autoriser un groupe spécifique, qu&#8217;on appellera "docker".</p>
+</div>
+<div class="paragraph">
+<p>Les commandes PowerShell ci-dessous permettent de créer le groupe, s&#8217;il n&#8217;existe pas déjà&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="PowerShell">$dockerGroup = "docker"
+$g = Get-LocalGroup $dockerGroup -EA 0
+if ($g) {
+   Write-Host "Group $dockerGroup already exists"
+}
+else {
+   Write-Host "Group $dockerGroup does not exist"
+   New-LocalGroup -Name "docker"
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="activer_le_support_des_containers_linux"><a class="anchor" href="#activer_le_support_des_containers_linux"></a><a class="link" href="#activer_le_support_des_containers_linux">Activer le support des containers Linux</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>L&#8217;activation des containers Linux peut se faire avec la commande PowerShell suivante&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="PowerShell">[Environment]::SetEnvironmentVariable("LCOW_SUPPORTED", "1", "Machine")</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Le moteur Docker sous Windows 2019 peut gérer des images Windows ou Linux. Pour exécuter des images Linux il est nécessaire de préciser le paramètre <code>--platform=linux</code>.
+Il est cependant possible de définir la plateforme par défaut avec la commande suivante&nbsp;:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="PowerShell">[Environment]::SetEnvironmentVariable("LCOW_API_PLATFORM_IF_OMITTED", "linux", "Machine")</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="configuration_du_moteur"><a class="anchor" href="#configuration_du_moteur"></a><a class="link" href="#configuration_du_moteur">Configuration du moteur</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Microsoft
+<a href="https://docs.microsoft.com/en-us/virtualization/windowscontainers/manage-docker/configure-docker-daemon">décrit</a> toutes les options disponibles.</p>
+</div>
+<div class="paragraph">
+<p>Nous aurons besoin de&nbsp;:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Activer le mode expérimental</p>
+</li>
+<li>
+<p>Configurer le groupe de sécurité</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Encore une fois, la commande PowerShell</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="PowerShell">$configfile = @"
+{
+    "experimental": true,
+    "group": "docker"
+}
+"@
+$configfile | Out-File -FilePath C:\ProgramData\docker\config\daemon.json -Encoding ascii -Force</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="noyau"><a class="anchor" href="#noyau"></a><a class="link" href="#noyau">Noyau</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Un noyau LinuxKit est nécessaire. Les commandes suivantes vont télécharger le noyau à partir de la dernière release et le pousser dans le bon répertoire.
+Ecraser le contenu du répertoire <code>C:\Program Files\Linux Containers\</code>, notamment le fichier <code>initrd</code> faisait que rien ne fonctionnait.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="PowerShell">$Archive = Join-Path $env:TEMP "release.zip"
+Invoke-WebRequest -Uri "https://github.com/linuxkit/lcow/releases/download/v4.14.35-v0.3.9/release.zip" -UseBasicParsing -OutFile $Archive
+$target = Join-Path $env:TEMP "Linux Containers"
+md $target
+Expand-Archive $Archive -DestinationPath $target
+$kernel = Join-Path $target "kernel"
+Copy-Item $kernel "$Env:ProgramFiles\Linux Containers\."</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="test"><a class="anchor" href="#test"></a><a class="link" href="#test">Test</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Après redémarrage, vous devriez être en mesure d&#8217;exécuter la commande ci-dessous (sans être administrateur) et obtenir un prompt bash&nbsp;:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>docker run --rm -it ubuntu bash</pre>
+</div>
+</div>
+</div>
+</div></section>
+  
+<footer>
+  <div class="tags">
+    
+    <a class="tag" href="/tags#docker">#docker</a>
+    
+    <a class="tag" href="/tags#2019">#2019</a>
+    
+    <a class="tag" href="/tags#WindowsServer2019">#WindowsServer2019</a>
+    
+  </div>
+</footer>
+
+
+</article>
+
+<!-- Disqus -->
+
+
+<!-- Post navigation -->
+
+  <div id="post-nav">
+  
+  <div id="previous-post" class="post-nav-post">
+      <p>Article précédent</p>
+      <a href="/2020/02/01/aci-grafana-influxdb/">
+        Grafana et InfluxDB sur Azure Container Instances
+      </a>
+  </div>
+  
+  
+  <div id="next-post" class="post-nav-post">
+      <p>Article suivant</p>
+      <a href="/2020/04/30/programmation-enfant/">
+        Exercices de programmation pour enfant
+      </a>
+  </div>
+  
+</div>
+
+
+
+    </div>
+    
+
+
+<footer class="site-footer">
+	<nav class="site-nav">
+		<ul>
+			
+<li>
+	<a href="/feed.xml" title="Suivre sur RSS">
+		<i class="fa fa-fw fa-rss"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+	<a href="https://github.com/r3dlin3" title="Follow on GitHub">
+		<i class="fa fa-fw fa-github"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		</ul>
+	</nav>
+	<p class="text">Powered by <a href="https://jekyllrb.com/">Jekyll</a> with <i class="fa fa-heart" aria-hidden="true" style="color:Tomato"></i>
+</p>
+</footer>
+
+  </body>
+</html>
