@@ -10,8 +10,6 @@
 
 https://www.packer.io/[Packer] est un outil très adapté à la création d'images personnalisées sur https://docs.microsoft.com/en-us/azure/virtual-machines/windows/build-image-with-packer[Azure].
 
-J'ai déjà évoqué une link:pass:[{% post_url 2018-07-02-packer-azure-least-privilege %}][configuration possible] avec Azure.
-
 Packer va être responsable de créer bon nombre de ressources :
 
 - Un Key Vault
